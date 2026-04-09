@@ -173,6 +173,7 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
                 val resultado = repositorio.actualizarImagenVehiculo(vehiculoActual, imagenLocalUri)
                 if (resultado.isSuccess) {
                     _vehiculoDetalle.value = resultado.getOrNull()
+                    _estadoLista.value = _estadoLista.value.copy(mensajeError = null)
                 } else {
                     _estadoLista.value = _estadoLista.value.copy(
                         mensajeError = "No se ha podido actualizar la foto del vehiculo"

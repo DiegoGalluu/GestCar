@@ -44,21 +44,25 @@ end $$;
 alter table vehiculos enable row level security;
 
 -- politica para que los usuarios solo puedan ver sus propios vehiculos
+drop policy if exists "los usuarios ven sus vehiculos" on vehiculos;
 create policy "los usuarios ven sus vehiculos"
     on vehiculos for select
     using (auth.uid() = usuario_id);
 
 -- politica para que los usuarios solo puedan insertar sus propios vehiculos
+drop policy if exists "los usuarios crean sus vehiculos" on vehiculos;
 create policy "los usuarios crean sus vehiculos"
     on vehiculos for insert
     with check (auth.uid() = usuario_id);
 
 -- politica para que los usuarios solo puedan actualizar sus propios vehiculos
+drop policy if exists "los usuarios actualizan sus vehiculos" on vehiculos;
 create policy "los usuarios actualizan sus vehiculos"
     on vehiculos for update
     using (auth.uid() = usuario_id);
 
 -- politica para que los usuarios solo puedan eliminar sus propios vehiculos
+drop policy if exists "los usuarios eliminan sus vehiculos" on vehiculos;
 create policy "los usuarios eliminan sus vehiculos"
     on vehiculos for delete
     using (auth.uid() = usuario_id);

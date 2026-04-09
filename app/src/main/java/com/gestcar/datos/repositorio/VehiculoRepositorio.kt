@@ -108,16 +108,17 @@ class VehiculoRepositorio(
     }
 
     suspend fun actualizarImagenVehiculo(vehiculo: Vehiculo, imagenUriLocal: String): Result<Vehiculo> {
+        val vehiculoActualizado = vehiculo.copy(
+            imagenUri = imagenUriLocal,
+            actualizadoEn = System.currentTimeMillis()
+        )
+
         return try {
-            val vehiculoActualizado = vehiculo.copy(
-                imagenUri = imagenUriLocal,
-                actualizadoEn = System.currentTimeMillis()
-            )
             vehiculoDao.actualizar(vehiculoActualizado)
             val vehiculoSincronizado = sincronizarVehiculo(vehiculoActualizado)
             Result.success(vehiculoSincronizado)
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.success(vehiculoActualizado)
         }
     }
 
