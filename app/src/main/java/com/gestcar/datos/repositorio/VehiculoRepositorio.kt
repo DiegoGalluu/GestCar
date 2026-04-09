@@ -8,7 +8,9 @@ import com.gestcar.datos.remoto.aDto
 import com.gestcar.datos.remoto.aEntidad
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 // repositorio de vehiculos, es el intermediario entre la ui y los datos
 // se encarga de guardar en local (room) y sincronizar con supabase
@@ -42,14 +44,7 @@ class VehiculoRepositorio(
             // guardamos en room primero para que la app sea responsive
             vehiculoDao.insertar(vehiculo)
 
-            // intentamos subir a supabase
-            ClienteSupabase.cliente.postgrest[tablaRemota]
-                .upsert(
-                    value = vehiculo.aDto(),
-                    request = {
-                        select(Columns.list("id"))
-                    }
-                )
+            sincronizarVehiculo(vehiculo)
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -65,13 +60,7 @@ class VehiculoRepositorio(
             )
             vehiculoDao.actualizar(vehiculoActualizado)
 
-            ClienteSupabase.cliente.postgrest[tablaRemota]
-                .upsert(
-                    value = vehiculoActualizado.aDto(),
-                    request = {
-                        select(Columns.list("id"))
-                    }
-                )
+            sincronizarVehiculo(vehiculoActualizado)
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -100,13 +89,7 @@ class VehiculoRepositorio(
         try {
             val vehiculosLocales = obtenerVehiculosLocales(usuarioId)
             vehiculosLocales.forEach { vehiculo ->
-                ClienteSupabase.cliente.postgrest[tablaRemota]
-                    .upsert(
-                        value = vehiculo.aDto(),
-                        request = {
-                            select(Columns.list("id"))
-                        }
-                    )
+                sincronizarVehiculo(vehiculo)
             }
 
             val vehiculosRemotos = ClienteSupabase.cliente.postgrest[tablaRemota]
@@ -122,5 +105,58 @@ class VehiculoRepositorio(
         } catch (e: Exception) {
             return Result.failure(e)
         }
+    }
+
+    suspend fun actualizarImagenVehiculo(vehiculo: Vehiculo, imagenUriLocal: String): Result<Vehiculo> {
+        return try {
+            val vehiculoActualizado = vehiculo.copy(
+                imagenUri = imagenUriLocal,
+                actualizadoEn = System.currentTimeMillis()
+            )
+            vehiculoDao.actualizar(vehiculoActualizado)
+            val vehiculoSincronizado = sincronizarVehiculo(vehiculoActualizado)
+            Result.success(vehiculoSincronizado)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun sincronizarVehiculo(vehiculo: Vehiculo): Vehiculo {
+        val vehiculoPreparado = subirImagenSiHaceFalta(vehiculo)
+        ClienteSupabase.cliente.postgrest[tablaRemota]
+            .upsert(
+                value = vehiculoPreparado.aDto(),
+                request = {
+                    select(Columns.list("id"))
+                }
+            )
+        return vehiculoPreparado
+    }
+
+    private suspend fun subirImagenSiHaceFalta(vehiculo: Vehiculo): Vehiculo {
+        val imagenUri = vehiculo.imagenUri ?: return vehiculo
+        if (!imagenUri.startsWith("file://")) {
+            return vehiculo
+        }
+
+        val archivoImagen = File(requireNotNull(android.net.Uri.parse(imagenUri).path))
+        if (!archivoImagen.exists()) {
+            return vehiculo.copy(imagenUri = null)
+        }
+
+        val rutaRemota = "${vehiculo.usuarioId}/${vehiculo.id}.jpg"
+        val bucket = ClienteSupabase.cliente.storage.from(ClienteSupabase.BUCKET_FOTOS_VEHICULOS)
+        bucket.upload(rutaRemota, archivoImagen.readBytes()) {
+            upsert = true
+        }
+
+        val urlPublica = bucket.publicUrl(rutaRemota)
+        val vehiculoConImagenRemota = vehiculo.copy(
+            imagenUri = urlPublica,
+            actualizadoEn = System.currentTimeMillis()
+        )
+        vehiculoDao.actualizar(vehiculoConImagenRemota)
+        archivoImagen.delete()
+        return vehiculoConImagenRemota
     }
 }

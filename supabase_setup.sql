@@ -62,3 +62,50 @@ create policy "los usuarios actualizan sus vehiculos"
 create policy "los usuarios eliminan sus vehiculos"
     on vehiculos for delete
     using (auth.uid() = usuario_id);
+
+-- bucket publico para las fotos de vehiculos
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+    'vehiculos',
+    'vehiculos',
+    true,
+    2097152,
+    array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update
+set
+    public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+-- cada usuario puede subir fotos solo dentro de su carpeta
+drop policy if exists "los usuarios suben sus fotos de vehiculos" on storage.objects;
+create policy "los usuarios suben sus fotos de vehiculos"
+    on storage.objects for insert
+    to authenticated
+    with check (
+        bucket_id = 'vehiculos'
+        and (storage.foldername(name))[1] = auth.uid()::text
+    );
+
+drop policy if exists "los usuarios actualizan sus fotos de vehiculos" on storage.objects;
+create policy "los usuarios actualizan sus fotos de vehiculos"
+    on storage.objects for update
+    to authenticated
+    using (
+        bucket_id = 'vehiculos'
+        and (storage.foldername(name))[1] = auth.uid()::text
+    )
+    with check (
+        bucket_id = 'vehiculos'
+        and (storage.foldername(name))[1] = auth.uid()::text
+    );
+
+drop policy if exists "los usuarios eliminan sus fotos de vehiculos" on storage.objects;
+create policy "los usuarios eliminan sus fotos de vehiculos"
+    on storage.objects for delete
+    to authenticated
+    using (
+        bucket_id = 'vehiculos'
+        and (storage.foldername(name))[1] = auth.uid()::text
+    );

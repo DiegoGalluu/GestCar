@@ -1,5 +1,9 @@
 package com.gestcar.ui.pantallas
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,19 +17,23 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.Moped
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -37,12 +45,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.entidades.Vehiculo
+import com.gestcar.ui.componentes.ImagenVehiculo
 import com.gestcar.ui.viewmodel.VehiculoViewModel
+import com.gestcar.util.GestorImagenesVehiculo
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,7 +69,29 @@ fun PantallaDetalleVehiculo(
     viewModel: VehiculoViewModel = viewModel()
 ) {
     val vehiculo by viewModel.vehiculoDetalle.collectAsState()
+    val estadoLista by viewModel.estadoLista.collectAsState()
     var mostrarDialogoEliminar by remember { mutableStateOf(false) }
+    var mostrarMenuFoto by remember { mutableStateOf(false) }
+    var uriTemporalCamara by remember { mutableStateOf<Uri?>(null) }
+    val contexto = LocalContext.current
+
+    val selectorGaleria = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.actualizarImagenVehiculo(uri)
+        }
+    }
+
+    val lanzadorCamara = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { imagenGuardada ->
+        val uriCaptura = uriTemporalCamara
+        if (imagenGuardada && uriCaptura != null) {
+            viewModel.actualizarImagenVehiculo(uriCaptura)
+        }
+        uriTemporalCamara = null
+    }
 
     // cargamos el vehiculo al entrar en la pantalla
     LaunchedEffect(vehiculoId) {
@@ -102,19 +135,59 @@ fun PantallaDetalleVehiculo(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // icono grande del tipo de vehiculo
-                val icono = when (v.tipo) {
-                    "MOTO" -> Icons.Default.Moped
-                    "FURGONETA" -> Icons.Default.LocalShipping
-                    else -> Icons.Default.DirectionsCar
-                }
+                Box(
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    ImagenVehiculo(
+                        vehiculo = v,
+                        modifier = Modifier.size(220.dp),
+                        iconoPadding = 36
+                    )
 
-                Icon(
-                    imageVector = icono,
-                    contentDescription = null,
-                    modifier = Modifier.size(100.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                    FloatingActionButton(
+                        onClick = { mostrarMenuFoto = true },
+                        modifier = Modifier.padding(12.dp),
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "anadir foto",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = mostrarMenuFoto,
+                        onDismissRequest = { mostrarMenuFoto = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Elegir de la galeria") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Image, contentDescription = null)
+                            },
+                            onClick = {
+                                mostrarMenuFoto = false
+                                selectorGaleria.launch("image/*")
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Hacer una foto") },
+                            leadingIcon = {
+                                Icon(Icons.Default.CameraAlt, contentDescription = null)
+                            },
+                            onClick = {
+                                mostrarMenuFoto = false
+                                val vehiculoActual = vehiculo ?: return@DropdownMenuItem
+                                val nuevaUri = GestorImagenesVehiculo.crearUriTemporalCamara(
+                                    context = contexto,
+                                    vehiculoId = vehiculoActual.id
+                                )
+                                uriTemporalCamara = nuevaUri
+                                lanzadorCamara.launch(nuevaUri)
+                            }
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -173,6 +246,13 @@ fun PantallaDetalleVehiculo(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+
+                estadoLista.mensajeError?.let { mensaje ->
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Snackbar {
+                        Text(mensaje)
                     }
                 }
             }

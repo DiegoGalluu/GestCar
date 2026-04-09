@@ -3,11 +3,14 @@ package com.gestcar.datos.remoto
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.storage.Storage
 
 // cliente de supabase, es el punto de conexion con el servidor remoto
 // aqui se configura la url del proyecto y la clave anonima
 // IMPORTANTE, tienes que poner tu propia url y clave de tu proyecto de supabase
 object ClienteSupabase {
+
+    const val BUCKET_FOTOS_VEHICULOS = "vehiculos"
 
     // pon aqui la url de tu proyecto de supabase
     // la encuentras en supabase dashboard > settings > api > project url
@@ -27,5 +30,8 @@ object ClienteSupabase {
 
         // modulo de postgrest para hacer consultas a la base de datos remota
         install(Postgrest)
+
+        // modulo de storage para subir fotos de vehiculos
+        install(Storage)
     }
 }

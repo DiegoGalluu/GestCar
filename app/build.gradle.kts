@@ -69,8 +69,12 @@ dependencies {
     // supabase (autenticacion y base de datos remota)
     implementation(libs.supabase.auth)
     implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.storage)
     implementation(libs.ktor.client.android)
 
     // serializacion
     implementation(libs.kotlinx.serialization.json)
+
+    // imagenes
+    implementation(libs.coil.compose)
 }

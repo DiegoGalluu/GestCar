@@ -1,11 +1,13 @@
 package com.gestcar.ui.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.gestcar.datos.basedatos.GestCarBaseDatos
 import com.gestcar.datos.entidades.Vehiculo
 import com.gestcar.datos.repositorio.VehiculoRepositorio
+import com.gestcar.util.GestorImagenesVehiculo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -153,6 +155,34 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
     fun eliminarVehiculo(vehiculo: Vehiculo) {
         viewModelScope.launch {
             repositorio.eliminar(vehiculo)
+        }
+    }
+
+    fun actualizarImagenVehiculo(origenUri: Uri) {
+        val vehiculoActual = _vehiculoDetalle.value ?: return
+
+        viewModelScope.launch {
+            try {
+                val imagenLocalUri = GestorImagenesVehiculo.guardarImagenComprimida(
+                    context = getApplication(),
+                    origenUri = origenUri,
+                    usuarioId = vehiculoActual.usuarioId,
+                    vehiculoId = vehiculoActual.id
+                )
+
+                val resultado = repositorio.actualizarImagenVehiculo(vehiculoActual, imagenLocalUri)
+                if (resultado.isSuccess) {
+                    _vehiculoDetalle.value = resultado.getOrNull()
+                } else {
+                    _estadoLista.value = _estadoLista.value.copy(
+                        mensajeError = "No se ha podido actualizar la foto del vehiculo"
+                    )
+                }
+            } catch (e: Exception) {
+                _estadoLista.value = _estadoLista.value.copy(
+                    mensajeError = "No se ha podido procesar la imagen seleccionada"
+                )
+            }
         }
     }
 }

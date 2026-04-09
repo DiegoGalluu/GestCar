@@ -8,13 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Moped
-import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,18 +37,10 @@ fun TarjetaVehiculo(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // icono que cambia segun el tipo de vehiculo
-            val icono = when (vehiculo.tipo) {
-                "MOTO" -> Icons.Default.Moped
-                "FURGONETA" -> Icons.Default.LocalShipping
-                else -> Icons.Default.DirectionsCar
-            }
-
-            Icon(
-                imageVector = icono,
-                contentDescription = "icono de ${vehiculo.tipo.lowercase()}",
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
+            ImagenVehiculo(
+                vehiculo = vehiculo,
+                modifier = Modifier.size(64.dp),
+                iconoPadding = 10
             )
 
             Spacer(modifier = Modifier.width(16.dp))
