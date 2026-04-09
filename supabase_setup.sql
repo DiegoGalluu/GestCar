@@ -72,7 +72,7 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values (
     'vehiculos',
     'vehiculos',
-    true,
+    false,
     2097152,
     array['image/jpeg', 'image/png', 'image/webp']
 )
@@ -83,6 +83,15 @@ set
     allowed_mime_types = excluded.allowed_mime_types;
 
 -- cada usuario puede subir fotos solo dentro de su carpeta
+drop policy if exists "los usuarios ven sus fotos de vehiculos" on storage.objects;
+create policy "los usuarios ven sus fotos de vehiculos"
+    on storage.objects for select
+    to authenticated
+    using (
+        bucket_id = 'vehiculos'
+        and (storage.foldername(name))[1] = auth.uid()::text
+    );
+
 drop policy if exists "los usuarios suben sus fotos de vehiculos" on storage.objects;
 create policy "los usuarios suben sus fotos de vehiculos"
     on storage.objects for insert

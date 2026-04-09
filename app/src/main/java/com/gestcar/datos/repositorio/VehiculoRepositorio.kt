@@ -10,6 +10,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.flow.Flow
+import com.gestcar.util.normalizarRutaImagenVehiculo
 import java.io.File
 
 // repositorio de vehiculos, es el intermediario entre la ui y los datos
@@ -135,9 +136,9 @@ class VehiculoRepositorio(
     }
 
     private suspend fun subirImagenSiHaceFalta(vehiculo: Vehiculo): Vehiculo {
-        val imagenUri = vehiculo.imagenUri ?: return vehiculo
+        val imagenUri = normalizarRutaImagenVehiculo(vehiculo.imagenUri) ?: return vehiculo
         if (!imagenUri.startsWith("file://")) {
-            return vehiculo
+            return vehiculo.copy(imagenUri = imagenUri)
         }
 
         val archivoImagen = File(requireNotNull(android.net.Uri.parse(imagenUri).path))
@@ -151,9 +152,8 @@ class VehiculoRepositorio(
             upsert = true
         }
 
-        val urlPublica = bucket.publicUrl(rutaRemota)
         val vehiculoConImagenRemota = vehiculo.copy(
-            imagenUri = urlPublica,
+            imagenUri = rutaRemota,
             actualizadoEn = System.currentTimeMillis()
         )
         vehiculoDao.actualizar(vehiculoConImagenRemota)

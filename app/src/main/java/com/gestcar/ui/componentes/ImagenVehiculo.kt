@@ -12,6 +12,8 @@ import androidx.compose.material.icons.filled.Moped
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,6 +21,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.gestcar.datos.entidades.Vehiculo
+import com.gestcar.datos.remoto.ClienteSupabase
+import com.gestcar.util.esRutaRemotaPrivadaImagen
+import com.gestcar.util.normalizarRutaImagenVehiculo
+import io.github.jan.supabase.storage.storage
+import kotlin.time.Duration.Companion.hours
 
 @Composable
 fun ImagenVehiculo(
@@ -26,15 +33,29 @@ fun ImagenVehiculo(
     modifier: Modifier = Modifier,
     iconoPadding: Int = 12
 ) {
+    val imagenNormalizada = normalizarRutaImagenVehiculo(vehiculo.imagenUri)
+    val imagenMostrable by produceState<String?>(initialValue = imagenNormalizada, imagenNormalizada) {
+        value = when {
+            imagenNormalizada.isNullOrBlank() -> null
+            esRutaRemotaPrivadaImagen(imagenNormalizada) -> {
+                ClienteSupabase.cliente.storage
+                    .from(ClienteSupabase.BUCKET_FOTOS_VEHICULOS)
+                    .createSignedUrl(imagenNormalizada, 6.hours)
+            }
+
+            else -> imagenNormalizada
+        }
+    }
+
     val icono = when (vehiculo.tipo) {
         "MOTO" -> Icons.Default.Moped
         "FURGONETA" -> Icons.Default.LocalShipping
         else -> Icons.Default.DirectionsCar
     }
 
-    if (!vehiculo.imagenUri.isNullOrBlank()) {
+    if (!imagenMostrable.isNullOrBlank()) {
         AsyncImage(
-            model = vehiculo.imagenUri,
+            model = imagenMostrable,
             contentDescription = "foto de ${vehiculo.marca} ${vehiculo.modelo}",
             contentScale = ContentScale.Crop,
             modifier = modifier

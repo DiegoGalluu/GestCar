@@ -47,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -147,12 +148,12 @@ fun PantallaDetalleVehiculo(
                     FloatingActionButton(
                         onClick = { mostrarMenuFoto = true },
                         modifier = Modifier.padding(12.dp),
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = Color(0xFF7FC8FF)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "anadir foto",
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            tint = Color.White
                         )
                     }
 
