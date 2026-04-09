@@ -56,12 +56,15 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
         viewModelScope.launch {
             _estadoLista.value = _estadoLista.value.copy(estaCargando = true)
 
-            // primero intentamos sincronizar con supabase
-            repositorio.sincronizarDesdeRemoto(usuarioId)
+            // primero intentamos subir pendientes locales y luego traer lo remoto
+            val resultadoSincronizacion = repositorio.sincronizar(usuarioId)
 
             // nos suscribimos al flow de room para recibir actualizaciones en tiempo real
             repositorio.obtenerVehiculos(usuarioId).collect { lista ->
-                _estadoLista.value = EstadoListaVehiculos(vehiculos = lista)
+                _estadoLista.value = EstadoListaVehiculos(
+                    vehiculos = lista,
+                    mensajeError = resultadoSincronizacion.exceptionOrNull()?.message
+                )
             }
         }
     }

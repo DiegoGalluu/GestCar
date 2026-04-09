@@ -26,6 +26,11 @@ class VehiculoRepositorio(
         return vehiculoDao.obtenerVehiculosPorUsuario(usuarioId)
     }
 
+    // obtener todos los vehiculos locales de una sola vez, util para sincronizar pendientes
+    private suspend fun obtenerVehiculosLocales(usuarioId: String): List<Vehiculo> {
+        return vehiculoDao.obtenerVehiculosPorUsuarioLista(usuarioId)
+    }
+
     // obtener un vehiculo por su id desde la base de datos local
     suspend fun obtenerPorId(id: String): Vehiculo? {
         return vehiculoDao.obtenerPorId(id)
@@ -89,10 +94,21 @@ class VehiculoRepositorio(
     }
 
     // sincronizar los vehiculos remotos con los locales
-    // descarga todos los vehiculos del usuario desde supabase y los guarda en room
-    // se llama al abrir la app o al hacer pull to refresh
-    suspend fun sincronizarDesdeRemoto(usuarioId: String) {
+    // primero intenta subir los cambios locales pendientes y despues descarga el estado remoto
+    // esto permite trabajar sin internet y sincronizar en cuanto vuelva la conexion
+    suspend fun sincronizar(usuarioId: String): Result<Unit> {
         try {
+            val vehiculosLocales = obtenerVehiculosLocales(usuarioId)
+            vehiculosLocales.forEach { vehiculo ->
+                ClienteSupabase.cliente.postgrest[tablaRemota]
+                    .upsert(
+                        value = vehiculo.aDto(),
+                        request = {
+                            select(Columns.list("id"))
+                        }
+                    )
+            }
+
             val vehiculosRemotos = ClienteSupabase.cliente.postgrest[tablaRemota]
                 .select { filter { eq("usuario_id", usuarioId) } }
                 .decodeList<VehiculoDto>()
@@ -101,9 +117,10 @@ class VehiculoRepositorio(
             vehiculosRemotos.forEach { dto ->
                 vehiculoDao.insertar(dto.aEntidad())
             }
+
+            return Result.success(Unit)
         } catch (e: Exception) {
-            // si no hay internet simplemente no sincronizamos
-            // los datos locales siguen disponibles
+            return Result.failure(e)
         }
     }
 }

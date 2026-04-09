@@ -19,6 +19,10 @@ interface VehiculoDao {
     @Query("SELECT * FROM vehiculos WHERE usuarioId = :usuarioId ORDER BY fechaAlta DESC")
     fun obtenerVehiculosPorUsuario(usuarioId: String): Flow<List<Vehiculo>>
 
+    // obtener todos los vehiculos de un usuario una sola vez, util para sincronizaciones
+    @Query("SELECT * FROM vehiculos WHERE usuarioId = :usuarioId ORDER BY fechaAlta DESC")
+    suspend fun obtenerVehiculosPorUsuarioLista(usuarioId: String): List<Vehiculo>
+
     // obtener un vehiculo concreto por su id
     @Query("SELECT * FROM vehiculos WHERE id = :id")
     suspend fun obtenerPorId(id: String): Vehiculo?
