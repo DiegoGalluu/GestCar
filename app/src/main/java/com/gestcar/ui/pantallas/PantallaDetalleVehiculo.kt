@@ -142,7 +142,7 @@ fun PantallaDetalleVehiculo(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         FilaDato("Tipo", v.tipo)
-                        FilaDato("Anio", v.anio.toString())
+                        FilaDato("Año de fabricación", formatearFechaFabricacion(v))
                         FilaDato("Kilometraje", "${String.format("%,.0f", v.kilometraje)} km")
                         v.tipoCombustible?.let { FilaDato("Combustible", it) }
                         FilaDato("Fecha de alta", formatearFecha(v.fechaAlta))
@@ -228,4 +228,20 @@ fun FilaDato(etiqueta: String, valor: String) {
 fun formatearFecha(timestamp: Long): String {
     val formato = SimpleDateFormat("dd/MM/yyyy", Locale("es", "ES"))
     return formato.format(Date(timestamp))
+}
+
+fun formatearFechaFabricacion(vehiculo: Vehiculo): String {
+    val anio = vehiculo.anioFabricacion.toString()
+    val mes = vehiculo.mesFabricacion?.let { numeroMes ->
+        listOf(
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ).getOrNull(numeroMes - 1)
+    }
+
+    return when {
+        vehiculo.diaFabricacion != null && mes != null -> "${vehiculo.diaFabricacion} de $mes de $anio"
+        mes != null -> "$mes de $anio"
+        else -> anio
+    }
 }

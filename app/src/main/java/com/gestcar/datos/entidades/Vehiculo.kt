@@ -21,8 +21,14 @@ data class Vehiculo(
     // modelo del vehiculo, por ejemplo corolla o ibiza
     val modelo: String = "",
 
-    // anio de fabricacion
-    val anio: Int = 2024,
+    // año de fabricación obligatorio
+    val anioFabricacion: Int = 2024,
+
+    // mes de fabricación opcional, se guarda como número del 1 al 12
+    val mesFabricacion: Int? = null,
+
+    // día de fabricación opcional
+    val diaFabricacion: Int? = null,
 
     // tipo de vehiculo, puede ser coche, moto o furgoneta
     val tipo: String = "COCHE",

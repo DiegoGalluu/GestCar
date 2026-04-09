@@ -50,6 +50,11 @@ private val tiposVehiculo = listOf("COCHE", "MOTO", "FURGONETA")
 // tipos de combustible disponibles
 private val tiposCombustible = listOf("Gasolina", "Diesel", "Electrico", "Hibrido", "GLP")
 
+private val mesesFabricacion = listOf(
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+)
+
 // pantalla con el formulario para crear o editar un vehiculo
 // si vehiculoId es "nuevo" se crea uno nuevo, si no se edita el existente
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,14 +130,41 @@ fun PantallaFormularioVehiculo(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // campo de anio
+            // año obligatorio y fecha parcial/completa opcional
             OutlinedTextField(
-                value = if (vehiculo.anio > 0) vehiculo.anio.toString() else "",
+                value = if (vehiculo.anioFabricacion > 0) vehiculo.anioFabricacion.toString() else "",
                 onValueChange = {
                     val anio = it.toIntOrNull() ?: 0
-                    viewModel.actualizarFormulario(vehiculo.copy(anio = anio))
+                    viewModel.actualizarFormulario(vehiculo.copy(anioFabricacion = anio))
                 },
-                label = { Text("Anio de fabricacion *") },
+                label = { Text("Año de fabricación *") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            SelectorDesplegable(
+                etiqueta = "Mes de fabricación",
+                valorSeleccionado = vehiculo.mesFabricacion?.let { mesesFabricacion[it - 1] } ?: "",
+                opciones = mesesFabricacion,
+                alSeleccionar = {
+                    viewModel.actualizarFormulario(
+                        vehiculo.copy(mesFabricacion = mesesFabricacion.indexOf(it) + 1)
+                    )
+                }
+            )
+
+            OutlinedTextField(
+                value = vehiculo.diaFabricacion?.toString() ?: "",
+                onValueChange = {
+                    val dia = it.toIntOrNull()
+                    viewModel.actualizarFormulario(
+                        vehiculo.copy(
+                            diaFabricacion = dia?.takeIf { numero -> numero in 1..31 }
+                        )
+                    )
+                },
+                label = { Text("Día de fabricación") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()

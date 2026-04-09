@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.viewmodel.AutenticacionViewModel
 
 // pantalla de registro, el usuario crea una cuenta nueva con email y contrasena
@@ -34,7 +33,7 @@ import com.gestcar.ui.viewmodel.AutenticacionViewModel
 fun PantallaRegistro(
     alRegistrarse: () -> Unit,
     alVolverALogin: () -> Unit,
-    viewModel: AutenticacionViewModel = viewModel()
+    viewModel: AutenticacionViewModel
 ) {
     val estado by viewModel.estado.collectAsState()
 
@@ -65,7 +64,7 @@ fun PantallaRegistro(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Registrate para empezar a gestionar tus vehiculos",
+            text = "Registrate para empezar a gestionar tus vehiculos.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -136,7 +135,7 @@ fun PantallaRegistro(
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(onClick = alVolverALogin) {
-            Text("Ya tienes cuenta? Inicia sesion")
+            Text("¿Ya tienes cuenta? Inicia sesion.")
         }
 
         estado.mensajeError?.let { error ->

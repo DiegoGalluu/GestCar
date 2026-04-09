@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.viewmodel.AutenticacionViewModel
 
 // pantalla de login, el usuario pone su email y contrasena para entrar
@@ -37,7 +36,7 @@ import com.gestcar.ui.viewmodel.AutenticacionViewModel
 fun PantallaInicioSesion(
     alIniciarSesion: () -> Unit,
     alIrARegistro: () -> Unit,
-    viewModel: AutenticacionViewModel = viewModel()
+    viewModel: AutenticacionViewModel
 ) {
     val estado by viewModel.estado.collectAsState()
 
@@ -76,7 +75,7 @@ fun PantallaInicioSesion(
         )
 
         Text(
-            text = "Gestiona tus vehiculos",
+            text = "Gestiona tus vehiculos.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -126,7 +125,7 @@ fun PantallaInicioSesion(
 
         // enlace para ir a la pantalla de registro
         TextButton(onClick = alIrARegistro) {
-            Text("No tienes cuenta? Registrate")
+            Text("¿No tienes cuenta? Registrate.")
         }
 
         // mensaje de error si algo ha fallado

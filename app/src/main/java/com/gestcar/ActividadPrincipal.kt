@@ -26,6 +26,7 @@ class ActividadPrincipal : ComponentActivity() {
                 val estadoAuth by authViewModel.estado.collectAsState()
 
                 GrafoNavegacion(
+                    authViewModel = authViewModel,
                     estaAutenticado = estadoAuth.estaAutenticado,
                     usuarioId = estadoAuth.usuarioId,
                     alCerrarSesion = { authViewModel.cerrarSesion() }

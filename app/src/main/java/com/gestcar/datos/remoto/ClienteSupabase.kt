@@ -11,11 +11,11 @@ object ClienteSupabase {
 
     // pon aqui la url de tu proyecto de supabase
     // la encuentras en supabase dashboard > settings > api > project url
-    private const val SUPABASE_URL = "https://TU_PROYECTO.supabase.co"
+    private const val SUPABASE_URL = "https://fghrbkgktlssvpbznfjk.supabase.co"
 
     // pon aqui la clave anonima (anon key) de tu proyecto
     // la encuentras en supabase dashboard > settings > api > anon public
-    private const val SUPABASE_KEY = "TU_CLAVE_ANONIMA_AQUI"
+    private const val SUPABASE_KEY = "sb_publishable_fy1CfFqjPeO0-SlkQxijcg_1_63QOH5"
 
     // creamos el cliente con los modulos de autenticacion y base de datos
     val cliente = createSupabaseClient(

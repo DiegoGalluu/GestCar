@@ -16,7 +16,14 @@ data class VehiculoDto(
 
     val marca: String = "",
     val modelo: String = "",
-    val anio: Int = 2024,
+    @SerialName("anio_fabricacion")
+    val anioFabricacion: Int = 2024,
+
+    @SerialName("mes_fabricacion")
+    val mesFabricacion: Int? = null,
+
+    @SerialName("dia_fabricacion")
+    val diaFabricacion: Int? = null,
     val tipo: String = "COCHE",
     val matricula: String = "",
     val kilometraje: Double = 0.0,
@@ -42,7 +49,9 @@ fun Vehiculo.aDto(): VehiculoDto = VehiculoDto(
     usuarioId = usuarioId,
     marca = marca,
     modelo = modelo,
-    anio = anio,
+    anioFabricacion = anioFabricacion,
+    mesFabricacion = mesFabricacion,
+    diaFabricacion = diaFabricacion,
     tipo = tipo,
     matricula = matricula,
     kilometraje = kilometraje,
@@ -59,7 +68,9 @@ fun VehiculoDto.aEntidad(): Vehiculo = Vehiculo(
     usuarioId = usuarioId,
     marca = marca,
     modelo = modelo,
-    anio = anio,
+    anioFabricacion = anioFabricacion,
+    mesFabricacion = mesFabricacion,
+    diaFabricacion = diaFabricacion,
     tipo = tipo,
     matricula = matricula,
     kilometraje = kilometraje,

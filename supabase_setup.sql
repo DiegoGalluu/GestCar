@@ -7,7 +7,9 @@ create table if not exists vehiculos (
     usuario_id uuid not null references auth.users(id) on delete cascade,
     marca text not null,
     modelo text not null,
-    anio integer not null,
+    anio_fabricacion integer not null,
+    mes_fabricacion integer,
+    dia_fabricacion integer,
     tipo text not null default 'COCHE',
     matricula text not null,
     kilometraje double precision not null default 0,
@@ -18,6 +20,25 @@ create table if not exists vehiculos (
     actualizado_en bigint not null,
     created_at timestamptz default now()
 );
+
+alter table vehiculos add column if not exists anio_fabricacion integer;
+alter table vehiculos add column if not exists mes_fabricacion integer;
+alter table vehiculos add column if not exists dia_fabricacion integer;
+
+do $$
+begin
+    if exists (
+        select 1
+        from information_schema.columns
+        where table_schema = 'public'
+          and table_name = 'vehiculos'
+          and column_name = 'anio'
+    ) then
+        execute 'update vehiculos
+                 set anio_fabricacion = coalesce(anio_fabricacion, anio)
+                 where anio_fabricacion is null';
+    end if;
+end $$;
 
 -- activamos row level security para que cada usuario solo vea sus vehiculos
 alter table vehiculos enable row level security;

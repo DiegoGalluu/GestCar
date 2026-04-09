@@ -40,6 +40,8 @@ class AutenticacionViewModel : ViewModel() {
     private fun comprobarSesion() {
         viewModelScope.launch {
             try {
+                ClienteSupabase.cliente.auth.awaitInitialization()
+                ClienteSupabase.cliente.auth.loadFromStorage()
                 val sesion = ClienteSupabase.cliente.auth.currentSessionOrNull()
                 if (sesion != null) {
                     _estado.value = EstadoAutenticacion(
@@ -58,20 +60,19 @@ class AutenticacionViewModel : ViewModel() {
         viewModelScope.launch {
             _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
             try {
+                ClienteSupabase.cliente.auth.signOut()
                 ClienteSupabase.cliente.auth.signInWith(Email) {
                     this.email = email
                     this.password = contrasena
                 }
 
-                val usuario = ClienteSupabase.cliente.auth.currentUserOrNull()
-                _estado.value = EstadoAutenticacion(
-                    estaAutenticado = true,
-                    usuarioId = usuario?.id ?: ""
+                actualizarEstadoDesdeSesion(
+                    errorSinSesion = "No se pudo recuperar la sesion. Comprueba tu correo y vuelve a intentarlo."
                 )
             } catch (e: Exception) {
                 _estado.value = _estado.value.copy(
                     estaCargando = false,
-                    mensajeError = "Error al iniciar sesion, comprueba tus credenciales"
+                    mensajeError = "Error al iniciar sesion. Comprueba tus credenciales y que el correo este confirmado."
                 )
             }
         }
@@ -82,20 +83,19 @@ class AutenticacionViewModel : ViewModel() {
         viewModelScope.launch {
             _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
             try {
+                ClienteSupabase.cliente.auth.signOut()
                 ClienteSupabase.cliente.auth.signUpWith(Email) {
                     this.email = email
                     this.password = contrasena
                 }
 
-                val usuario = ClienteSupabase.cliente.auth.currentUserOrNull()
-                _estado.value = EstadoAutenticacion(
-                    estaAutenticado = true,
-                    usuarioId = usuario?.id ?: ""
+                actualizarEstadoDesdeSesion(
+                    errorSinSesion = "Cuenta creada. Revisa tu correo para confirmarla antes de iniciar sesion."
                 )
             } catch (e: Exception) {
                 _estado.value = _estado.value.copy(
                     estaCargando = false,
-                    mensajeError = "Error al crear la cuenta, intentalo de nuevo"
+                    mensajeError = "Error al crear la cuenta. Intentalo de nuevo."
                 )
             }
         }
@@ -116,5 +116,25 @@ class AutenticacionViewModel : ViewModel() {
     // limpia el mensaje de error, se usa cuando el usuario cierra el snackbar
     fun limpiarError() {
         _estado.value = _estado.value.copy(mensajeError = null)
+    }
+
+    private suspend fun actualizarEstadoDesdeSesion(errorSinSesion: String) {
+        ClienteSupabase.cliente.auth.awaitInitialization()
+        val sesion = ClienteSupabase.cliente.auth.currentSessionOrNull()
+        val usuario = sesion?.user
+
+        _estado.value = if (sesion != null && usuario?.id?.isNotBlank() == true) {
+            EstadoAutenticacion(
+                estaAutenticado = true,
+                usuarioId = usuario.id
+            )
+        } else {
+            EstadoAutenticacion(
+                estaAutenticado = false,
+                usuarioId = "",
+                estaCargando = false,
+                mensajeError = errorSinSesion
+            )
+        }
     }
 }

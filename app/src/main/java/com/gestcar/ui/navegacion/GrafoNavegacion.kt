@@ -29,6 +29,7 @@ import com.gestcar.ui.pantallas.PantallaInicioSesion
 import com.gestcar.ui.pantallas.PantallaListaVehiculos
 import com.gestcar.ui.pantallas.PantallaPlaceholder
 import com.gestcar.ui.pantallas.PantallaRegistro
+import com.gestcar.ui.viewmodel.AutenticacionViewModel
 
 // clase que define cada elemento de la barra de navegacion inferior
 data class ElementoNavegacion(
@@ -61,6 +62,7 @@ private val rutasConBarraInferior = listOf(
 @Composable
 fun GrafoNavegacion(
     controladorNav: NavHostController = rememberNavController(),
+    authViewModel: AutenticacionViewModel,
     estaAutenticado: Boolean,
     usuarioId: String,
     alCerrarSesion: () -> Unit
@@ -91,6 +93,7 @@ fun GrafoNavegacion(
             // pantalla de inicio de sesion
             composable(Rutas.INICIO_SESION) {
                 PantallaInicioSesion(
+                    viewModel = authViewModel,
                     alIniciarSesion = {
                         controladorNav.navigate(Rutas.LISTA_VEHICULOS) {
                             popUpTo(Rutas.INICIO_SESION) { inclusive = true }
@@ -105,6 +108,7 @@ fun GrafoNavegacion(
             // pantalla de registro de cuenta nueva
             composable(Rutas.REGISTRO) {
                 PantallaRegistro(
+                    viewModel = authViewModel,
                     alRegistrarse = {
                         controladorNav.navigate(Rutas.LISTA_VEHICULOS) {
                             popUpTo(Rutas.INICIO_SESION) { inclusive = true }

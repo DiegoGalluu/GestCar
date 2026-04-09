@@ -113,6 +113,22 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
                 return@launch
             }
 
+            if (vehiculo.anioFabricacion <= 0) {
+                _estadoFormulario.value = _estadoFormulario.value.copy(
+                    estaCargando = false,
+                    mensajeError = "El año de fabricación es obligatorio"
+                )
+                return@launch
+            }
+
+            if (vehiculo.diaFabricacion != null && vehiculo.mesFabricacion == null) {
+                _estadoFormulario.value = _estadoFormulario.value.copy(
+                    estaCargando = false,
+                    mensajeError = "Si indicas un día, también debes indicar el mes"
+                )
+                return@launch
+            }
+
             val resultado = repositorio.guardar(vehiculo)
             _estadoFormulario.value = _estadoFormulario.value.copy(
                 estaCargando = false,
