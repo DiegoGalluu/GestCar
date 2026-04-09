@@ -130,10 +130,19 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
             }
 
             val resultado = repositorio.guardar(vehiculo)
-            _estadoFormulario.value = _estadoFormulario.value.copy(
-                estaCargando = false,
-                guardadoExitoso = resultado.isSuccess
-            )
+            _estadoFormulario.value = if (resultado.isSuccess) {
+                _estadoFormulario.value.copy(
+                    estaCargando = false,
+                    guardadoExitoso = true,
+                    mensajeError = null
+                )
+            } else {
+                _estadoFormulario.value.copy(
+                    estaCargando = false,
+                    guardadoExitoso = false,
+                    mensajeError = "Se ha guardado en local, pero Supabase ha rechazado la sincronizacion. ${resultado.exceptionOrNull()?.message ?: ""}".trim()
+                )
+            }
         }
     }
 

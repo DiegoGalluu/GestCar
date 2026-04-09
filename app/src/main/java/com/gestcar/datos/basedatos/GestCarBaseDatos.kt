@@ -25,10 +25,69 @@ abstract class GestCarBaseDatos : RoomDatabase() {
     companion object {
         private val MIGRACION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE vehiculos ADD COLUMN anioFabricacion INTEGER NOT NULL DEFAULT 2024")
-                db.execSQL("ALTER TABLE vehiculos ADD COLUMN mesFabricacion INTEGER")
-                db.execSQL("ALTER TABLE vehiculos ADD COLUMN diaFabricacion INTEGER")
-                db.execSQL("UPDATE vehiculos SET anioFabricacion = anio")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS vehiculos_nueva (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        usuarioId TEXT NOT NULL,
+                        marca TEXT NOT NULL,
+                        modelo TEXT NOT NULL,
+                        anioFabricacion INTEGER NOT NULL,
+                        mesFabricacion INTEGER,
+                        diaFabricacion INTEGER,
+                        tipo TEXT NOT NULL,
+                        matricula TEXT NOT NULL,
+                        kilometraje REAL NOT NULL,
+                        tipoCombustible TEXT,
+                        imagenUri TEXT,
+                        fechaAlta INTEGER NOT NULL,
+                        notas TEXT,
+                        actualizadoEn INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    INSERT INTO vehiculos_nueva (
+                        id,
+                        usuarioId,
+                        marca,
+                        modelo,
+                        anioFabricacion,
+                        mesFabricacion,
+                        diaFabricacion,
+                        tipo,
+                        matricula,
+                        kilometraje,
+                        tipoCombustible,
+                        imagenUri,
+                        fechaAlta,
+                        notas,
+                        actualizadoEn
+                    )
+                    SELECT
+                        id,
+                        usuarioId,
+                        marca,
+                        modelo,
+                        anio,
+                        NULL,
+                        NULL,
+                        tipo,
+                        matricula,
+                        kilometraje,
+                        tipoCombustible,
+                        imagenUri,
+                        fechaAlta,
+                        notas,
+                        actualizadoEn
+                    FROM vehiculos
+                    """.trimIndent()
+                )
+
+                db.execSQL("DROP TABLE vehiculos")
+                db.execSQL("ALTER TABLE vehiculos_nueva RENAME TO vehiculos")
             }
         }
 

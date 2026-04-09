@@ -16,6 +16,10 @@ data class VehiculoDto(
 
     val marca: String = "",
     val modelo: String = "",
+    // compatibilidad temporal con la columna antigua `anio` en Supabase
+    @SerialName("anio")
+    val anioLegacy: Int? = null,
+
     @SerialName("anio_fabricacion")
     val anioFabricacion: Int = 2024,
 
@@ -49,6 +53,7 @@ fun Vehiculo.aDto(): VehiculoDto = VehiculoDto(
     usuarioId = usuarioId,
     marca = marca,
     modelo = modelo,
+    anioLegacy = anioFabricacion,
     anioFabricacion = anioFabricacion,
     mesFabricacion = mesFabricacion,
     diaFabricacion = diaFabricacion,
@@ -68,7 +73,7 @@ fun VehiculoDto.aEntidad(): Vehiculo = Vehiculo(
     usuarioId = usuarioId,
     marca = marca,
     modelo = modelo,
-    anioFabricacion = anioFabricacion,
+    anioFabricacion = anioFabricacion.takeIf { it > 0 } ?: anioLegacy ?: 2024,
     mesFabricacion = mesFabricacion,
     diaFabricacion = diaFabricacion,
     tipo = tipo,

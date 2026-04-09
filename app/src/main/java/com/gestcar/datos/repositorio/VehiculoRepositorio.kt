@@ -7,6 +7,7 @@ import com.gestcar.datos.remoto.VehiculoDto
 import com.gestcar.datos.remoto.aDto
 import com.gestcar.datos.remoto.aEntidad
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.Flow
 
 // repositorio de vehiculos, es el intermediario entre la ui y los datos
@@ -38,13 +39,16 @@ class VehiculoRepositorio(
 
             // intentamos subir a supabase
             ClienteSupabase.cliente.postgrest[tablaRemota]
-                .upsert(vehiculo.aDto())
+                .upsert(
+                    value = vehiculo.aDto(),
+                    request = {
+                        select(Columns.list("id"))
+                    }
+                )
 
             Result.success(Unit)
         } catch (e: Exception) {
-            // si falla supabase no pasa nada, el dato esta en local
-            // en el futuro se podria reintentar la sincronizacion
-            Result.success(Unit)
+            Result.failure(e)
         }
     }
 
@@ -57,11 +61,16 @@ class VehiculoRepositorio(
             vehiculoDao.actualizar(vehiculoActualizado)
 
             ClienteSupabase.cliente.postgrest[tablaRemota]
-                .upsert(vehiculoActualizado.aDto())
+                .upsert(
+                    value = vehiculoActualizado.aDto(),
+                    request = {
+                        select(Columns.list("id"))
+                    }
+                )
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.success(Unit)
+            Result.failure(e)
         }
     }
 
@@ -75,7 +84,7 @@ class VehiculoRepositorio(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.success(Unit)
+            Result.failure(e)
         }
     }
 
