@@ -54,7 +54,7 @@ fun PantallaRestablecerContrasena(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Restablecer contrasena",
+            text = "Restablecer contraseña",
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.primary
         )
@@ -62,7 +62,7 @@ fun PantallaRestablecerContrasena(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Introduce una nueva contrasena para tu cuenta.",
+            text = "Introduce una nueva contraseña para tu cuenta.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -72,7 +72,7 @@ fun PantallaRestablecerContrasena(
         OutlinedTextField(
             value = nuevaContrasena,
             onValueChange = { nuevaContrasena = it },
-            label = { Text("Nueva contrasena") },
+            label = { Text("Nueva contraseña") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
@@ -84,7 +84,7 @@ fun PantallaRestablecerContrasena(
                 IconButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
                     Icon(
                         imageVector = if (mostrarContrasena) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = if (mostrarContrasena) "ocultar contrasena" else "mostrar contrasena"
+                        contentDescription = if (mostrarContrasena) "Ocultar contraseña" else "Mostrar contraseña"
                     )
                 }
             },
@@ -96,7 +96,7 @@ fun PantallaRestablecerContrasena(
         OutlinedTextField(
             value = confirmarContrasena,
             onValueChange = { confirmarContrasena = it },
-            label = { Text("Confirmar contrasena") },
+            label = { Text("Confirmar contraseña") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
@@ -108,7 +108,7 @@ fun PantallaRestablecerContrasena(
                 IconButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
                     Icon(
                         imageVector = if (mostrarContrasena) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = if (mostrarContrasena) "ocultar contrasena" else "mostrar contrasena"
+                        contentDescription = if (mostrarContrasena) "Ocultar contraseña" else "Mostrar contraseña"
                     )
                 }
             },
@@ -130,7 +130,7 @@ fun PantallaRestablecerContrasena(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Guardar nueva contrasena")
+                Text("Guardar nueva contraseña")
             }
         }
 
@@ -148,7 +148,7 @@ fun PantallaRestablecerContrasena(
         if (confirmarContrasena.isNotBlank() && nuevaContrasena != confirmarContrasena) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Las contrasenas no coinciden",
+                text = "Las contraseñas no coinciden",
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )

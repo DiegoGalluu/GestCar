@@ -1,0 +1,142 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="bgMain" x1="0" y1="0" x2="0.3" y2="1">
+<stop offset="0%" stop-color="#1B3A5C"/>
+<stop offset="100%" stop-color="#0F2440"/>
+</linearGradient>
+<linearGradient id="carTop" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#6BB3F0"/>
+<stop offset="100%" stop-color="#3D8AD6"/>
+</linearGradient>
+<linearGradient id="carBottom" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#3D8AD6"/>
+<stop offset="100%" stop-color="#2B6CB5"/>
+</linearGradient>
+<linearGradient id="glass" x1="0.2" y1="0" x2="0.8" y2="1">
+<stop offset="0%" stop-color="#B8DEFF"/>
+<stop offset="40%" stop-color="#7DBFEF"/>
+<stop offset="100%" stop-color="#5EAADF"/>
+</linearGradient>
+<linearGradient id="bar1" x1="0" y1="1" x2="0" y2="0">
+<stop offset="0%" stop-color="#22C55E" stop-opacity="0.25"/>
+<stop offset="100%" stop-color="#22C55E" stop-opacity="0.75"/>
+</linearGradient>
+<linearGradient id="bar2" x1="0" y1="1" x2="0" y2="0">
+<stop offset="0%" stop-color="#34D399" stop-opacity="0.35"/>
+<stop offset="100%" stop-color="#10B981" stop-opacity="0.85"/>
+</linearGradient>
+<linearGradient id="barAccent" x1="0" y1="1" x2="0" y2="0">
+<stop offset="0%" stop-color="#F59E0B" stop-opacity="0.45"/>
+<stop offset="100%" stop-color="#FBBF24" stop-opacity="1"/>
+</linearGradient>
+<linearGradient id="hlL" x1="0" y1="0" x2="1" y2="0.3">
+<stop offset="0%" stop-color="#FEF3C7"/>
+<stop offset="100%" stop-color="#F59E0B"/>
+</linearGradient>
+<linearGradient id="hlR" x1="1" y1="0" x2="0" y2="0.3">
+<stop offset="0%" stop-color="#FEF3C7"/>
+<stop offset="100%" stop-color="#F59E0B"/>
+</linearGradient>
+<radialGradient id="glL" cx="0.5" cy="0.5" r="0.6">
+<stop offset="0%" stop-color="#FDE68A" stop-opacity="0.45"/>
+<stop offset="100%" stop-color="#FDE68A" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="glR" cx="0.5" cy="0.5" r="0.6">
+<stop offset="0%" stop-color="#FDE68A" stop-opacity="0.45"/>
+<stop offset="100%" stop-color="#FDE68A" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="tire" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#1a1a2e"/>
+<stop offset="100%" stop-color="#0a0a15"/>
+</linearGradient>
+<linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#5EAADF"/>
+<stop offset="50%" stop-color="#3D7AB5"/>
+<stop offset="100%" stop-color="#5EAADF"/>
+</linearGradient>
+<clipPath id="iconClip">
+<rect x="0" y="0" width="400" height="400" rx="80"/>
+</clipPath>
+</defs>
+
+<rect x="0" y="0" width="400" height="400" rx="80" fill="url(#bgMain)"/>
+
+<g clip-path="url(#iconClip)" opacity="0.03">
+<line x1="0" y1="400" x2="400" y2="0" stroke="#FFF" stroke-width="1"/>
+<line x1="40" y1="400" x2="440" y2="0" stroke="#FFF" stroke-width="1"/>
+<line x1="80" y1="400" x2="480" y2="0" stroke="#FFF" stroke-width="1"/>
+<line x1="120" y1="400" x2="520" y2="0" stroke="#FFF" stroke-width="1"/>
+<line x1="160" y1="400" x2="560" y2="0" stroke="#FFF" stroke-width="1"/>
+<line x1="200" y1="400" x2="600" y2="0" stroke="#FFF" stroke-width="1"/>
+<line x1="240" y1="400" x2="640" y2="0" stroke="#FFF" stroke-width="1"/>
+<line x1="-40" y1="400" x2="360" y2="0" stroke="#FFF" stroke-width="1"/>
+<line x1="-80" y1="400" x2="320" y2="0" stroke="#FFF" stroke-width="1"/>
+<line x1="280" y1="400" x2="680" y2="0" stroke="#FFF" stroke-width="1"/>
+</g>
+
+<g clip-path="url(#iconClip)">
+<rect x="15" y="320" width="28" height="80" rx="4" fill="url(#bar1)"/>
+<rect x="51" y="290" width="28" height="110" rx="4" fill="url(#bar1)"/>
+<rect x="87" y="258" width="28" height="142" rx="4" fill="url(#bar2)"/>
+<rect x="123" y="278" width="28" height="122" rx="4" fill="url(#bar1)"/>
+<rect x="159" y="238" width="28" height="162" rx="4" fill="url(#bar2)"/>
+<rect x="195" y="205" width="28" height="195" rx="4" fill="url(#barAccent)"/>
+<rect x="231" y="248" width="28" height="152" rx="4" fill="url(#bar2)"/>
+<rect x="267" y="225" width="28" height="175" rx="4" fill="url(#bar2)"/>
+<rect x="303" y="265" width="28" height="135" rx="4" fill="url(#bar1)"/>
+<rect x="339" y="288" width="28" height="112" rx="4" fill="url(#bar1)"/>
+<rect x="370" y="305" width="18" height="95" rx="4" fill="url(#bar1)"/>
+<polyline points="29,315 65,285 101,253 137,273 173,233 209,200 245,243 281,220 317,260 353,283"
+  fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+<circle cx="209" cy="200" r="3.5" fill="#FBBF24" opacity="0.85"/>
+</g>
+
+<g transform="translate(200, 120)">
+<ellipse cx="0" cy="190" rx="100" ry="8" fill="#000" opacity="0.15"/>
+<path d="M-100 165 L-95 135 Q-90 125 -80 120 L80 120 Q90 125 95 135 L100 165 Q60 175 0 175 Q-60 175 -100 165 Z" fill="url(#carBottom)"/>
+<path d="M-80 120 L-72 88 Q-60 60 -40 53 L-30 50 L30 50 L40 53 Q60 60 72 88 L80 120 Z" fill="url(#carTop)"/>
+<path d="M-72 92 Q-40 84 0 82 Q40 84 72 92" fill="none" stroke="#2B6CB5" stroke-width="1.2" opacity="0.5"/>
+<path d="M-60 115 L-50 83 Q-28 68 0 66 Q28 68 50 83 L60 115 Q0 110 -60 115 Z" fill="url(#glass)"/>
+<path d="M-32 109 L-24 84 Q-8 74 6 72 L16 74 L3 109 Z" fill="#FFF" opacity="0.12"/>
+<path d="M-44 105 L-40 94 L-32 91 L-37 105 Z" fill="#FFF" opacity="0.08"/>
+<path d="M-62 117 L-52 82 L-48 83 L-58 117 Z" fill="#2B6CB5" opacity="0.6"/>
+<path d="M62 117 L52 82 L48 83 L58 117 Z" fill="#2B6CB5" opacity="0.6"/>
+<line x1="0" y1="58" x2="0" y2="78" stroke="#5EAADF" stroke-width="0.8" opacity="0.3"/>
+<path d="M-35 142 Q-30 135 -25 133 L25 133 Q30 135 35 142 L30 152 L-30 152 Z" fill="#0D1F33" opacity="0.8"/>
+<line x1="-24" y1="137" x2="24" y2="137" stroke="#4A8BC2" stroke-width="0.7" opacity="0.4"/>
+<line x1="-27" y1="141" x2="27" y2="141" stroke="#4A8BC2" stroke-width="0.7" opacity="0.4"/>
+<line x1="-28" y1="145" x2="28" y2="145" stroke="#4A8BC2" stroke-width="0.7" opacity="0.4"/>
+<line x1="-27" y1="149" x2="27" y2="149" stroke="#4A8BC2" stroke-width="0.7" opacity="0.4"/>
+<path d="M-55 160 Q0 170 55 160 L50 166 Q0 174 -50 166 Z" fill="#0D1F33" opacity="0.6"/>
+<ellipse cx="-68" cy="137" rx="22" ry="13" fill="url(#glL)"/>
+<path d="M-88 132 Q-78 124 -58 126 Q-48 128 -46 137 Q-48 146 -58 148 Q-78 150 -88 142 Z" fill="url(#hlL)"/>
+<path d="M-82 132 Q-75 129 -62 130 L-60 134 L-80 134 Z" fill="#FFF" opacity="0.5"/>
+<ellipse cx="-68" cy="137" rx="4" ry="2.5" fill="#FFF" opacity="0.8"/>
+<ellipse cx="68" cy="137" rx="22" ry="13" fill="url(#glR)"/>
+<path d="M88 132 Q78 124 58 126 Q48 128 46 137 Q48 146 58 148 Q78 150 88 142 Z" fill="url(#hlR)"/>
+<path d="M82 132 Q75 129 62 130 L60 134 L80 134 Z" fill="#FFF" opacity="0.5"/>
+<ellipse cx="68" cy="137" rx="4" ry="2.5" fill="#FFF" opacity="0.8"/>
+<path d="M-46 137 L-35 136" fill="none" stroke="#2B6CB5" stroke-width="1.5" opacity="0.4"/>
+<path d="M46 137 L35 136" fill="none" stroke="#2B6CB5" stroke-width="1.5" opacity="0.4"/>
+<circle cx="0" cy="142" r="6" fill="#1B3A5C" stroke="#5EAADF" stroke-width="1"/>
+<circle cx="0" cy="142" r="3" fill="#5EAADF" opacity="0.6"/>
+<path d="M-95 162 Q-80 155 -55 153 L55 153 Q80 155 95 162 L100 167 Q60 175 0 175 Q-60 175 -100 167 Z" fill="#2567A3" opacity="0.4"/>
+<path d="M-70 160 Q0 165 70 160" fill="none" stroke="#7DBFEF" stroke-width="0.8" opacity="0.35"/>
+<rect x="-100" y="160" width="22" height="28" rx="3" fill="url(#tire)"/>
+<rect x="-94" y="163" width="10" height="22" rx="2" fill="url(#rim)" opacity="0.4"/>
+<line x1="-89" y1="165" x2="-89" y2="183" stroke="#7DBFEF" stroke-width="0.6" opacity="0.5"/>
+<line x1="-86" y1="165" x2="-86" y2="183" stroke="#7DBFEF" stroke-width="0.6" opacity="0.3"/>
+<line x1="-92" y1="165" x2="-92" y2="183" stroke="#7DBFEF" stroke-width="0.6" opacity="0.3"/>
+<rect x="-99" y="162" width="3" height="24" rx="1" fill="#FFF" opacity="0.06"/>
+<rect x="78" y="160" width="22" height="28" rx="3" fill="url(#tire)"/>
+<rect x="84" y="163" width="10" height="22" rx="2" fill="url(#rim)" opacity="0.4"/>
+<line x1="89" y1="165" x2="89" y2="183" stroke="#7DBFEF" stroke-width="0.6" opacity="0.5"/>
+<line x1="86" y1="165" x2="86" y2="183" stroke="#7DBFEF" stroke-width="0.6" opacity="0.3"/>
+<line x1="92" y1="165" x2="92" y2="183" stroke="#7DBFEF" stroke-width="0.6" opacity="0.3"/>
+<rect x="96" y="162" width="3" height="24" rx="1" fill="#FFF" opacity="0.06"/>
+<path d="M-25 61 Q0 55 25 61 Q15 70 -15 70 Z" fill="#FFF" opacity="0.04"/>
+</g>
+
+<text x="200" y="82" text-anchor="middle" font-family="sans-serif" font-size="64" font-weight="700" fill="#FFFFFF" opacity="0.97" letter-spacing="18">GC</text>
+
+</svg>

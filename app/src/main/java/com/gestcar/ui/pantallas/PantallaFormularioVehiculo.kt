@@ -2,7 +2,6 @@ package com.gestcar.ui.pantallas
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +27,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -44,10 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.viewmodel.VehiculoViewModel
 
-// tipos de vehiculo disponibles
 private val tiposVehiculo = listOf("COCHE", "MOTO", "FURGONETA")
-
-// tipos de combustible disponibles
 private val tiposCombustible = listOf("Gasolina", "Diesel", "Electrico", "Hibrido", "GLP")
 
 private val mesesFabricacion = listOf(
@@ -55,8 +50,6 @@ private val mesesFabricacion = listOf(
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 )
 
-// pantalla con el formulario para crear o editar un vehiculo
-// si vehiculoId es "nuevo" se crea uno nuevo, si no se edita el existente
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaFormularioVehiculo(
@@ -69,7 +62,6 @@ fun PantallaFormularioVehiculo(
     val estado by viewModel.estadoFormulario.collectAsState()
     val esNuevo = vehiculoId == "nuevo"
 
-    // cargamos el vehiculo si estamos editando, o reseteamos si es nuevo
     LaunchedEffect(vehiculoId) {
         if (esNuevo) {
             viewModel.resetearFormulario(usuarioId)
@@ -78,7 +70,6 @@ fun PantallaFormularioVehiculo(
         }
     }
 
-    // si se guardo correctamente volvemos a la pantalla anterior
     LaunchedEffect(estado.guardadoExitoso) {
         if (estado.guardadoExitoso) {
             alGuardar()
@@ -90,10 +81,10 @@ fun PantallaFormularioVehiculo(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (esNuevo) "Nuevo vehiculo" else "Editar vehiculo") },
+                title = { Text(if (esNuevo) "Nuevo vehículo" else "Editar vehículo") },
                 navigationIcon = {
                     IconButton(onClick = alVolver) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -112,39 +103,36 @@ fun PantallaFormularioVehiculo(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // campo de marca
             OutlinedTextField(
                 value = vehiculo.marca,
                 onValueChange = { viewModel.actualizarFormulario(vehiculo.copy(marca = it)) },
-                label = { Text("Marca *") },
+                label = { Text("Marca (obligatorio)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // campo de modelo
             OutlinedTextField(
                 value = vehiculo.modelo,
                 onValueChange = { viewModel.actualizarFormulario(vehiculo.copy(modelo = it)) },
-                label = { Text("Modelo *") },
+                label = { Text("Modelo (obligatorio)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // año obligatorio y fecha parcial/completa opcional
             OutlinedTextField(
                 value = if (vehiculo.anioFabricacion > 0) vehiculo.anioFabricacion.toString() else "",
                 onValueChange = {
                     val anio = it.toIntOrNull() ?: 0
                     viewModel.actualizarFormulario(vehiculo.copy(anioFabricacion = anio))
                 },
-                label = { Text("Año de fabricación *") },
+                label = { Text("Año de fabricación (obligatorio)") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
 
             SelectorDesplegable(
-                etiqueta = "Mes de fabricación",
+                etiqueta = "Mes de fabricación (opcional)",
                 valorSeleccionado = vehiculo.mesFabricacion?.let { mesesFabricacion[it - 1] } ?: "",
                 opciones = mesesFabricacion,
                 alSeleccionar = {
@@ -164,51 +152,46 @@ fun PantallaFormularioVehiculo(
                         )
                     )
                 },
-                label = { Text("Día de fabricación") },
+                label = { Text("Día de fabricación (opcional)") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // selector de tipo de vehiculo
             SelectorDesplegable(
-                etiqueta = "Tipo de vehiculo *",
+                etiqueta = "Tipo de vehículo (obligatorio)",
                 valorSeleccionado = vehiculo.tipo,
                 opciones = tiposVehiculo,
                 alSeleccionar = { viewModel.actualizarFormulario(vehiculo.copy(tipo = it)) }
             )
 
-            // campo de matricula
             OutlinedTextField(
                 value = vehiculo.matricula,
                 onValueChange = { viewModel.actualizarFormulario(vehiculo.copy(matricula = it)) },
-                label = { Text("Matricula *") },
+                label = { Text("Matrícula (obligatorio)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // campo de kilometraje
             OutlinedTextField(
                 value = if (vehiculo.kilometraje > 0) vehiculo.kilometraje.toLong().toString() else "",
                 onValueChange = {
                     val km = it.toDoubleOrNull() ?: 0.0
                     viewModel.actualizarFormulario(vehiculo.copy(kilometraje = km))
                 },
-                label = { Text("Kilometraje actual") },
+                label = { Text("Kilometraje actual (opcional)") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // selector de tipo de combustible
             SelectorDesplegable(
-                etiqueta = "Tipo de combustible",
+                etiqueta = "Tipo de combustible (opcional)",
                 valorSeleccionado = vehiculo.tipoCombustible ?: "",
                 opciones = tiposCombustible,
                 alSeleccionar = { viewModel.actualizarFormulario(vehiculo.copy(tipoCombustible = it)) }
             )
 
-            // campo de notas
             OutlinedTextField(
                 value = vehiculo.notas ?: "",
                 onValueChange = { viewModel.actualizarFormulario(vehiculo.copy(notas = it.ifBlank { null })) },
@@ -219,7 +202,6 @@ fun PantallaFormularioVehiculo(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // boton de guardar
             Button(
                 onClick = { viewModel.guardarVehiculo() },
                 enabled = !estado.estaCargando,
@@ -231,11 +213,10 @@ fun PantallaFormularioVehiculo(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Guardar vehiculo")
+                    Text("Guardar vehículo")
                 }
             }
 
-            // mensaje de error si la validacion falla
             estado.mensajeError?.let { error ->
                 Snackbar {
                     Text(error)
@@ -245,7 +226,6 @@ fun PantallaFormularioVehiculo(
     }
 }
 
-// componente reutilizable para un menu desplegable con opciones
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectorDesplegable(

@@ -66,7 +66,7 @@ fun PantallaInicioSesion(
     ) {
         Icon(
             imageVector = Icons.Default.DirectionsCar,
-            contentDescription = "logo de gestcar",
+            contentDescription = "Logo de GestCar",
             modifier = Modifier.size(80.dp),
             tint = MaterialTheme.colorScheme.primary
         )
@@ -80,7 +80,7 @@ fun PantallaInicioSesion(
         )
 
         Text(
-            text = "Gestiona tus vehiculos.",
+            text = "Gestiona tus vehículos.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -90,7 +90,7 @@ fun PantallaInicioSesion(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Correo electronico") },
+            label = { Text("Correo electrónico") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
@@ -105,7 +105,7 @@ fun PantallaInicioSesion(
         OutlinedTextField(
             value = contrasena,
             onValueChange = { contrasena = it },
-            label = { Text("Contrasena") },
+            label = { Text("Contraseña") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
@@ -117,7 +117,7 @@ fun PantallaInicioSesion(
                 IconButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
                     Icon(
                         imageVector = if (mostrarContrasena) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = if (mostrarContrasena) "ocultar contrasena" else "mostrar contrasena"
+                        contentDescription = if (mostrarContrasena) "Ocultar contraseña" else "Mostrar contraseña"
                     )
                 }
             },
@@ -137,20 +137,20 @@ fun PantallaInicioSesion(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Iniciar sesion")
+                Text("Iniciar sesión")
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(onClick = { alRecuperarContrasena(email) }) {
-            Text("He olvidado mi contrasena")
+            Text("He olvidado mi contraseña")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         TextButton(onClick = alIrARegistro) {
-            Text("¿No tienes cuenta? Registrate.")
+            Text("¿No tienes cuenta? Regístrate.")
         }
 
         estado.mensajeError?.let { error ->

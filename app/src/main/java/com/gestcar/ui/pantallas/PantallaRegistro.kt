@@ -72,7 +72,7 @@ fun PantallaRegistro(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Registrate para empezar a gestionar tus vehiculos.",
+            text = "Regístrate para empezar a gestionar tus vehículos.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -82,7 +82,7 @@ fun PantallaRegistro(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Correo electronico") },
+            label = { Text("Correo electrónico") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
@@ -97,7 +97,7 @@ fun PantallaRegistro(
         OutlinedTextField(
             value = contrasena,
             onValueChange = { contrasena = it },
-            label = { Text("Contrasena") },
+            label = { Text("Contraseña") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
@@ -109,7 +109,7 @@ fun PantallaRegistro(
                 IconButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
                     Icon(
                         imageVector = if (mostrarContrasena) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = if (mostrarContrasena) "ocultar contrasena" else "mostrar contrasena"
+                        contentDescription = if (mostrarContrasena) "Ocultar contraseña" else "Mostrar contraseña"
                     )
                 }
             },
@@ -121,7 +121,7 @@ fun PantallaRegistro(
         OutlinedTextField(
             value = confirmarContrasena,
             onValueChange = { confirmarContrasena = it },
-            label = { Text("Confirmar contrasena") },
+            label = { Text("Confirmar contraseña") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
@@ -133,7 +133,7 @@ fun PantallaRegistro(
                 IconButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
                     Icon(
                         imageVector = if (mostrarContrasena) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = if (mostrarContrasena) "ocultar contrasena" else "mostrar contrasena"
+                        contentDescription = if (mostrarContrasena) "Ocultar contraseña" else "Mostrar contraseña"
                     )
                 }
             },
@@ -163,7 +163,7 @@ fun PantallaRegistro(
         if (confirmarContrasena.isNotBlank() && contrasena != confirmarContrasena) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Las contrasenas no coinciden",
+                text = "Las contraseñas no coinciden",
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -172,7 +172,7 @@ fun PantallaRegistro(
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(onClick = alVolverALogin) {
-            Text("¿Ya tienes cuenta? Inicia sesion.")
+            Text("¿Ya tienes cuenta? Inicia sesión.")
         }
 
         estado.mensajeError?.let { error ->
