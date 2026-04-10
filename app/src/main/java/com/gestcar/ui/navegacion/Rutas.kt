@@ -6,6 +6,7 @@ object Rutas {
     // pantallas de autenticacion
     const val INICIO_SESION = "inicio_sesion"
     const val REGISTRO = "registro"
+    const val RESTABLECER_CONTRASENA = "restablecer_contrasena"
 
     // pantallas principales con barra de navegacion inferior
     const val LISTA_VEHICULOS = "lista_vehiculos"

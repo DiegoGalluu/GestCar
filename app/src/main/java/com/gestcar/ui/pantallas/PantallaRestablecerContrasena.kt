@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -23,7 +21,6 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,31 +28,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.gestcar.ui.viewmodel.AutenticacionViewModel
 
 @Composable
-fun PantallaInicioSesion(
-    alIniciarSesion: () -> Unit,
-    alIrARegistro: () -> Unit,
-    alRecuperarContrasena: (String) -> Unit,
-    viewModel: AutenticacionViewModel
+fun PantallaRestablecerContrasena(
+    viewModel: AutenticacionViewModel,
+    alCancelar: () -> Unit
 ) {
     val estado by viewModel.estado.collectAsState()
-
-    var email by remember { mutableStateOf("") }
-    var contrasena by remember { mutableStateOf("") }
+    var nuevaContrasena by remember { mutableStateOf("") }
+    var confirmarContrasena by remember { mutableStateOf("") }
     var mostrarContrasena by remember { mutableStateOf(false) }
-
-    LaunchedEffect(estado.estaAutenticado) {
-        if (estado.estaAutenticado) {
-            alIniciarSesion()
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -64,54 +50,46 @@ fun PantallaInicioSesion(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.DirectionsCar,
-            contentDescription = "logo de gestcar",
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         Text(
-            text = "GestCar",
-            style = MaterialTheme.typography.headlineLarge,
+            text = "Restablecer contrasena",
+            style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.primary
         )
 
+        Spacer(modifier = Modifier.height(12.dp))
+
         Text(
-            text = "Gestiona tus vehiculos.",
+            text = "Introduce una nueva contrasena para tu cuenta.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Correo electronico") },
+            value = nuevaContrasena,
+            onValueChange = { nuevaContrasena = it },
+            label = { Text("Nueva contrasena") },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                autoCorrectEnabled = false,
-                capitalization = KeyboardCapitalization.None
-            ),
+            visualTransformation = if (mostrarContrasena) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
+                    Icon(
+                        imageVector = if (mostrarContrasena) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = if (mostrarContrasena) "ocultar contrasena" else "mostrar contrasena"
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = contrasena,
-            onValueChange = { contrasena = it },
-            label = { Text("Contrasena") },
+            value = confirmarContrasena,
+            onValueChange = { confirmarContrasena = it },
+            label = { Text("Confirmar contrasena") },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                autoCorrectEnabled = false,
-                capitalization = KeyboardCapitalization.None
-            ),
             visualTransformation = if (mostrarContrasena) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
@@ -127,8 +105,10 @@ fun PantallaInicioSesion(
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { viewModel.iniciarSesion(email, contrasena) },
-            enabled = !estado.estaCargando && email.isNotBlank() && contrasena.isNotBlank(),
+            onClick = { viewModel.actualizarContrasena(nuevaContrasena) },
+            enabled = !estado.estaCargando
+                    && nuevaContrasena.isNotBlank()
+                    && nuevaContrasena == confirmarContrasena,
             modifier = Modifier.fillMaxWidth()
         ) {
             if (estado.estaCargando) {
@@ -137,23 +117,31 @@ fun PantallaInicioSesion(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Iniciar sesion")
+                Text("Guardar nueva contrasena")
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        TextButton(onClick = { alRecuperarContrasena(email) }) {
-            Text("He olvidado mi contrasena")
+        TextButton(
+            onClick = {
+                viewModel.salirModoRestablecerContrasena()
+                alCancelar()
+            }
+        ) {
+            Text("Cancelar")
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextButton(onClick = alIrARegistro) {
-            Text("¿No tienes cuenta? Registrate.")
+        if (confirmarContrasena.isNotBlank() && nuevaContrasena != confirmarContrasena) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Las contrasenas no coinciden",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
 
-        estado.mensajeError?.let { error ->
+        estado.mensajeError?.let { mensaje ->
             Spacer(modifier = Modifier.height(16.dp))
             Snackbar(
                 action = {
@@ -162,7 +150,7 @@ fun PantallaInicioSesion(
                     }
                 }
             ) {
-                Text(error)
+                Text(mensaje)
             }
         }
     }

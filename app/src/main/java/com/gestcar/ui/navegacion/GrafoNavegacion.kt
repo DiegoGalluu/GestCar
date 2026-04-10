@@ -13,6 +13,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -29,6 +31,7 @@ import com.gestcar.ui.pantallas.PantallaInicioSesion
 import com.gestcar.ui.pantallas.PantallaListaVehiculos
 import com.gestcar.ui.pantallas.PantallaPlaceholder
 import com.gestcar.ui.pantallas.PantallaRegistro
+import com.gestcar.ui.pantallas.PantallaRestablecerContrasena
 import com.gestcar.ui.viewmodel.AutenticacionViewModel
 
 // clase que define cada elemento de la barra de navegacion inferior
@@ -69,11 +72,18 @@ fun GrafoNavegacion(
 ) {
     // determinamos la pantalla de inicio segun si el usuario esta logueado o no
     val pantallaInicio = if (estaAutenticado) Rutas.LISTA_VEHICULOS else Rutas.INICIO_SESION
+    val estadoAuth by authViewModel.estado.collectAsState()
 
     // miramos la ruta actual para saber si mostramos la barra inferior
     val entradaActual by controladorNav.currentBackStackEntryAsState()
     val rutaActual = entradaActual?.destination?.route
     val mostrarBarraInferior = rutaActual in rutasConBarraInferior
+
+    LaunchedEffect(estadoAuth.modoRestablecerContrasena, rutaActual) {
+        if (estadoAuth.modoRestablecerContrasena && rutaActual != Rutas.RESTABLECER_CONTRASENA) {
+            controladorNav.navigate(Rutas.RESTABLECER_CONTRASENA)
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -101,6 +111,9 @@ fun GrafoNavegacion(
                     },
                     alIrARegistro = {
                         controladorNav.navigate(Rutas.REGISTRO)
+                    },
+                    alRecuperarContrasena = { email ->
+                        authViewModel.solicitarRestablecimientoContrasena(email)
                     }
                 )
             }
@@ -117,6 +130,13 @@ fun GrafoNavegacion(
                     alVolverALogin = {
                         controladorNav.popBackStack()
                     }
+                )
+            }
+
+            composable(Rutas.RESTABLECER_CONTRASENA) {
+                PantallaRestablecerContrasena(
+                    viewModel = authViewModel,
+                    alCancelar = { controladorNav.popBackStack() }
                 )
             }
 

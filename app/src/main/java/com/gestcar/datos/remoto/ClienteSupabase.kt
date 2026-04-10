@@ -11,6 +11,7 @@ import io.github.jan.supabase.storage.Storage
 object ClienteSupabase {
 
     const val BUCKET_FOTOS_VEHICULOS = "vehiculos"
+    const val AUTH_DEEP_LINK = "gestcar://login-callback"
 
     // pon aqui la url de tu proyecto de supabase
     // la encuentras en supabase dashboard > settings > api > project url
@@ -26,7 +27,10 @@ object ClienteSupabase {
         supabaseKey = SUPABASE_KEY
     ) {
         // modulo de autenticacion para login y registro
-        install(Auth)
+        install(Auth) {
+            scheme = "gestcar"
+            host = "login-callback"
+        }
 
         // modulo de postgrest para hacer consultas a la base de datos remota
         install(Postgrest)

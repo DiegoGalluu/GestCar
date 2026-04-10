@@ -8,8 +8,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Snackbar
@@ -24,11 +30,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.gestcar.ui.viewmodel.AutenticacionViewModel
 
-// pantalla de registro, el usuario crea una cuenta nueva con email y contrasena
 @Composable
 fun PantallaRegistro(
     alRegistrarse: () -> Unit,
@@ -40,8 +48,8 @@ fun PantallaRegistro(
     var email by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
     var confirmarContrasena by remember { mutableStateOf("") }
+    var mostrarContrasena by remember { mutableStateOf(false) }
 
-    // si se registro correctamente navegamos a la lista de vehiculos
     LaunchedEffect(estado.estaAutenticado) {
         if (estado.estaAutenticado) {
             alRegistrarse()
@@ -76,6 +84,11 @@ fun PantallaRegistro(
             onValueChange = { email = it },
             label = { Text("Correo electronico") },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                autoCorrectEnabled = false,
+                capitalization = KeyboardCapitalization.None
+            ),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -86,7 +99,20 @@ fun PantallaRegistro(
             onValueChange = { contrasena = it },
             label = { Text("Contrasena") },
             singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                autoCorrectEnabled = false,
+                capitalization = KeyboardCapitalization.None
+            ),
+            visualTransformation = if (mostrarContrasena) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
+                    Icon(
+                        imageVector = if (mostrarContrasena) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = if (mostrarContrasena) "ocultar contrasena" else "mostrar contrasena"
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -97,13 +123,25 @@ fun PantallaRegistro(
             onValueChange = { confirmarContrasena = it },
             label = { Text("Confirmar contrasena") },
             singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                autoCorrectEnabled = false,
+                capitalization = KeyboardCapitalization.None
+            ),
+            visualTransformation = if (mostrarContrasena) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { mostrarContrasena = !mostrarContrasena }) {
+                    Icon(
+                        imageVector = if (mostrarContrasena) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = if (mostrarContrasena) "ocultar contrasena" else "mostrar contrasena"
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // solo se puede registrar si las contrasenas coinciden
         Button(
             onClick = { viewModel.registrarse(email, contrasena) },
             enabled = !estado.estaCargando
@@ -122,7 +160,6 @@ fun PantallaRegistro(
             }
         }
 
-        // aviso si las contrasenas no coinciden
         if (confirmarContrasena.isNotBlank() && contrasena != confirmarContrasena) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(

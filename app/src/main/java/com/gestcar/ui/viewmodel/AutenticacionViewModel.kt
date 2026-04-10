@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gestcar.datos.remoto.ClienteSupabase
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.exception.AuthRestException
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +20,9 @@ data class EstadoAutenticacion(
     // si hay alguna operacion de auth en curso
     val estaCargando: Boolean = false,
     // mensaje de error si algo ha fallado
-    val mensajeError: String? = null
+    val mensajeError: String? = null,
+    // indica si debemos mostrar la pantalla de nueva contrasena
+    val modoRestablecerContrasena: Boolean = false
 )
 
 // viewmodel que gestiona todo lo relacionado con la autenticacion
@@ -37,7 +40,7 @@ class AutenticacionViewModel : ViewModel() {
     }
 
     // comprueba si hay una sesion activa en supabase
-    private fun comprobarSesion() {
+    fun comprobarSesion() {
         viewModelScope.launch {
             try {
                 ClienteSupabase.cliente.auth.awaitInitialization()
@@ -60,9 +63,9 @@ class AutenticacionViewModel : ViewModel() {
         viewModelScope.launch {
             _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
             try {
-                ClienteSupabase.cliente.auth.signOut()
+                ClienteSupabase.cliente.auth.clearSession()
                 ClienteSupabase.cliente.auth.signInWith(Email) {
-                    this.email = email
+                    this.email = email.trim()
                     this.password = contrasena
                 }
 
@@ -72,7 +75,10 @@ class AutenticacionViewModel : ViewModel() {
             } catch (e: Exception) {
                 _estado.value = _estado.value.copy(
                     estaCargando = false,
-                    mensajeError = "Error al iniciar sesion. Comprueba tus credenciales y que el correo este confirmado."
+                    mensajeError = mensajeErrorLegible(
+                        porDefecto = "Error al iniciar sesion. Comprueba tus credenciales y que el correo este confirmado.",
+                        error = e
+                    )
                 )
             }
         }
@@ -83,9 +89,12 @@ class AutenticacionViewModel : ViewModel() {
         viewModelScope.launch {
             _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
             try {
-                ClienteSupabase.cliente.auth.signOut()
-                ClienteSupabase.cliente.auth.signUpWith(Email) {
-                    this.email = email
+                ClienteSupabase.cliente.auth.clearSession()
+                ClienteSupabase.cliente.auth.signUpWith(
+                    provider = Email,
+                    redirectUrl = ClienteSupabase.AUTH_DEEP_LINK
+                ) {
+                    this.email = email.trim()
                     this.password = contrasena
                 }
 
@@ -95,7 +104,10 @@ class AutenticacionViewModel : ViewModel() {
             } catch (e: Exception) {
                 _estado.value = _estado.value.copy(
                     estaCargando = false,
-                    mensajeError = "Error al crear la cuenta. Intentalo de nuevo."
+                    mensajeError = mensajeErrorLegible(
+                        porDefecto = "Error al crear la cuenta. Intentalo de nuevo.",
+                        error = e
+                    )
                 )
             }
         }
@@ -118,6 +130,81 @@ class AutenticacionViewModel : ViewModel() {
         _estado.value = _estado.value.copy(mensajeError = null)
     }
 
+    fun solicitarRestablecimientoContrasena(email: String) {
+        viewModelScope.launch {
+            val correo = email.trim()
+            if (correo.isBlank()) {
+                _estado.value = _estado.value.copy(
+                    mensajeError = "Introduce tu correo electronico para enviarte el enlace de recuperacion."
+                )
+                return@launch
+            }
+
+            _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
+            try {
+                ClienteSupabase.cliente.auth.resetPasswordForEmail(
+                    email = correo,
+                    redirectUrl = ClienteSupabase.AUTH_DEEP_LINK
+                )
+                _estado.value = _estado.value.copy(
+                    estaCargando = false,
+                    mensajeError = "Te hemos enviado un correo para restablecer la contrasena."
+                )
+            } catch (e: Exception) {
+                _estado.value = _estado.value.copy(
+                    estaCargando = false,
+                    mensajeError = mensajeErrorLegible(
+                        porDefecto = "No se ha podido enviar el correo de recuperacion.",
+                        error = e
+                    )
+                )
+            }
+        }
+    }
+
+    fun activarModoRestablecerContrasena() {
+        _estado.value = _estado.value.copy(
+            modoRestablecerContrasena = true,
+            mensajeError = null
+        )
+    }
+
+    fun salirModoRestablecerContrasena() {
+        _estado.value = _estado.value.copy(modoRestablecerContrasena = false)
+    }
+
+    fun actualizarContrasena(nuevaContrasena: String) {
+        viewModelScope.launch {
+            if (nuevaContrasena.isBlank()) {
+                _estado.value = _estado.value.copy(
+                    mensajeError = "La nueva contrasena no puede estar vacia."
+                )
+                return@launch
+            }
+
+            _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
+            try {
+                ClienteSupabase.cliente.auth.updateUser {
+                    password = nuevaContrasena
+                }
+                comprobarSesion()
+                _estado.value = _estado.value.copy(
+                    estaCargando = false,
+                    modoRestablecerContrasena = false,
+                    mensajeError = "Contrasena actualizada. Ya puedes iniciar sesion con la nueva clave."
+                )
+            } catch (e: Exception) {
+                _estado.value = _estado.value.copy(
+                    estaCargando = false,
+                    mensajeError = mensajeErrorLegible(
+                        porDefecto = "No se ha podido actualizar la contrasena.",
+                        error = e
+                    )
+                )
+            }
+        }
+    }
+
     private suspend fun actualizarEstadoDesdeSesion(errorSinSesion: String) {
         ClienteSupabase.cliente.auth.awaitInitialization()
         val sesion = ClienteSupabase.cliente.auth.currentSessionOrNull()
@@ -136,5 +223,14 @@ class AutenticacionViewModel : ViewModel() {
                 mensajeError = errorSinSesion
             )
         }
+    }
+
+    private fun mensajeErrorLegible(porDefecto: String, error: Exception): String {
+        val detalle = when (error) {
+            is AuthRestException -> error.description
+            else -> error.message
+        }?.trim()
+
+        return if (detalle.isNullOrBlank()) porDefecto else "$porDefecto\n$detalle"
     }
 }
