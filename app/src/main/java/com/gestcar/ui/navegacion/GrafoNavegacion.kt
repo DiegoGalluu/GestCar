@@ -27,8 +27,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.gestcar.ui.pantallas.PantallaDetalleVehiculo
 import com.gestcar.ui.pantallas.PantallaFormularioVehiculo
+import com.gestcar.ui.pantallas.PantallaFormularioRepostaje
 import com.gestcar.ui.pantallas.PantallaInicioSesion
 import com.gestcar.ui.pantallas.PantallaListaVehiculos
+import com.gestcar.ui.pantallas.PantallaListaRepostajes
 import com.gestcar.ui.pantallas.PantallaPlaceholder
 import com.gestcar.ui.pantallas.PantallaRegistro
 import com.gestcar.ui.pantallas.PantallaRestablecerContrasena
@@ -184,9 +186,37 @@ fun GrafoNavegacion(
                 )
             }
 
+            composable(Rutas.REPOSTAJES) {
+                PantallaListaRepostajes(
+                    usuarioId = usuarioId,
+                    alCrearRepostaje = { vehiculoId ->
+                        controladorNav.navigate(Rutas.formularioRepostaje(vehiculoId))
+                    },
+                    alEditarRepostaje = { vehiculoId, repostajeId ->
+                        controladorNav.navigate(Rutas.formularioRepostaje(vehiculoId, repostajeId))
+                    }
+                )
+            }
+
+            composable(
+                route = Rutas.FORMULARIO_REPOSTAJE,
+                arguments = listOf(
+                    navArgument("vehiculoId") { type = NavType.StringType },
+                    navArgument("repostajeId") { type = NavType.StringType }
+                )
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId") ?: ""
+                val repostajeId = entrada.arguments?.getString("repostajeId") ?: "nuevo"
+                PantallaFormularioRepostaje(
+                    vehiculoId = vehiculoId,
+                    repostajeId = repostajeId,
+                    alGuardar = { controladorNav.popBackStack() },
+                    alVolver = { controladorNav.popBackStack() }
+                )
+            }
+
             // pantallas placeholder para las secciones que aun no estan implementadas
             composable(Rutas.GASTOS) { PantallaPlaceholder("Gastos") }
-            composable(Rutas.REPOSTAJES) { PantallaPlaceholder("Repostajes") }
             composable(Rutas.MANTENIMIENTO) { PantallaPlaceholder("Mantenimiento") }
             composable(Rutas.MAS_OPCIONES) { PantallaPlaceholder("Mas opciones") }
         }
