@@ -6,21 +6,39 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.gestcar.datos.dao.GastoPeriodicoDao
+import com.gestcar.datos.dao.MantenimientoDao
+import com.gestcar.datos.dao.RecordatorioDao
+import com.gestcar.datos.dao.RepostajeDao
 import com.gestcar.datos.dao.VehiculoDao
+import com.gestcar.datos.entidades.GastoPeriodico
+import com.gestcar.datos.entidades.Mantenimiento
+import com.gestcar.datos.entidades.Recordatorio
+import com.gestcar.datos.entidades.Repostaje
 import com.gestcar.datos.entidades.Vehiculo
 
 // base de datos principal de la app, aqui se registran todas las entidades
 // y se crean los dao para acceder a ellas
 // version 1 porque es la primera version del esquema
 @Database(
-    entities = [Vehiculo::class],
-    version = 2,
+    entities = [
+        Vehiculo::class,
+        Repostaje::class,
+        Mantenimiento::class,
+        GastoPeriodico::class,
+        Recordatorio::class
+    ],
+    version = 3,
     exportSchema = false
 )
 abstract class GestCarBaseDatos : RoomDatabase() {
 
     // dao para acceder a la tabla de vehiculos
     abstract fun vehiculoDao(): VehiculoDao
+    abstract fun repostajeDao(): RepostajeDao
+    abstract fun mantenimientoDao(): MantenimientoDao
+    abstract fun gastoPeriodicoDao(): GastoPeriodicoDao
+    abstract fun recordatorioDao(): RecordatorioDao
 
     companion object {
         private val MIGRACION_1_2 = object : Migration(1, 2) {
@@ -91,6 +109,85 @@ abstract class GestCarBaseDatos : RoomDatabase() {
             }
         }
 
+        private val MIGRACION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS repostajes (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        vehiculoId TEXT NOT NULL,
+                        fecha INTEGER NOT NULL,
+                        kilometros REAL NOT NULL,
+                        litros REAL NOT NULL,
+                        precioPorLitro REAL NOT NULL,
+                        importeTotal REAL NOT NULL,
+                        llenoCompleto INTEGER NOT NULL,
+                        gasolinera TEXT,
+                        notas TEXT,
+                        actualizadoEn INTEGER NOT NULL,
+                        FOREIGN KEY(vehiculoId) REFERENCES vehiculos(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_repostajes_vehiculoId ON repostajes(vehiculoId)")
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS mantenimientos (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        vehiculoId TEXT NOT NULL,
+                        tipo TEXT NOT NULL,
+                        categoria TEXT NOT NULL,
+                        fecha INTEGER NOT NULL,
+                        kilometros REAL,
+                        coste REAL NOT NULL,
+                        taller TEXT,
+                        descripcion TEXT,
+                        actualizadoEn INTEGER NOT NULL,
+                        FOREIGN KEY(vehiculoId) REFERENCES vehiculos(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_mantenimientos_vehiculoId ON mantenimientos(vehiculoId)")
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS gastos_periodicos (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        vehiculoId TEXT NOT NULL,
+                        concepto TEXT NOT NULL,
+                        importe REAL NOT NULL,
+                        fecha INTEGER NOT NULL,
+                        periodicidad TEXT,
+                        fechaVencimiento INTEGER,
+                        notas TEXT,
+                        actualizadoEn INTEGER NOT NULL,
+                        FOREIGN KEY(vehiculoId) REFERENCES vehiculos(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_gastos_periodicos_vehiculoId ON gastos_periodicos(vehiculoId)")
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS recordatorios (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        vehiculoId TEXT NOT NULL,
+                        concepto TEXT NOT NULL,
+                        fechaLimite INTEGER,
+                        kilometrajeLimite REAL,
+                        completado INTEGER NOT NULL,
+                        fechaCompletado INTEGER,
+                        notas TEXT,
+                        actualizadoEn INTEGER NOT NULL,
+                        FOREIGN KEY(vehiculoId) REFERENCES vehiculos(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_recordatorios_vehiculoId ON recordatorios(vehiculoId)")
+            }
+        }
+
         // instancia unica de la base de datos, se usa el patron singleton
         // para que no se creen multiples conexiones a la vez
         @Volatile
@@ -103,7 +200,7 @@ abstract class GestCarBaseDatos : RoomDatabase() {
                     contexto.applicationContext,
                     GestCarBaseDatos::class.java,
                     "gestcar_database"
-                ).addMigrations(MIGRACION_1_2).build()
+                ).addMigrations(MIGRACION_1_2, MIGRACION_2_3).build()
                 INSTANCIA = instancia
                 instancia
             }

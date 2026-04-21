@@ -19,10 +19,30 @@ object Rutas {
     const val MANTENIMIENTO = "mantenimiento"
     const val MAS_OPCIONES = "mas_opciones"
 
+    // pantallas de fase 2
+    const val FORMULARIO_REPOSTAJE = "formulario_repostaje/{vehiculoId}/{repostajeId}"
+    const val FORMULARIO_MANTENIMIENTO = "formulario_mantenimiento/{vehiculoId}/{mantenimientoId}"
+    const val FORMULARIO_GASTO = "formulario_gasto/{vehiculoId}/{gastoId}"
+    const val RECORDATORIOS = "recordatorios"
+    const val FORMULARIO_RECORDATORIO = "formulario_recordatorio/{vehiculoId}/{recordatorioId}"
+    const val ESTADISTICAS = "estadisticas"
+
     // funciones helper para construir rutas con parametros
     fun formularioVehiculo(vehiculoId: String = "nuevo") =
         "formulario_vehiculo/$vehiculoId"
 
     fun detalleVehiculo(vehiculoId: String) =
         "detalle_vehiculo/$vehiculoId"
+
+    fun formularioRepostaje(vehiculoId: String, repostajeId: String = "nuevo") =
+        "formulario_repostaje/$vehiculoId/$repostajeId"
+
+    fun formularioMantenimiento(vehiculoId: String, mantenimientoId: String = "nuevo") =
+        "formulario_mantenimiento/$vehiculoId/$mantenimientoId"
+
+    fun formularioGasto(vehiculoId: String, gastoId: String = "nuevo") =
+        "formulario_gasto/$vehiculoId/$gastoId"
+
+    fun formularioRecordatorio(vehiculoId: String, recordatorioId: String = "nuevo") =
+        "formulario_recordatorio/$vehiculoId/$recordatorioId"
 }
