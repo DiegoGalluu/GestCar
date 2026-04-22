@@ -16,6 +16,7 @@ class RepostajeRepositorio(
     private val vehiculoDao: VehiculoDao
 ) {
     private val tablaRemota = "repostajes"
+    private val tablaVehiculosRemota = "vehiculos"
 
     fun obtenerRepostajes(vehiculoId: String): Flow<List<Repostaje>> {
         return repostajeDao.obtenerPorVehiculo(vehiculoId)
@@ -90,6 +91,18 @@ class RepostajeRepositorio(
         }
     }
 
+    suspend fun sincronizarPendientesDelUsuario(usuarioId: String): Result<Unit> {
+        return try {
+            vehiculoDao.obtenerVehiculosPorUsuarioLista(usuarioId).forEach { vehiculo ->
+                sincronizar(vehiculo.id)
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun calcularConsumoMedio(vehiculoId: String): Double {
         val repostajes = repostajeDao.obtenerPorVehiculoLista(vehiculoId)
             .filter { it.llenoCompleto }
@@ -112,9 +125,25 @@ class RepostajeRepositorio(
     }
 
     private suspend fun sincronizarRepostaje(repostaje: Repostaje) {
+        sincronizarVehiculoPadreSiHaceFalta(repostaje.vehiculoId)
+
         ClienteSupabase.cliente.postgrest[tablaRemota]
             .upsert(
                 value = repostaje.aDto(),
+                request = {
+                    select(Columns.list("id"))
+                }
+            )
+    }
+
+    private suspend fun sincronizarVehiculoPadreSiHaceFalta(vehiculoId: String) {
+        val vehiculo = vehiculoDao.obtenerPorId(vehiculoId) ?: return
+
+        // supabase exige que exista el vehiculo antes del repostaje
+        // si no lo aseguramos aqui, la foreign key o la rls pueden rechazar el alta
+        ClienteSupabase.cliente.postgrest[tablaVehiculosRemota]
+            .upsert(
+                value = vehiculo.aDto(),
                 request = {
                     select(Columns.list("id"))
                 }

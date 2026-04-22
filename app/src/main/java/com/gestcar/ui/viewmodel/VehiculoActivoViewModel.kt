@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.gestcar.datos.basedatos.GestCarBaseDatos
 import com.gestcar.datos.entidades.Vehiculo
+import com.gestcar.datos.repositorio.RepostajeRepositorio
 import com.gestcar.datos.repositorio.VehiculoRepositorio
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,11 +25,16 @@ data class EstadoVehiculoActivo(
 class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) {
 
     private val repositorio: VehiculoRepositorio
+    private val repostajeRepositorio: RepostajeRepositorio
     private var trabajoCarga: Job? = null
 
     init {
         val baseDatos = GestCarBaseDatos.obtenerInstancia(aplicacion)
         repositorio = VehiculoRepositorio(baseDatos.vehiculoDao())
+        repostajeRepositorio = RepostajeRepositorio(
+            repostajeDao = baseDatos.repostajeDao(),
+            vehiculoDao = baseDatos.vehiculoDao()
+        )
     }
 
     private val _estado = MutableStateFlow(EstadoVehiculoActivo())
@@ -40,6 +46,12 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
             _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
 
             val resultadoSincronizacion = repositorio.sincronizar(usuarioId)
+
+            // los repostajes pendientes se suben en segundo plano
+            // asi la lista de vehiculos no se queda esperando si no hay conexion
+            launch {
+                repostajeRepositorio.sincronizarPendientesDelUsuario(usuarioId)
+            }
 
             repositorio.obtenerVehiculos(usuarioId).collect { vehiculos ->
                 val vehiculoActual = _estado.value.vehiculoActivo
