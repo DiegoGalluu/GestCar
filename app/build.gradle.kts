@@ -61,6 +61,9 @@ dependencies {
     // navegacion
     implementation(libs.navigation.compose)
 
+    // tareas en segundo plano
+    implementation(libs.work.runtime.ktx)
+
     // room (base de datos local)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)

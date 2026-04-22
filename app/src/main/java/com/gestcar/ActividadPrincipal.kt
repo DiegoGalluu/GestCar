@@ -5,13 +5,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.remoto.ClienteSupabase
 import com.gestcar.ui.navegacion.GrafoNavegacion
 import com.gestcar.ui.tema.GestCarTema
 import com.gestcar.ui.viewmodel.AutenticacionViewModel
+import com.gestcar.util.ObservadorConectividad
+import com.gestcar.util.PlanificadorSincronizacion
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.handleDeeplinks
 
@@ -31,6 +35,17 @@ class ActividadPrincipal : ComponentActivity() {
                 val authViewModel: AutenticacionViewModel = viewModel()
                 authViewModelRef = authViewModel
                 val estadoAuth by authViewModel.estado.collectAsState()
+                val contexto = LocalContext.current
+
+                LaunchedEffect(estadoAuth.estaAutenticado, estadoAuth.usuarioId) {
+                    if (estadoAuth.estaAutenticado && estadoAuth.usuarioId.isNotBlank()) {
+                        ObservadorConectividad(contexto).observarConexion().collect { hayConexion ->
+                            if (hayConexion) {
+                                PlanificadorSincronizacion.encolarSincronizacionPuntual(contexto)
+                            }
+                        }
+                    }
+                }
 
                 GrafoNavegacion(
                     authViewModel = authViewModel,

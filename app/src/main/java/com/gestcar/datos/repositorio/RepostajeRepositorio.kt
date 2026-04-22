@@ -93,8 +93,16 @@ class RepostajeRepositorio(
 
     suspend fun sincronizarPendientesDelUsuario(usuarioId: String): Result<Unit> {
         return try {
+            val errores = mutableListOf<Throwable>()
             vehiculoDao.obtenerVehiculosPorUsuarioLista(usuarioId).forEach { vehiculo ->
-                sincronizar(vehiculo.id)
+                repostajeDao.obtenerPorVehiculoLista(vehiculo.id).forEach { repostaje ->
+                    runCatching { sincronizarRepostaje(repostaje) }
+                        .onFailure { errores.add(it) }
+                }
+            }
+
+            if (errores.isNotEmpty()) {
+                return Result.failure(errores.first())
             }
 
             Result.success(Unit)

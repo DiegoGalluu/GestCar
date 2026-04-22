@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.gestcar.datos.basedatos.GestCarBaseDatos
 import com.gestcar.datos.entidades.Repostaje
 import com.gestcar.datos.repositorio.RepostajeRepositorio
+import com.gestcar.util.PlanificadorSincronizacion
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -117,6 +118,7 @@ class RepostajeViewModel(aplicacion: Application) : AndroidViewModel(aplicacion)
 
             val resultado = repositorio.guardar(repostaje)
             _estadoFormulario.value = if (resultado.isSuccess) {
+                PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
                 _estadoFormulario.value.copy(
                     estaCargando = false,
                     guardadoExitoso = true,
