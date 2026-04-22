@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.gestcar.datos.basedatos.GestCarBaseDatos
 import com.gestcar.datos.entidades.Vehiculo
+import com.gestcar.datos.repositorio.MantenimientoRepositorio
 import com.gestcar.datos.repositorio.RepostajeRepositorio
 import com.gestcar.datos.repositorio.VehiculoRepositorio
 import kotlinx.coroutines.Job
@@ -26,6 +27,7 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
 
     private val repositorio: VehiculoRepositorio
     private val repostajeRepositorio: RepostajeRepositorio
+    private val mantenimientoRepositorio: MantenimientoRepositorio
     private var trabajoCarga: Job? = null
 
     init {
@@ -33,6 +35,10 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
         repositorio = VehiculoRepositorio(baseDatos.vehiculoDao())
         repostajeRepositorio = RepostajeRepositorio(
             repostajeDao = baseDatos.repostajeDao(),
+            vehiculoDao = baseDatos.vehiculoDao()
+        )
+        mantenimientoRepositorio = MantenimientoRepositorio(
+            mantenimientoDao = baseDatos.mantenimientoDao(),
             vehiculoDao = baseDatos.vehiculoDao()
         )
     }
@@ -51,6 +57,7 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
             // asi la lista de vehiculos no se queda esperando si no hay conexion
             launch {
                 repostajeRepositorio.sincronizarPendientesDelUsuario(usuarioId)
+                mantenimientoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
             }
 
             repositorio.obtenerVehiculos(usuarioId).collect { vehiculos ->

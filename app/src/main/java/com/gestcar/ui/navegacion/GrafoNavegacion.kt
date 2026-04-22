@@ -26,9 +26,11 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.gestcar.ui.pantallas.PantallaDetalleVehiculo
+import com.gestcar.ui.pantallas.PantallaFormularioMantenimiento
 import com.gestcar.ui.pantallas.PantallaFormularioVehiculo
 import com.gestcar.ui.pantallas.PantallaFormularioRepostaje
 import com.gestcar.ui.pantallas.PantallaInicioSesion
+import com.gestcar.ui.pantallas.PantallaListaMantenimientos
 import com.gestcar.ui.pantallas.PantallaListaVehiculos
 import com.gestcar.ui.pantallas.PantallaListaRepostajes
 import com.gestcar.ui.pantallas.PantallaPlaceholder
@@ -198,6 +200,18 @@ fun GrafoNavegacion(
                 )
             }
 
+            composable(Rutas.MANTENIMIENTO) {
+                PantallaListaMantenimientos(
+                    usuarioId = usuarioId,
+                    alCrearMantenimiento = { vehiculoId ->
+                        controladorNav.navigate(Rutas.formularioMantenimiento(vehiculoId))
+                    },
+                    alEditarMantenimiento = { vehiculoId, mantenimientoId ->
+                        controladorNav.navigate(Rutas.formularioMantenimiento(vehiculoId, mantenimientoId))
+                    }
+                )
+            }
+
             composable(
                 route = Rutas.FORMULARIO_REPOSTAJE,
                 arguments = listOf(
@@ -215,9 +229,25 @@ fun GrafoNavegacion(
                 )
             }
 
+            composable(
+                route = Rutas.FORMULARIO_MANTENIMIENTO,
+                arguments = listOf(
+                    navArgument("vehiculoId") { type = NavType.StringType },
+                    navArgument("mantenimientoId") { type = NavType.StringType }
+                )
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId") ?: ""
+                val mantenimientoId = entrada.arguments?.getString("mantenimientoId") ?: "nuevo"
+                PantallaFormularioMantenimiento(
+                    vehiculoId = vehiculoId,
+                    mantenimientoId = mantenimientoId,
+                    alGuardar = { controladorNav.popBackStack() },
+                    alVolver = { controladorNav.popBackStack() }
+                )
+            }
+
             // pantallas placeholder para las secciones que aun no estan implementadas
             composable(Rutas.GASTOS) { PantallaPlaceholder("Gastos") }
-            composable(Rutas.MANTENIMIENTO) { PantallaPlaceholder("Mantenimiento") }
             composable(Rutas.MAS_OPCIONES) { PantallaPlaceholder("Mas opciones") }
         }
     }
