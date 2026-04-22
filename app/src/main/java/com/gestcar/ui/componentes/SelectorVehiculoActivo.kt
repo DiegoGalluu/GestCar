@@ -26,7 +26,7 @@ fun SelectorVehiculoActivo(
     modifier: Modifier = Modifier
 ) {
     var expandido by remember { mutableStateOf(false) }
-    val textoVehiculo = vehiculoActivo?.let { "${it.marca} ${it.modelo}" } ?: "Sin vehículos"
+    val textoVehiculo = vehiculoActivo?.textoSelectorVehiculo() ?: "Sin vehículos"
 
     if (vehiculos.size <= 1) {
         OutlinedTextField(
@@ -63,7 +63,7 @@ fun SelectorVehiculoActivo(
         ) {
             vehiculos.forEach { vehiculo ->
                 DropdownMenuItem(
-                    text = { Text("${vehiculo.marca} ${vehiculo.modelo}") },
+                    text = { Text(vehiculo.textoSelectorVehiculo()) },
                     onClick = {
                         alSeleccionar(vehiculo)
                         expandido = false
@@ -72,4 +72,8 @@ fun SelectorVehiculoActivo(
             }
         }
     }
+}
+
+private fun Vehiculo.textoSelectorVehiculo(): String {
+    return "$marca $modelo - $matricula"
 }

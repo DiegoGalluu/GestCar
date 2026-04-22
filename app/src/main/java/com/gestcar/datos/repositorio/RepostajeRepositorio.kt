@@ -37,7 +37,11 @@ class RepostajeRepositorio(
             )
             repostajeDao.insertar(repostajeActualizado)
             actualizarKilometrajeVehiculoSiHaceFalta(repostajeActualizado)
-            sincronizarRepostaje(repostajeActualizado)
+
+            // si supabase falla no bloqueamos el guardado local
+            // el repostaje queda en room y se subira en una sincronizacion posterior
+            runCatching { sincronizarRepostaje(repostajeActualizado) }
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -51,8 +55,13 @@ class RepostajeRepositorio(
     suspend fun eliminar(repostaje: Repostaje): Result<Unit> {
         return try {
             repostajeDao.eliminar(repostaje)
-            ClienteSupabase.cliente.postgrest[tablaRemota]
-                .delete { filter { eq("id", repostaje.id) } }
+
+            // borramos en remoto si se puede, pero la accion local manda
+            runCatching {
+                ClienteSupabase.cliente.postgrest[tablaRemota]
+                    .delete { filter { eq("id", repostaje.id) } }
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -62,12 +71,14 @@ class RepostajeRepositorio(
     suspend fun sincronizar(vehiculoId: String): Result<Unit> {
         return try {
             repostajeDao.obtenerPorVehiculoLista(vehiculoId).forEach { repostaje ->
-                sincronizarRepostaje(repostaje)
+                runCatching { sincronizarRepostaje(repostaje) }
             }
 
-            val repostajesRemotos = ClienteSupabase.cliente.postgrest[tablaRemota]
-                .select { filter { eq("vehiculo_id", vehiculoId) } }
-                .decodeList<RepostajeDto>()
+            val repostajesRemotos = runCatching {
+                ClienteSupabase.cliente.postgrest[tablaRemota]
+                    .select { filter { eq("vehiculo_id", vehiculoId) } }
+                    .decodeList<RepostajeDto>()
+            }.getOrElse { emptyList() }
 
             repostajesRemotos.forEach { dto ->
                 repostajeDao.insertar(dto.aEntidad())

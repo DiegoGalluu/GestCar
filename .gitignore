@@ -8,3 +8,4 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+gestcar_database_debug*.sqlite

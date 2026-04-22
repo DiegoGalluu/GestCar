@@ -2,10 +2,9 @@ package com.gestcar.datos.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import com.gestcar.datos.entidades.Vehiculo
 import kotlinx.coroutines.flow.Flow
 
@@ -27,8 +26,9 @@ interface VehiculoDao {
     @Query("SELECT * FROM vehiculos WHERE id = :id")
     suspend fun obtenerPorId(id: String): Vehiculo?
 
-    // insertar un vehiculo nuevo, si ya existe lo reemplaza
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    // usamos upsert porque replace borra la fila antes de insertarla
+    // y eso dispara el borrado en cascada de repostajes y futuros gastos
+    @Upsert
     suspend fun insertar(vehiculo: Vehiculo)
 
     // actualizar un vehiculo existente
