@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.gestcar.datos.basedatos.GestCarBaseDatos
 import com.gestcar.datos.entidades.Vehiculo
+import com.gestcar.datos.repositorio.GastoPeriodicoRepositorio
 import com.gestcar.datos.repositorio.MantenimientoRepositorio
 import com.gestcar.datos.repositorio.RepostajeRepositorio
 import com.gestcar.datos.repositorio.VehiculoRepositorio
@@ -28,6 +29,7 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
     private val repositorio: VehiculoRepositorio
     private val repostajeRepositorio: RepostajeRepositorio
     private val mantenimientoRepositorio: MantenimientoRepositorio
+    private val gastoRepositorio: GastoPeriodicoRepositorio
     private var trabajoCarga: Job? = null
 
     init {
@@ -39,6 +41,10 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
         )
         mantenimientoRepositorio = MantenimientoRepositorio(
             mantenimientoDao = baseDatos.mantenimientoDao(),
+            vehiculoDao = baseDatos.vehiculoDao()
+        )
+        gastoRepositorio = GastoPeriodicoRepositorio(
+            gastoPeriodicoDao = baseDatos.gastoPeriodicoDao(),
             vehiculoDao = baseDatos.vehiculoDao()
         )
     }
@@ -53,11 +59,12 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
 
             val resultadoSincronizacion = repositorio.sincronizar(usuarioId)
 
-            // los repostajes pendientes se suben en segundo plano
+            // las operaciones pendientes se suben en segundo plano
             // asi la lista de vehiculos no se queda esperando si no hay conexion
             launch {
                 repostajeRepositorio.sincronizarPendientesDelUsuario(usuarioId)
                 mantenimientoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
+                gastoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
             }
 
             repositorio.obtenerVehiculos(usuarioId).collect { vehiculos ->

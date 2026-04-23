@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -43,34 +44,39 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.componentes.CampoFecha
-import com.gestcar.ui.viewmodel.CATEGORIA_MANTENIMIENTO
-import com.gestcar.ui.viewmodel.CATEGORIA_REPARACION
-import com.gestcar.ui.viewmodel.MantenimientoViewModel
-import com.gestcar.ui.viewmodel.tiposMantenimientoPredefinidos
+import com.gestcar.ui.viewmodel.GastoPeriodicoViewModel
+import com.gestcar.ui.viewmodel.PERIODICIDAD_ANUAL
+import com.gestcar.ui.viewmodel.PERIODICIDAD_MENSUAL
+import com.gestcar.ui.viewmodel.PERIODICIDAD_SEMESTRAL
+import com.gestcar.ui.viewmodel.PERIODICIDAD_TRIMESTRAL
+import com.gestcar.ui.viewmodel.PERIODICIDAD_UNICO
+import com.gestcar.ui.viewmodel.conceptosGastoPredefinidos
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun PantallaFormularioMantenimiento(
+fun PantallaFormularioGasto(
     vehiculoId: String,
-    mantenimientoId: String,
+    gastoId: String,
     alGuardar: () -> Unit,
     alVolver: () -> Unit,
-    viewModel: MantenimientoViewModel = viewModel()
+    viewModel: GastoPeriodicoViewModel = viewModel()
 ) {
     val estado by viewModel.estadoFormulario.collectAsState()
-    val esNuevo = mantenimientoId == "nuevo"
-    val mantenimiento = estado.mantenimiento
+    val esNuevo = gastoId == "nuevo"
+    val gasto = estado.gasto
     var intentoGuardar by remember { mutableStateOf(false) }
     var mostrarSugerencias by remember { mutableStateOf(false) }
-    val tipoVacio = mantenimiento.tipo.isBlank()
-    val faltaTipo = intentoGuardar && tipoVacio
-    val faltanCamposObligatorios = tipoVacio
+    val conceptoVacio = gasto.concepto.isBlank()
+    val importeVacio = gasto.importe <= 0
+    val faltaConcepto = intentoGuardar && conceptoVacio
+    val faltaImporte = intentoGuardar && importeVacio
+    val faltanCamposObligatorios = conceptoVacio || importeVacio
 
-    LaunchedEffect(vehiculoId, mantenimientoId) {
+    LaunchedEffect(vehiculoId, gastoId) {
         if (esNuevo) {
             viewModel.resetearFormulario(vehiculoId)
         } else {
-            viewModel.cargarParaEditar(mantenimientoId)
+            viewModel.cargarParaEditar(gastoId)
         }
     }
 
@@ -83,7 +89,7 @@ fun PantallaFormularioMantenimiento(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (esNuevo) "Nueva operación" else "Editar operación") },
+                title = { Text(if (esNuevo) "Nuevo gasto" else "Editar gasto") },
                 navigationIcon = {
                     IconButton(onClick = alVolver) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -106,10 +112,10 @@ fun PantallaFormularioMantenimiento(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedTextField(
-                value = mantenimiento.tipo,
-                onValueChange = { viewModel.actualizarFormulario(mantenimiento.copy(tipo = it)) },
-                label = { Text("Tipo o componente *") },
-                isError = faltaTipo,
+                value = gasto.concepto,
+                onValueChange = { viewModel.actualizarFormulario(gasto.copy(concepto = it)) },
+                label = { Text("Concepto *") },
+                isError = faltaConcepto,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -136,70 +142,88 @@ fun PantallaFormularioMantenimiento(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    tiposMantenimientoPredefinidos.forEach { sugerencia ->
+                    conceptosGastoPredefinidos.forEach { sugerencia ->
                         FilterChip(
-                            selected = mantenimiento.tipo == sugerencia,
-                            onClick = { viewModel.actualizarFormulario(mantenimiento.copy(tipo = sugerencia)) },
+                            selected = gasto.concepto == sugerencia,
+                            onClick = { viewModel.actualizarFormulario(gasto.copy(concepto = sugerencia)) },
                             label = { Text(sugerencia) }
                         )
                     }
                 }
             }
 
-            SelectorCategoriaMantenimiento(
-                categoria = mantenimiento.categoria,
-                alSeleccionar = { viewModel.actualizarFormulario(mantenimiento.copy(categoria = it)) }
-            )
-
-            CampoFecha(
-                etiqueta = "Fecha *",
-                fecha = mantenimiento.fecha,
-                alSeleccionarFecha = {
-                    viewModel.actualizarFormulario(mantenimiento.copy(fecha = it))
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-
             OutlinedTextField(
-                value = mantenimiento.kilometros?.takeIf { it > 0 }?.toLong()?.toString().orEmpty(),
+                value = if (gasto.importe > 0) gasto.importe.toString() else "",
                 onValueChange = {
                     viewModel.actualizarFormulario(
-                        mantenimiento.copy(kilometros = it.toDoubleOrNull())
+                        gasto.copy(importe = it.replace(",", ".").toDoubleOrNull() ?: 0.0)
                     )
                 },
-                label = { Text("Kilómetros") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = if (mantenimiento.coste > 0) mantenimiento.coste.toString() else "",
-                onValueChange = {
-                    viewModel.actualizarFormulario(
-                        mantenimiento.copy(coste = it.replace(",", ".").toDoubleOrNull() ?: 0.0)
-                    )
-                },
-                label = { Text("Coste") },
+                label = { Text("Importe *") },
+                isError = faltaImporte,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            OutlinedTextField(
-                value = mantenimiento.taller ?: "",
-                onValueChange = {
-                    viewModel.actualizarFormulario(mantenimiento.copy(taller = it.ifBlank { null }))
+            CampoFecha(
+                etiqueta = "Fecha *",
+                fecha = gasto.fecha,
+                alSeleccionarFecha = {
+                    viewModel.actualizarFormulario(gasto.copy(fecha = it))
                 },
-                label = { Text("Taller") },
-                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
+            SelectorDesplegable(
+                etiqueta = "Periodicidad",
+                valorSeleccionado = textoPeriodicidad(gasto.periodicidad),
+                opciones = opcionesPeriodicidad(),
+                alSeleccionar = {
+                    viewModel.actualizarFormulario(gasto.copy(periodicidad = valorPeriodicidad(it)))
+                }
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Añadir vencimiento",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Switch(
+                    checked = gasto.fechaVencimiento != null,
+                    onCheckedChange = { activado ->
+                        viewModel.actualizarFormulario(
+                            gasto.copy(
+                                fechaVencimiento = if (activado) {
+                                    gasto.fechaVencimiento ?: System.currentTimeMillis()
+                                } else {
+                                    null
+                                }
+                            )
+                        )
+                    }
+                )
+            }
+
+            gasto.fechaVencimiento?.let { vencimiento ->
+                CampoFecha(
+                    etiqueta = "Fecha de vencimiento",
+                    fecha = vencimiento,
+                    alSeleccionarFecha = {
+                        viewModel.actualizarFormulario(gasto.copy(fechaVencimiento = it))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             OutlinedTextField(
-                value = mantenimiento.descripcion ?: "",
+                value = gasto.notas ?: "",
                 onValueChange = {
-                    viewModel.actualizarFormulario(mantenimiento.copy(descripcion = it.ifBlank { null }))
+                    viewModel.actualizarFormulario(gasto.copy(notas = it.ifBlank { null }))
                 },
                 label = { Text("Comentarios") },
                 minLines = 3,
@@ -212,7 +236,7 @@ fun PantallaFormularioMantenimiento(
                 onClick = {
                     intentoGuardar = true
                     if (!faltanCamposObligatorios) {
-                        viewModel.guardarMantenimiento()
+                        viewModel.guardarGasto()
                     }
                 },
                 enabled = !estado.estaCargando,
@@ -224,7 +248,7 @@ fun PantallaFormularioMantenimiento(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Guardar operación")
+                    Text("Guardar gasto")
                 }
             }
 
@@ -243,21 +267,30 @@ fun PantallaFormularioMantenimiento(
     }
 }
 
-@Composable
-private fun SelectorCategoriaMantenimiento(
-    categoria: String,
-    alSeleccionar: (String) -> Unit
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(
-            selected = categoria == CATEGORIA_MANTENIMIENTO,
-            onClick = { alSeleccionar(CATEGORIA_MANTENIMIENTO) },
-            label = { Text("Mantenimiento") }
-        )
-        FilterChip(
-            selected = categoria == CATEGORIA_REPARACION,
-            onClick = { alSeleccionar(CATEGORIA_REPARACION) },
-            label = { Text("Reparación") }
-        )
+private fun opcionesPeriodicidad(): List<String> = listOf(
+    "Único",
+    "Mensual",
+    "Trimestral",
+    "Semestral",
+    "Anual"
+)
+
+private fun textoPeriodicidad(periodicidad: String?): String {
+    return when (periodicidad) {
+        PERIODICIDAD_MENSUAL -> "Mensual"
+        PERIODICIDAD_TRIMESTRAL -> "Trimestral"
+        PERIODICIDAD_SEMESTRAL -> "Semestral"
+        PERIODICIDAD_ANUAL -> "Anual"
+        else -> "Único"
+    }
+}
+
+private fun valorPeriodicidad(texto: String): String {
+    return when (texto) {
+        "Mensual" -> PERIODICIDAD_MENSUAL
+        "Trimestral" -> PERIODICIDAD_TRIMESTRAL
+        "Semestral" -> PERIODICIDAD_SEMESTRAL
+        "Anual" -> PERIODICIDAD_ANUAL
+        else -> PERIODICIDAD_UNICO
     }
 }

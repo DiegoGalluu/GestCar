@@ -25,11 +25,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.gestcar.ui.pantallas.PantallaDetalleGasto
 import com.gestcar.ui.pantallas.PantallaDetalleVehiculo
+import com.gestcar.ui.pantallas.PantallaDetalleMantenimiento
+import com.gestcar.ui.pantallas.PantallaDetalleRepostaje
+import com.gestcar.ui.pantallas.PantallaFormularioGasto
 import com.gestcar.ui.pantallas.PantallaFormularioMantenimiento
 import com.gestcar.ui.pantallas.PantallaFormularioVehiculo
 import com.gestcar.ui.pantallas.PantallaFormularioRepostaje
 import com.gestcar.ui.pantallas.PantallaInicioSesion
+import com.gestcar.ui.pantallas.PantallaListaGastos
 import com.gestcar.ui.pantallas.PantallaListaMantenimientos
 import com.gestcar.ui.pantallas.PantallaListaVehiculos
 import com.gestcar.ui.pantallas.PantallaListaRepostajes
@@ -194,8 +199,8 @@ fun GrafoNavegacion(
                     alCrearRepostaje = { vehiculoId ->
                         controladorNav.navigate(Rutas.formularioRepostaje(vehiculoId))
                     },
-                    alEditarRepostaje = { vehiculoId, repostajeId ->
-                        controladorNav.navigate(Rutas.formularioRepostaje(vehiculoId, repostajeId))
+                    alVerDetalleRepostaje = { vehiculoId, repostajeId ->
+                        controladorNav.navigate(Rutas.detalleRepostaje(vehiculoId, repostajeId))
                     }
                 )
             }
@@ -206,9 +211,76 @@ fun GrafoNavegacion(
                     alCrearMantenimiento = { vehiculoId ->
                         controladorNav.navigate(Rutas.formularioMantenimiento(vehiculoId))
                     },
-                    alEditarMantenimiento = { vehiculoId, mantenimientoId ->
-                        controladorNav.navigate(Rutas.formularioMantenimiento(vehiculoId, mantenimientoId))
+                    alVerDetalleMantenimiento = { vehiculoId, mantenimientoId ->
+                        controladorNav.navigate(Rutas.detalleMantenimiento(vehiculoId, mantenimientoId))
                     }
+                )
+            }
+
+            composable(Rutas.GASTOS) {
+                PantallaListaGastos(
+                    usuarioId = usuarioId,
+                    alCrearGasto = { vehiculoId ->
+                        controladorNav.navigate(Rutas.formularioGasto(vehiculoId))
+                    },
+                    alVerDetalleGasto = { vehiculoId, gastoId ->
+                        controladorNav.navigate(Rutas.detalleGasto(vehiculoId, gastoId))
+                    }
+                )
+            }
+
+            composable(
+                route = Rutas.DETALLE_GASTO,
+                arguments = listOf(
+                    navArgument("vehiculoId") { type = NavType.StringType },
+                    navArgument("gastoId") { type = NavType.StringType }
+                )
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId") ?: ""
+                val gastoId = entrada.arguments?.getString("gastoId") ?: ""
+                PantallaDetalleGasto(
+                    gastoId = gastoId,
+                    alEditar = { _, id ->
+                        controladorNav.navigate(Rutas.formularioGasto(vehiculoId, id))
+                    },
+                    alVolver = { controladorNav.popBackStack() },
+                    alEliminar = { controladorNav.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Rutas.FORMULARIO_GASTO,
+                arguments = listOf(
+                    navArgument("vehiculoId") { type = NavType.StringType },
+                    navArgument("gastoId") { type = NavType.StringType }
+                )
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId") ?: ""
+                val gastoId = entrada.arguments?.getString("gastoId") ?: "nuevo"
+                PantallaFormularioGasto(
+                    vehiculoId = vehiculoId,
+                    gastoId = gastoId,
+                    alGuardar = { controladorNav.popBackStack() },
+                    alVolver = { controladorNav.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Rutas.DETALLE_REPOSTAJE,
+                arguments = listOf(
+                    navArgument("vehiculoId") { type = NavType.StringType },
+                    navArgument("repostajeId") { type = NavType.StringType }
+                )
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId") ?: ""
+                val repostajeId = entrada.arguments?.getString("repostajeId") ?: ""
+                PantallaDetalleRepostaje(
+                    repostajeId = repostajeId,
+                    alEditar = { _, id ->
+                        controladorNav.navigate(Rutas.formularioRepostaje(vehiculoId, id))
+                    },
+                    alVolver = { controladorNav.popBackStack() },
+                    alEliminar = { controladorNav.popBackStack() }
                 )
             }
 
@@ -230,6 +302,25 @@ fun GrafoNavegacion(
             }
 
             composable(
+                route = Rutas.DETALLE_MANTENIMIENTO,
+                arguments = listOf(
+                    navArgument("vehiculoId") { type = NavType.StringType },
+                    navArgument("mantenimientoId") { type = NavType.StringType }
+                )
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId") ?: ""
+                val mantenimientoId = entrada.arguments?.getString("mantenimientoId") ?: ""
+                PantallaDetalleMantenimiento(
+                    mantenimientoId = mantenimientoId,
+                    alEditar = { _, id ->
+                        controladorNav.navigate(Rutas.formularioMantenimiento(vehiculoId, id))
+                    },
+                    alVolver = { controladorNav.popBackStack() },
+                    alEliminar = { controladorNav.popBackStack() }
+                )
+            }
+
+            composable(
                 route = Rutas.FORMULARIO_MANTENIMIENTO,
                 arguments = listOf(
                     navArgument("vehiculoId") { type = NavType.StringType },
@@ -247,7 +338,6 @@ fun GrafoNavegacion(
             }
 
             // pantallas placeholder para las secciones que aun no estan implementadas
-            composable(Rutas.GASTOS) { PantallaPlaceholder("Gastos") }
             composable(Rutas.MAS_OPCIONES) { PantallaPlaceholder("Mas opciones") }
         }
     }

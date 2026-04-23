@@ -77,6 +77,22 @@ fun PantallaFormularioVehiculo(
     }
 
     val vehiculo = estado.vehiculo
+    var intentoGuardar by remember { mutableStateOf(false) }
+    val marcaVacia = vehiculo.marca.isBlank()
+    val modeloVacio = vehiculo.modelo.isBlank()
+    val anioFabricacionVacio = vehiculo.anioFabricacion <= 0
+    val tipoVacio = vehiculo.tipo.isBlank()
+    val matriculaVacia = vehiculo.matricula.isBlank()
+    val faltaMarca = intentoGuardar && marcaVacia
+    val faltaModelo = intentoGuardar && modeloVacio
+    val faltaAnioFabricacion = intentoGuardar && anioFabricacionVacio
+    val faltaTipo = intentoGuardar && tipoVacio
+    val faltaMatricula = intentoGuardar && matriculaVacia
+    val faltanCamposObligatorios = marcaVacia ||
+        modeloVacio ||
+        anioFabricacionVacio ||
+        tipoVacio ||
+        matriculaVacia
 
     Scaffold(
         topBar = {
@@ -106,7 +122,8 @@ fun PantallaFormularioVehiculo(
             OutlinedTextField(
                 value = vehiculo.marca,
                 onValueChange = { viewModel.actualizarFormulario(vehiculo.copy(marca = it)) },
-                label = { Text("Marca (obligatorio)") },
+                label = { Text("Marca *") },
+                isError = faltaMarca,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -114,7 +131,8 @@ fun PantallaFormularioVehiculo(
             OutlinedTextField(
                 value = vehiculo.modelo,
                 onValueChange = { viewModel.actualizarFormulario(vehiculo.copy(modelo = it)) },
-                label = { Text("Modelo (obligatorio)") },
+                label = { Text("Modelo *") },
+                isError = faltaModelo,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -125,14 +143,15 @@ fun PantallaFormularioVehiculo(
                     val anio = it.toIntOrNull() ?: 0
                     viewModel.actualizarFormulario(vehiculo.copy(anioFabricacion = anio))
                 },
-                label = { Text("Año de fabricación (obligatorio)") },
+                label = { Text("Año de fabricación *") },
+                isError = faltaAnioFabricacion,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
 
             SelectorDesplegable(
-                etiqueta = "Mes de fabricación (opcional)",
+                etiqueta = "Mes de fabricación",
                 valorSeleccionado = vehiculo.mesFabricacion?.let { mesesFabricacion[it - 1] } ?: "",
                 opciones = mesesFabricacion,
                 alSeleccionar = {
@@ -152,23 +171,25 @@ fun PantallaFormularioVehiculo(
                         )
                     )
                 },
-                label = { Text("Día de fabricación (opcional)") },
+                label = { Text("Día de fabricación") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
 
             SelectorDesplegable(
-                etiqueta = "Tipo de vehículo (obligatorio)",
+                etiqueta = "Tipo de vehículo *",
                 valorSeleccionado = vehiculo.tipo,
                 opciones = tiposVehiculo,
-                alSeleccionar = { viewModel.actualizarFormulario(vehiculo.copy(tipo = it)) }
+                alSeleccionar = { viewModel.actualizarFormulario(vehiculo.copy(tipo = it)) },
+                esError = faltaTipo
             )
 
             OutlinedTextField(
                 value = vehiculo.matricula,
                 onValueChange = { viewModel.actualizarFormulario(vehiculo.copy(matricula = it)) },
-                label = { Text("Matrícula (obligatorio)") },
+                label = { Text("Matrícula *") },
+                isError = faltaMatricula,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -179,14 +200,14 @@ fun PantallaFormularioVehiculo(
                     val km = it.toDoubleOrNull() ?: 0.0
                     viewModel.actualizarFormulario(vehiculo.copy(kilometraje = km))
                 },
-                label = { Text("Kilometraje actual (opcional)") },
+                label = { Text("Kilometraje actual") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
 
             SelectorDesplegable(
-                etiqueta = "Tipo de combustible (opcional)",
+                etiqueta = "Tipo de combustible",
                 valorSeleccionado = vehiculo.tipoCombustible ?: "",
                 opciones = tiposCombustible,
                 alSeleccionar = { viewModel.actualizarFormulario(vehiculo.copy(tipoCombustible = it)) }
@@ -195,7 +216,7 @@ fun PantallaFormularioVehiculo(
             OutlinedTextField(
                 value = vehiculo.notas ?: "",
                 onValueChange = { viewModel.actualizarFormulario(vehiculo.copy(notas = it.ifBlank { null })) },
-                label = { Text("Notas (opcional)") },
+                label = { Text("Notas") },
                 maxLines = 3,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -203,7 +224,12 @@ fun PantallaFormularioVehiculo(
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                onClick = { viewModel.guardarVehiculo() },
+                onClick = {
+                    intentoGuardar = true
+                    if (!faltanCamposObligatorios) {
+                        viewModel.guardarVehiculo()
+                    }
+                },
                 enabled = !estado.estaCargando,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -214,6 +240,12 @@ fun PantallaFormularioVehiculo(
                     )
                 } else {
                     Text("Guardar vehículo")
+                }
+            }
+
+            if (intentoGuardar && faltanCamposObligatorios) {
+                Snackbar {
+                    Text("Faltan campos obligatorios por rellenar")
                 }
             }
 
@@ -232,7 +264,8 @@ fun SelectorDesplegable(
     etiqueta: String,
     valorSeleccionado: String,
     opciones: List<String>,
-    alSeleccionar: (String) -> Unit
+    alSeleccionar: (String) -> Unit,
+    esError: Boolean = false
 ) {
     var expandido by remember { mutableStateOf(false) }
 
@@ -246,6 +279,7 @@ fun SelectorDesplegable(
             readOnly = true,
             label = { Text(etiqueta) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandido) },
+            isError = esError,
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)

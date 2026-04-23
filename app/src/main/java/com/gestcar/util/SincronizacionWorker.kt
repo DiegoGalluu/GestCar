@@ -5,6 +5,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.gestcar.datos.basedatos.GestCarBaseDatos
 import com.gestcar.datos.remoto.ClienteSupabase
+import com.gestcar.datos.repositorio.GastoPeriodicoRepositorio
 import com.gestcar.datos.repositorio.MantenimientoRepositorio
 import com.gestcar.datos.repositorio.RepostajeRepositorio
 import com.gestcar.datos.repositorio.VehiculoRepositorio
@@ -40,12 +41,22 @@ class SincronizacionWorker(
                 mantenimientoDao = baseDatos.mantenimientoDao(),
                 vehiculoDao = baseDatos.vehiculoDao()
             )
+            val gastoRepositorio = GastoPeriodicoRepositorio(
+                gastoPeriodicoDao = baseDatos.gastoPeriodicoDao(),
+                vehiculoDao = baseDatos.vehiculoDao()
+            )
 
             val resultadoVehiculos = vehiculoRepositorio.sincronizar(usuarioId)
             val resultadoRepostajes = repostajeRepositorio.sincronizarPendientesDelUsuario(usuarioId)
             val resultadoMantenimientos = mantenimientoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
+            val resultadoGastos = gastoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
 
-            if (resultadoVehiculos.isFailure || resultadoRepostajes.isFailure || resultadoMantenimientos.isFailure) {
+            if (
+                resultadoVehiculos.isFailure ||
+                resultadoRepostajes.isFailure ||
+                resultadoMantenimientos.isFailure ||
+                resultadoGastos.isFailure
+            ) {
                 Result.retry()
             } else {
                 Result.success()

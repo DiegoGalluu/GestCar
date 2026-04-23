@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -14,9 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.LocalGasStation
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -35,21 +32,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.componentes.SelectorVehiculoActivo
-import com.gestcar.ui.componentes.TarjetaRepostaje
-import com.gestcar.ui.viewmodel.RepostajeViewModel
+import com.gestcar.ui.componentes.TarjetaGasto
+import com.gestcar.ui.viewmodel.GastoPeriodicoViewModel
 import com.gestcar.ui.viewmodel.VehiculoActivoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PantallaListaRepostajes(
+fun PantallaListaGastos(
     usuarioId: String,
-    alCrearRepostaje: (String) -> Unit,
-    alVerDetalleRepostaje: (String, String) -> Unit,
-    repostajeViewModel: RepostajeViewModel = viewModel(),
+    alCrearGasto: (String) -> Unit,
+    alVerDetalleGasto: (String, String) -> Unit,
+    gastoViewModel: GastoPeriodicoViewModel = viewModel(),
     vehiculoActivoViewModel: VehiculoActivoViewModel = viewModel()
 ) {
     val estadoVehiculo by vehiculoActivoViewModel.estado.collectAsState()
-    val estadoRepostajes by repostajeViewModel.estadoLista.collectAsState()
+    val estadoGastos by gastoViewModel.estadoLista.collectAsState()
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
 
     LaunchedEffect(usuarioId) {
@@ -57,13 +54,13 @@ fun PantallaListaRepostajes(
     }
 
     LaunchedEffect(vehiculoActivo?.id) {
-        vehiculoActivo?.let { repostajeViewModel.cargarRepostajes(it.id) }
+        vehiculoActivo?.let { gastoViewModel.cargarGastos(it.id) }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Repostajes") },
+                title = { Text("Gastos") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -73,10 +70,10 @@ fun PantallaListaRepostajes(
         floatingActionButton = {
             if (vehiculoActivo != null) {
                 FloatingActionButton(
-                    onClick = { alCrearRepostaje(vehiculoActivo.id) },
+                    onClick = { alCrearGasto(vehiculoActivo.id) },
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Añadir repostaje")
+                    Icon(Icons.Default.Add, contentDescription = "Añadir gasto")
                 }
             }
         }
@@ -94,22 +91,22 @@ fun PantallaListaRepostajes(
             )
 
             when {
-                estadoVehiculo.estaCargando || estadoRepostajes.estaCargando -> {
+                estadoVehiculo.estaCargando || estadoGastos.estaCargando -> {
                     Box(modifier = Modifier.fillMaxSize()) {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
                 }
 
                 vehiculoActivo == null -> {
-                    EstadoVacioRepostajes(
+                    EstadoVacioGastos(
                         titulo = "No hay vehículos",
-                        mensaje = "Añade un vehículo antes de registrar repostajes"
+                        mensaje = "Añade un vehículo antes de registrar gastos"
                     )
                 }
 
-                estadoRepostajes.repostajes.isEmpty() -> {
-                    EstadoVacioRepostajes(
-                        titulo = "No hay repostajes",
+                estadoGastos.gastos.isEmpty() -> {
+                    EstadoVacioGastos(
+                        titulo = "No hay gastos",
                         mensaje = "Pulsa + para añadir el primero"
                     )
                 }
@@ -119,34 +116,10 @@ fun PantallaListaRepostajes(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                )
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = "Consumo medio",
-                                        style = MaterialTheme.typography.titleSmall
-                                    )
-                                    Text(
-                                        text = if (estadoRepostajes.consumoMedio > 0) {
-                                            "${String.format("%.2f", estadoRepostajes.consumoMedio)} L/100 km"
-                                        } else {
-                                            "Datos insuficientes"
-                                        },
-                                        style = MaterialTheme.typography.headlineSmall
-                                    )
-                                }
-                            }
-                        }
-
-                        items(estadoRepostajes.repostajes) { repostaje ->
-                            TarjetaRepostaje(
-                                repostaje = repostaje,
-                                alPulsar = { alVerDetalleRepostaje(repostaje.vehiculoId, repostaje.id) }
+                        items(estadoGastos.gastos) { gasto ->
+                            TarjetaGasto(
+                                gasto = gasto,
+                                alPulsar = { alVerDetalleGasto(gasto.vehiculoId, gasto.id) }
                             )
                         }
                     }
@@ -157,7 +130,7 @@ fun PantallaListaRepostajes(
 }
 
 @Composable
-private fun EstadoVacioRepostajes(
+private fun EstadoVacioGastos(
     titulo: String,
     mensaje: String
 ) {
@@ -167,7 +140,7 @@ private fun EstadoVacioRepostajes(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = Icons.Default.LocalGasStation,
+                imageVector = Icons.Default.Payments,
                 contentDescription = null,
                 modifier = Modifier.size(80.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)

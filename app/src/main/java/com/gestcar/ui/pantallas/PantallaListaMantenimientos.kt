@@ -45,7 +45,7 @@ import com.gestcar.ui.viewmodel.VehiculoActivoViewModel
 fun PantallaListaMantenimientos(
     usuarioId: String,
     alCrearMantenimiento: (String) -> Unit,
-    alEditarMantenimiento: (String, String) -> Unit,
+    alVerDetalleMantenimiento: (String, String) -> Unit,
     mantenimientoViewModel: MantenimientoViewModel = viewModel(),
     vehiculoActivoViewModel: VehiculoActivoViewModel = viewModel()
 ) {
@@ -129,7 +129,7 @@ fun PantallaListaMantenimientos(
                         items(estadoMantenimientos.mantenimientosFiltrados) { mantenimiento ->
                             TarjetaMantenimiento(
                                 mantenimiento = mantenimiento,
-                                alPulsar = { alEditarMantenimiento(mantenimiento.vehiculoId, mantenimiento.id) }
+                                alPulsar = { alVerDetalleMantenimiento(mantenimiento.vehiculoId, mantenimiento.id) }
                             )
                         }
                     }

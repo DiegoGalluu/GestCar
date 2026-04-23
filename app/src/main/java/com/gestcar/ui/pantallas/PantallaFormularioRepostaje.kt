@@ -32,6 +32,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -51,6 +54,14 @@ fun PantallaFormularioRepostaje(
     val estado by viewModel.estadoFormulario.collectAsState()
     val esNuevo = repostajeId == "nuevo"
     val repostaje = estado.repostaje
+    var intentoGuardar by remember { mutableStateOf(false) }
+    val kilometrosVacios = repostaje.kilometros <= 0
+    val litrosVacios = repostaje.litros <= 0
+    val precioPorLitroVacio = repostaje.precioPorLitro <= 0
+    val faltaKilometros = intentoGuardar && kilometrosVacios
+    val faltaLitros = intentoGuardar && litrosVacios
+    val faltaPrecioPorLitro = intentoGuardar && precioPorLitroVacio
+    val faltanCamposObligatorios = kilometrosVacios || litrosVacios || precioPorLitroVacio
 
     LaunchedEffect(vehiculoId, repostajeId) {
         if (esNuevo) {
@@ -92,7 +103,7 @@ fun PantallaFormularioRepostaje(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             CampoFecha(
-                etiqueta = "Fecha (obligatorio)",
+                etiqueta = "Fecha *",
                 fecha = repostaje.fecha,
                 alSeleccionarFecha = {
                     viewModel.actualizarFormulario(repostaje.copy(fecha = it))
@@ -107,7 +118,8 @@ fun PantallaFormularioRepostaje(
                         repostaje.copy(kilometros = it.toDoubleOrNull() ?: 0.0)
                     )
                 },
-                label = { Text("Kilómetros actuales (obligatorio)") },
+                label = { Text("Kilómetros actuales *") },
+                isError = faltaKilometros,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
@@ -120,7 +132,8 @@ fun PantallaFormularioRepostaje(
                         repostaje.copy(litros = it.replace(",", ".").toDoubleOrNull() ?: 0.0)
                     )
                 },
-                label = { Text("Litros (obligatorio)") },
+                label = { Text("Litros *") },
+                isError = faltaLitros,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
@@ -133,7 +146,8 @@ fun PantallaFormularioRepostaje(
                         repostaje.copy(precioPorLitro = it.replace(",", ".").toDoubleOrNull() ?: 0.0)
                     )
                 },
-                label = { Text("Precio por litro (obligatorio)") },
+                label = { Text("Precio por litro *") },
+                isError = faltaPrecioPorLitro,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
@@ -168,7 +182,7 @@ fun PantallaFormularioRepostaje(
                 onValueChange = {
                     viewModel.actualizarFormulario(repostaje.copy(gasolinera = it.ifBlank { null }))
                 },
-                label = { Text("Gasolinera (opcional)") },
+                label = { Text("Gasolinera") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -178,7 +192,7 @@ fun PantallaFormularioRepostaje(
                 onValueChange = {
                     viewModel.actualizarFormulario(repostaje.copy(notas = it.ifBlank { null }))
                 },
-                label = { Text("Notas (opcional)") },
+                label = { Text("Comentarios") },
                 maxLines = 3,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -186,7 +200,12 @@ fun PantallaFormularioRepostaje(
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                onClick = { viewModel.guardarRepostaje() },
+                onClick = {
+                    intentoGuardar = true
+                    if (!faltanCamposObligatorios) {
+                        viewModel.guardarRepostaje()
+                    }
+                },
                 enabled = !estado.estaCargando,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -197,6 +216,12 @@ fun PantallaFormularioRepostaje(
                     )
                 } else {
                     Text("Guardar repostaje")
+                }
+            }
+
+            if (intentoGuardar && faltanCamposObligatorios) {
+                Snackbar {
+                    Text("Faltan campos obligatorios por rellenar")
                 }
             }
 
