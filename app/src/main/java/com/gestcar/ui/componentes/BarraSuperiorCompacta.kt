@@ -4,13 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsTopHeight
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
@@ -23,10 +22,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 // usamos una barra propia para compactar la cabecera sin perder el espacio seguro del sistema
 // asi ganamos altura util en pantalla y mantenemos el look de la app en todos los sitios
@@ -37,27 +34,27 @@ fun BarraSuperiorCompacta(
     alVolver: (() -> Unit)? = null,
     acciones: @Composable RowScope.() -> Unit = {}
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primary
-    ) {
-        Column {
-            Spacer(
-                modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars)
-            )
+    Column(modifier = modifier.fillMaxWidth()) {
+        Spacer(
+            modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars)
+        )
 
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.primary
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp)
-                    .padding(horizontal = 8.dp),
+                    .height(48.dp)
+                    .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 if (alVolver != null) {
                     IconButton(
                         onClick = alVolver,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Filled.ChevronLeft,
@@ -65,19 +62,15 @@ fun BarraSuperiorCompacta(
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
-                } else {
-                    Spacer(modifier = Modifier.width(8.dp))
                 }
 
                 Text(
                     text = titulo,
                     color = MaterialTheme.colorScheme.onPrimary,
-                    style = MaterialTheme.typography.titleLarge.compacta(),
+                    style = MaterialTheme.typography.titleLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = if (alVolver == null) 4.dp else 0.dp)
+                    modifier = Modifier.weight(1f)
                 )
 
                 Row(
@@ -88,11 +81,4 @@ fun BarraSuperiorCompacta(
             }
         }
     }
-}
-
-private fun TextStyle.compacta(): TextStyle {
-    return copy(
-        fontSize = 19.sp,
-        lineHeight = 22.sp
-    )
 }
