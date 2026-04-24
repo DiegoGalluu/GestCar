@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
@@ -110,7 +110,7 @@ fun PantallaDetalleVehiculo(
                 title = { Text("Detalle del vehiculo") },
                 navigationIcon = {
                     IconButton(onClick = alVolver) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "volver")
+                        Icon(Icons.Filled.ChevronLeft, contentDescription = "volver")
                     }
                 },
                 actions = {
