@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -13,20 +15,24 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -52,6 +58,7 @@ fun PantallaListaGastos(
     val estadoVehiculo by vehiculoActivoViewModel.estado.collectAsState()
     val estadoGastos by gastoViewModel.estadoLista.collectAsState()
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
+    var mostrarPagados by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(usuarioId) {
         vehiculoActivoViewModel.cargarVehiculos(usuarioId)
@@ -146,14 +153,21 @@ fun PantallaListaGastos(
                                 if (gastosPendientes.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
-                                TituloSeccionGastos("Pagados")
+                                TituloSeccionGastosDesplegable(
+                                    titulo = "Pagados",
+                                    cantidad = gastosPagados.size,
+                                    expandido = mostrarPagados,
+                                    alCambiarExpandido = { mostrarPagados = !mostrarPagados }
+                                )
                             }
 
-                            items(gastosPagados) { gasto ->
-                                TarjetaGasto(
-                                    gasto = gasto,
-                                    alPulsar = { alVerDetalleGasto(gasto.vehiculoId, gasto.id) }
-                                )
+                            if (mostrarPagados) {
+                                items(gastosPagados) { gasto ->
+                                    TarjetaGasto(
+                                        gasto = gasto,
+                                        alPulsar = { alVerDetalleGasto(gasto.vehiculoId, gasto.id) }
+                                    )
+                                }
                             }
                         }
                     }
@@ -171,6 +185,36 @@ private fun TituloSeccionGastos(titulo: String) {
         color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(bottom = 4.dp)
     )
+}
+
+@Composable
+private fun TituloSeccionGastosDesplegable(
+    titulo: String,
+    cantidad: Int,
+    expandido: Boolean,
+    alCambiarExpandido: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "$titulo ($cantidad)",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+
+        IconButton(
+            onClick = alCambiarExpandido,
+            modifier = Modifier.size(36.dp)
+        ) {
+            Icon(
+                imageVector = if (expandido) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
+                contentDescription = if (expandido) "Ocultar pagados" else "Mostrar pagados"
+            )
+        }
+    }
 }
 
 @Composable

@@ -111,7 +111,7 @@ class GastoPeriodicoViewModel(aplicacion: Application) : AndroidViewModel(aplica
     fun guardarGasto() {
         viewModelScope.launch {
             val estadoActual = _estadoFormulario.value
-            val gasto = estadoActual.gasto
+            val gasto = prepararGastoParaGuardar(estadoActual.gasto)
 
             if (gasto.vehiculoId.isBlank() || gasto.concepto.isBlank() || gasto.importe <= 0) {
                 _estadoFormulario.value = estadoActual.copy(
@@ -137,6 +137,14 @@ class GastoPeriodicoViewModel(aplicacion: Application) : AndroidViewModel(aplica
                     mensajeError = "No se ha podido guardar el gasto"
                 )
             }
+        }
+    }
+
+    private fun prepararGastoParaGuardar(gasto: GastoPeriodico): GastoPeriodico {
+        return if (gasto.pagado) {
+            gasto.copy(fechaPago = gasto.fechaPago ?: gasto.fecha)
+        } else {
+            gasto.copy(fechaPago = null)
         }
     }
 

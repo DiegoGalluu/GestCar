@@ -176,6 +176,18 @@ fun PantallaFormularioGasto(
                 }
             )
 
+            SelectorEstadoGasto(
+                pagado = gasto.pagado,
+                alCambiar = { estaPagado ->
+                    viewModel.actualizarFormulario(
+                        gasto.copy(
+                            pagado = estaPagado,
+                            fechaPago = if (estaPagado) gasto.fecha else null
+                        )
+                    )
+                }
+            )
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -284,5 +296,31 @@ private fun valorPeriodicidad(texto: String): String {
         "Semestral" -> PERIODICIDAD_SEMESTRAL
         "Anual" -> PERIODICIDAD_ANUAL
         else -> PERIODICIDAD_UNICO
+    }
+}
+
+@Composable
+private fun SelectorEstadoGasto(
+    pagado: Boolean,
+    alCambiar: (Boolean) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Estado",
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(
+                selected = !pagado,
+                onClick = { alCambiar(false) },
+                label = { Text("Pendiente") }
+            )
+            FilterChip(
+                selected = pagado,
+                onClick = { alCambiar(true) },
+                label = { Text("Pagado") }
+            )
+        }
     }
 }
