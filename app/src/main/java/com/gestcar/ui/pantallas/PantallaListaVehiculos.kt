@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.TarjetaVehiculo
 import com.gestcar.ui.viewmodel.VehiculoViewModel
 
@@ -51,13 +52,7 @@ fun PantallaListaVehiculos(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Mis vehículos") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
+            BarraSuperiorCompacta(titulo = "Mis vehículos")
         },
         floatingActionButton = {
             FloatingActionButton(

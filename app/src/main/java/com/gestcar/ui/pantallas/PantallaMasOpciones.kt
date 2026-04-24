@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.gestcar.ui.componentes.BarraSuperiorCompacta
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,13 +40,7 @@ fun PantallaMasOpciones(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Más opciones") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
+            BarraSuperiorCompacta(titulo = "Más opciones")
         }
     ) { padding ->
         Column(

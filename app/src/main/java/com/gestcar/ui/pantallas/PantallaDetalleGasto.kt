@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.colorEstadoGasto
 import com.gestcar.ui.componentes.calcularEstadoVisualGasto
 import com.gestcar.ui.componentes.textoEstadoGasto
@@ -67,14 +68,10 @@ fun PantallaDetalleGasto(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Detalle del gasto") },
-                navigationIcon = {
-                    IconButton(onClick = alVolver) {
-                        Icon(Icons.Filled.ChevronLeft, contentDescription = "Volver")
-                    }
-                },
-                actions = {
+            BarraSuperiorCompacta(
+                titulo = "Detalle del gasto",
+                alVolver = alVolver,
+                acciones = {
                     if (gasto.id.isNotBlank()) {
                         IconButton(onClick = { alEditar(gasto.vehiculoId, gasto.id) }) {
                             Icon(Icons.Default.Edit, contentDescription = "Editar gasto")
@@ -83,13 +80,7 @@ fun PantallaDetalleGasto(
                             Icon(Icons.Default.Delete, contentDescription = "Eliminar gasto")
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                }
             )
         }
     ) { padding ->

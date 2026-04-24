@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.viewmodel.CATEGORIA_REPARACION
 import com.gestcar.ui.viewmodel.MantenimientoViewModel
 
@@ -61,14 +62,10 @@ fun PantallaDetalleMantenimiento(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Detalle de operación") },
-                navigationIcon = {
-                    IconButton(onClick = alVolver) {
-                        Icon(Icons.Filled.ChevronLeft, contentDescription = "Volver")
-                    }
-                },
-                actions = {
+            BarraSuperiorCompacta(
+                titulo = "Detalle de operación",
+                alVolver = alVolver,
+                acciones = {
                     if (mantenimiento.id.isNotBlank()) {
                         IconButton(onClick = { alEditar(mantenimiento.vehiculoId, mantenimiento.id) }) {
                             Icon(Icons.Default.Edit, contentDescription = "Editar operación")
@@ -77,13 +74,7 @@ fun PantallaDetalleMantenimiento(
                             Icon(Icons.Default.Delete, contentDescription = "Eliminar operación")
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                }
             )
         }
     ) { padding ->

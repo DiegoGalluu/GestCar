@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.CampoFecha
 import com.gestcar.ui.viewmodel.CATEGORIA_MANTENIMIENTO
 import com.gestcar.ui.viewmodel.CATEGORIA_REPARACION
@@ -82,18 +83,9 @@ fun PantallaFormularioMantenimiento(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(if (esNuevo) "Nueva operación" else "Editar operación") },
-                navigationIcon = {
-                    IconButton(onClick = alVolver) {
-                        Icon(Icons.Filled.ChevronLeft, contentDescription = "Volver")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+            BarraSuperiorCompacta(
+                titulo = if (esNuevo) "Nueva operación" else "Editar operación",
+                alVolver = alVolver
             )
         }
     ) { padding ->

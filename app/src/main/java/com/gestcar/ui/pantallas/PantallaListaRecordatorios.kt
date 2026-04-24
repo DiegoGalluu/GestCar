@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.entidades.Recordatorio
 import com.gestcar.datos.entidades.Vehiculo
+import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.EstadoVisualRecordatorio
 import com.gestcar.ui.componentes.SelectorVehiculoActivo
 import com.gestcar.ui.componentes.TarjetaRecordatorio
@@ -64,18 +65,9 @@ fun PantallaListaRecordatorios(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Recordatorios") },
-                navigationIcon = {
-                    IconButton(onClick = alVolver) {
-                        Icon(Icons.Filled.ChevronLeft, contentDescription = "Volver")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+            BarraSuperiorCompacta(
+                titulo = "Recordatorios",
+                alVolver = alVolver
             )
         },
         floatingActionButton = {

@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.viewmodel.RecordatorioViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,14 +61,10 @@ fun PantallaDetalleRecordatorio(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Detalle del recordatorio") },
-                navigationIcon = {
-                    IconButton(onClick = alVolver) {
-                        Icon(Icons.Filled.ChevronLeft, contentDescription = "Volver")
-                    }
-                },
-                actions = {
+            BarraSuperiorCompacta(
+                titulo = "Detalle del recordatorio",
+                alVolver = alVolver,
+                acciones = {
                     if (recordatorio.id.isNotBlank()) {
                         IconButton(onClick = { alEditar(recordatorio.vehiculoId, recordatorio.id) }) {
                             Icon(Icons.Default.Edit, contentDescription = "Editar recordatorio")
@@ -76,13 +73,7 @@ fun PantallaDetalleRecordatorio(
                             Icon(Icons.Default.Delete, contentDescription = "Eliminar recordatorio")
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                }
             )
         }
     ) { padding ->

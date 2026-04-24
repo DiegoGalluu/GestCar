@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.SelectorVehiculoActivo
 import com.gestcar.ui.componentes.TarjetaMantenimiento
 import com.gestcar.ui.viewmodel.CATEGORIA_MANTENIMIENTO
@@ -63,13 +64,7 @@ fun PantallaListaMantenimientos(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Mantenimiento") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
+            BarraSuperiorCompacta(titulo = "Mantenimiento")
         },
         floatingActionButton = {
             if (vehiculoActivo != null) {

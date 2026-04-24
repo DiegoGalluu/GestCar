@@ -18,6 +18,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.gestcar.ui.componentes.BarraSuperiorCompacta
 
 // pantalla temporal para las secciones que aun no estan implementadas
 // se ira reemplazando en las siguientes fases del desarrollo
@@ -29,20 +30,9 @@ fun PantallaPlaceholder(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(nombreSeccion) },
-                navigationIcon = {
-                    alVolver?.let {
-                        IconButton(onClick = it) {
-                            Icon(Icons.Filled.ChevronLeft, contentDescription = "Volver")
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+            BarraSuperiorCompacta(
+                titulo = nombreSeccion,
+                alVolver = alVolver
             )
         }
     ) { padding ->

@@ -52,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.entidades.Vehiculo
+import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.ImagenVehiculo
 import com.gestcar.ui.componentes.EstadoVisualRecordatorio
 import com.gestcar.ui.viewmodel.RecordatorioViewModel
@@ -106,29 +107,17 @@ fun PantallaDetalleVehiculo(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Detalle del vehiculo") },
-                navigationIcon = {
-                    IconButton(onClick = alVolver) {
-                        Icon(Icons.Filled.ChevronLeft, contentDescription = "volver")
-                    }
-                },
-                actions = {
-                    // boton de editar
+            BarraSuperiorCompacta(
+                titulo = "Detalle del vehiculo",
+                alVolver = alVolver,
+                acciones = {
                     IconButton(onClick = alEditar) {
                         Icon(Icons.Default.Edit, contentDescription = "editar vehiculo")
                     }
-                    // boton de eliminar
                     IconButton(onClick = { mostrarDialogoEliminar = true }) {
                         Icon(Icons.Default.Delete, contentDescription = "eliminar vehiculo")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                }
             )
         }
     ) { padding ->

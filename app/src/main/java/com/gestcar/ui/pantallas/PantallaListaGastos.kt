@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.entidades.GastoPeriodico
+import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.EstadoVisualGasto
 import com.gestcar.ui.componentes.SelectorVehiculoActivo
 import com.gestcar.ui.componentes.TarjetaGasto
@@ -62,13 +63,7 @@ fun PantallaListaGastos(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Gastos") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
+            BarraSuperiorCompacta(titulo = "Gastos")
         },
         floatingActionButton = {
             if (vehiculoActivo != null) {
