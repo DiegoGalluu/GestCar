@@ -23,8 +23,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 // usamos una barra propia para compactar la cabecera sin perder el espacio seguro del sistema
 // asi ganamos altura util en pantalla y mantenemos el look de la app en todos los sitios
@@ -47,7 +49,7 @@ fun BarraSuperiorCompacta(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
+                    .height(40.dp)
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -55,7 +57,7 @@ fun BarraSuperiorCompacta(
                 if (alVolver != null) {
                     IconButton(
                         onClick = alVolver,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Filled.ChevronLeft,
@@ -70,7 +72,7 @@ fun BarraSuperiorCompacta(
                 Text(
                     text = titulo,
                     color = MaterialTheme.colorScheme.onPrimary,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.compacta(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
@@ -86,4 +88,11 @@ fun BarraSuperiorCompacta(
             }
         }
     }
+}
+
+private fun TextStyle.compacta(): TextStyle {
+    return copy(
+        fontSize = 19.sp,
+        lineHeight = 22.sp
+    )
 }
