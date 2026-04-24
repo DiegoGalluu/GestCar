@@ -162,8 +162,7 @@ fun GrafoNavegacion(
                     },
                     alAnadirVehiculo = {
                         controladorNav.navigate(Rutas.formularioVehiculo())
-                    },
-                    alCerrarSesion = alCerrarSesion
+                    }
                 )
             }
 
@@ -240,7 +239,8 @@ fun GrafoNavegacion(
                     },
                     alIrAEstadisticas = {
                         controladorNav.navigate(Rutas.ESTADISTICAS)
-                    }
+                    },
+                    alCerrarSesion = alCerrarSesion
                 )
             }
 
@@ -252,7 +252,8 @@ fun GrafoNavegacion(
                     },
                     alVerDetalleRecordatorio = { vehiculoId, recordatorioId ->
                         controladorNav.navigate(Rutas.detalleRecordatorio(vehiculoId, recordatorioId))
-                    }
+                    },
+                    alVolver = { controladorNav.popBackStack() }
                 )
             }
 
@@ -401,7 +402,12 @@ fun GrafoNavegacion(
             }
 
             // pantallas placeholder para las secciones que aun no estan implementadas
-            composable(Rutas.ESTADISTICAS) { PantallaPlaceholder("Estadisticas") }
+            composable(Rutas.ESTADISTICAS) {
+                PantallaPlaceholder(
+                    nombreSeccion = "Estadísticas",
+                    alVolver = { controladorNav.popBackStack() }
+                )
+            }
         }
     }
 }

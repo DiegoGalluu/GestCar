@@ -14,12 +14,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -43,12 +41,10 @@ fun PantallaListaVehiculos(
     usuarioId: String,
     alPulsarVehiculo: (String) -> Unit,
     alAnadirVehiculo: () -> Unit,
-    alCerrarSesion: () -> Unit,
     viewModel: VehiculoViewModel = viewModel()
 ) {
     val estado by viewModel.estadoLista.collectAsState()
 
-    // cargamos los vehiculos al entrar en la pantalla
     LaunchedEffect(usuarioId) {
         viewModel.cargarVehiculos(usuarioId)
     }
@@ -56,30 +52,19 @@ fun PantallaListaVehiculos(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mis vehiculos") },
+                title = { Text("Mis vehículos") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                actions = {
-                    // boton para cerrar sesion
-                    IconButton(onClick = alCerrarSesion) {
-                        Icon(
-                            imageVector = Icons.Default.Logout,
-                            contentDescription = "cerrar sesion",
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                }
+                )
             )
         },
         floatingActionButton = {
-            // boton flotante para anadir un vehiculo nuevo
             FloatingActionButton(
                 onClick = alAnadirVehiculo,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "anadir vehiculo")
+                Icon(Icons.Default.Add, contentDescription = "Añadir vehículo")
             }
         }
     ) { padding ->
@@ -89,14 +74,12 @@ fun PantallaListaVehiculos(
                 .padding(padding)
         ) {
             when {
-                // si esta cargando mostramos un spinner
                 estado.estaCargando -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
 
-                // si no hay vehiculos mostramos el estado vacio
                 estado.vehiculos.isEmpty() -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center),
@@ -110,19 +93,18 @@ fun PantallaListaVehiculos(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "No tienes vehiculos registrados",
+                            text = "No tienes vehículos registrados",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "Pulsa + para anadir el primero",
+                            text = "Pulsa + para añadir el primero",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
                 }
 
-                // si hay vehiculos los mostramos en una lista
                 else -> {
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),

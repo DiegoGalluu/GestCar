@@ -9,15 +9,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -45,6 +46,7 @@ fun PantallaListaRecordatorios(
     usuarioId: String,
     alCrearRecordatorio: (String) -> Unit,
     alVerDetalleRecordatorio: (String, String) -> Unit,
+    alVolver: () -> Unit,
     recordatorioViewModel: RecordatorioViewModel = viewModel(),
     vehiculoActivoViewModel: VehiculoActivoViewModel = viewModel()
 ) {
@@ -64,9 +66,15 @@ fun PantallaListaRecordatorios(
         topBar = {
             TopAppBar(
                 title = { Text("Recordatorios") },
+                navigationIcon = {
+                    IconButton(onClick = alVolver) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
@@ -118,7 +126,7 @@ fun PantallaListaRecordatorios(
                     val recordatoriosOrdenados = estadoRecordatorios.recordatorios
                         .sortedWith(compareBy({ prioridadEstado(it, vehiculoActivo) }, { it.fechaLimite ?: Long.MAX_VALUE }))
 
-                    LazyColumn(
+                    androidx.compose.foundation.lazy.LazyColumn(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {

@@ -21,7 +21,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,8 +40,7 @@ enum class EstadoVisualGasto {
 @Composable
 fun TarjetaGasto(
     gasto: GastoPeriodico,
-    alPulsar: () -> Unit,
-    alMarcarPagado: (() -> Unit)? = null
+    alPulsar: () -> Unit
 ) {
     val estadoVisual = calcularEstadoVisualGasto(gasto)
     val colorEstado = colorEstadoGasto(estadoVisual)
@@ -60,7 +58,7 @@ fun TarjetaGasto(
             Box(
                 modifier = Modifier
                     .width(8.dp)
-                    .height(if (alMarcarPagado != null) 112.dp else 96.dp)
+                    .height(96.dp)
                     .background(
                         color = colorEstado,
                         shape = RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)
@@ -100,17 +98,6 @@ fun TarjetaGasto(
                         style = MaterialTheme.typography.bodySmall,
                         color = colorEstado
                     )
-
-                    alMarcarPagado?.let {
-                        TextButton(
-                            onClick = {
-                                it()
-                            },
-                            modifier = Modifier.padding(top = 4.dp)
-                        ) {
-                            Text("Pagado")
-                        }
-                    }
                 }
 
                 Text(

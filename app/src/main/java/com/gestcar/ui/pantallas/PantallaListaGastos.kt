@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -15,7 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -23,16 +21,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -43,7 +37,6 @@ import com.gestcar.ui.componentes.SelectorVehiculoActivo
 import com.gestcar.ui.componentes.TarjetaGasto
 import com.gestcar.ui.componentes.calcularEstadoVisualGasto
 import com.gestcar.ui.viewmodel.GastoPeriodicoViewModel
-import com.gestcar.ui.viewmodel.PERIODICIDAD_UNICO
 import com.gestcar.ui.viewmodel.VehiculoActivoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,7 +51,6 @@ fun PantallaListaGastos(
     val estadoVehiculo by vehiculoActivoViewModel.estado.collectAsState()
     val estadoGastos by gastoViewModel.estadoLista.collectAsState()
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
-    var gastoPendienteDePago by remember { mutableStateOf<GastoPeriodico?>(null) }
 
     LaunchedEffect(usuarioId) {
         vehiculoActivoViewModel.cargarVehiculos(usuarioId)
@@ -149,14 +141,7 @@ fun PantallaListaGastos(
                             items(gastosPendientes) { gasto ->
                                 TarjetaGasto(
                                     gasto = gasto,
-                                    alPulsar = { alVerDetalleGasto(gasto.vehiculoId, gasto.id) },
-                                    alMarcarPagado = {
-                                        if (gasto.periodicidad != null && gasto.periodicidad != PERIODICIDAD_UNICO) {
-                                            gastoPendienteDePago = gasto
-                                        } else {
-                                            gastoViewModel.marcarComoPagado(gasto, crearSiguienteAviso = false)
-                                        }
-                                    }
+                                    alPulsar = { alVerDetalleGasto(gasto.vehiculoId, gasto.id) }
                                 )
                             }
                         }
@@ -180,46 +165,6 @@ fun PantallaListaGastos(
                 }
             }
         }
-    }
-
-    gastoPendienteDePago?.let { gasto ->
-        AlertDialog(
-            onDismissRequest = { gastoPendienteDePago = null },
-            title = { Text("Marcar como pagado") },
-            text = {
-                Text(
-                    "Este gasto tiene periodicidad ${textoPeriodicidadDialogo(gasto.periodicidad)}. " +
-                        "¿Quieres crear el siguiente aviso automáticamente?"
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        gastoViewModel.marcarComoPagado(gasto, crearSiguienteAviso = true)
-                        gastoPendienteDePago = null
-                    }
-                ) {
-                    Text("Crear siguiente")
-                }
-            },
-            dismissButton = {
-                Row {
-                    TextButton(
-                        onClick = {
-                            gastoViewModel.marcarComoPagado(gasto, crearSiguienteAviso = false)
-                            gastoPendienteDePago = null
-                        }
-                    ) {
-                        Text("Solo marcar")
-                    }
-                    TextButton(
-                        onClick = { gastoPendienteDePago = null }
-                    ) {
-                        Text("Cancelar")
-                    }
-                }
-            }
-        )
     }
 }
 
@@ -272,11 +217,4 @@ private fun prioridadEstadoGasto(gasto: GastoPeriodico): Int {
         EstadoVisualGasto.SIN_VENCIMIENTO -> 3
         EstadoVisualGasto.PAGADO -> 4
     }
-}
-
-private fun textoPeriodicidadDialogo(periodicidad: String?): String {
-    return periodicidad
-        ?.lowercase()
-        ?.replaceFirstChar { it.uppercase() }
-        ?: "definida"
 }

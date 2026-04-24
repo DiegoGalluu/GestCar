@@ -2,6 +2,7 @@ package com.gestcar.ui.pantallas
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,6 +43,7 @@ import com.gestcar.ui.componentes.colorEstadoGasto
 import com.gestcar.ui.componentes.calcularEstadoVisualGasto
 import com.gestcar.ui.componentes.textoEstadoGasto
 import com.gestcar.ui.viewmodel.GastoPeriodicoViewModel
+import com.gestcar.ui.viewmodel.PERIODICIDAD_UNICO
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +59,7 @@ fun PantallaDetalleGasto(
     val estadoVisual = calcularEstadoVisualGasto(gasto)
     val colorEstado = colorEstadoGasto(estadoVisual)
     var mostrarDialogoEliminar by remember { mutableStateOf(false) }
+    var mostrarDialogoPagado by remember { mutableStateOf(false) }
 
     LaunchedEffect(gastoId) {
         viewModel.cargarParaEditar(gastoId)
@@ -138,7 +142,67 @@ fun PantallaDetalleGasto(
                     BloqueComentariosGasto(gasto.notas?.takeIf { it.isNotBlank() } ?: "Sin comentarios")
                 }
             }
+
+            if (gasto.id.isNotBlank() && !gasto.pagado) {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        if (gasto.periodicidad != null && gasto.periodicidad != PERIODICIDAD_UNICO) {
+                            mostrarDialogoPagado = true
+                        } else {
+                            viewModel.marcarComoPagado(gasto, crearSiguienteAviso = false)
+                            alVolver()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Marcar como pagado")
+                }
+            }
         }
+    }
+
+    if (mostrarDialogoPagado) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoPagado = false },
+            title = { Text("Marcar como pagado") },
+            text = {
+                Text(
+                    "Este gasto tiene periodicidad ${textoPeriodicidadDialogo(gasto.periodicidad)}. " +
+                        "¿Quieres crear el siguiente aviso automáticamente?"
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.marcarComoPagado(gasto, crearSiguienteAviso = true)
+                        mostrarDialogoPagado = false
+                        alVolver()
+                    }
+                ) {
+                    Text("Crear siguiente")
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(
+                        onClick = {
+                            viewModel.marcarComoPagado(gasto, crearSiguienteAviso = false)
+                            mostrarDialogoPagado = false
+                            alVolver()
+                        }
+                    ) {
+                        Text("Solo marcar")
+                    }
+                    TextButton(
+                        onClick = { mostrarDialogoPagado = false }
+                    ) {
+                        Text("Cancelar")
+                    }
+                }
+            }
+        )
     }
 
     if (mostrarDialogoEliminar) {
@@ -186,4 +250,11 @@ private fun textoPeriodicidadDetalle(periodicidad: String?): String {
         ?.lowercase()
         ?.replaceFirstChar { it.uppercase() }
         ?: "Único"
+}
+
+private fun textoPeriodicidadDialogo(periodicidad: String?): String {
+    return periodicidad
+        ?.lowercase()
+        ?.replaceFirstChar { it.uppercase() }
+        ?: "definida"
 }
