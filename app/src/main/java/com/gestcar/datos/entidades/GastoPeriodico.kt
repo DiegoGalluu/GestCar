@@ -27,6 +27,8 @@ data class GastoPeriodico(
     val fecha: Long = System.currentTimeMillis(),
     val periodicidad: String? = null,
     val fechaVencimiento: Long? = null,
+    val pagado: Boolean = false,
+    val fechaPago: Long? = null,
     val notas: String? = null,
     val actualizadoEn: Long = System.currentTimeMillis()
 )

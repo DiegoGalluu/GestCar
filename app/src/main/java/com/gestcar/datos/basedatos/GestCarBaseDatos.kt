@@ -19,7 +19,6 @@ import com.gestcar.datos.entidades.Vehiculo
 
 // base de datos principal de la app, aqui se registran todas las entidades
 // y se crean los dao para acceder a ellas
-// version 1 porque es la primera version del esquema
 @Database(
     entities = [
         Vehiculo::class,
@@ -28,12 +27,11 @@ import com.gestcar.datos.entidades.Vehiculo
         GastoPeriodico::class,
         Recordatorio::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class GestCarBaseDatos : RoomDatabase() {
 
-    // dao para acceder a la tabla de vehiculos
     abstract fun vehiculoDao(): VehiculoDao
     abstract fun repostajeDao(): RepostajeDao
     abstract fun mantenimientoDao(): MantenimientoDao
@@ -188,19 +186,37 @@ abstract class GestCarBaseDatos : RoomDatabase() {
             }
         }
 
-        // instancia unica de la base de datos, se usa el patron singleton
-        // para que no se creen multiples conexiones a la vez
+        private val MIGRACION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    ALTER TABLE gastos_periodicos
+                    ADD COLUMN pagado INTEGER NOT NULL DEFAULT 0
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    ALTER TABLE gastos_periodicos
+                    ADD COLUMN fechaPago INTEGER
+                    """.trimIndent()
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCIA: GestCarBaseDatos? = null
 
         fun obtenerInstancia(contexto: Context): GestCarBaseDatos {
-            // si ya hay una instancia creada la devolvemos directamente
             return INSTANCIA ?: synchronized(this) {
                 val instancia = Room.databaseBuilder(
                     contexto.applicationContext,
                     GestCarBaseDatos::class.java,
                     "gestcar_database"
-                ).addMigrations(MIGRACION_1_2, MIGRACION_2_3).build()
+                ).addMigrations(
+                    MIGRACION_1_2,
+                    MIGRACION_2_3,
+                    MIGRACION_3_4
+                ).build()
                 INSTANCIA = instancia
                 instancia
             }

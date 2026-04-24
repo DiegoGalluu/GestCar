@@ -19,6 +19,11 @@ data class GastoPeriodicoDto(
     @SerialName("fecha_vencimiento")
     val fechaVencimiento: Long? = null,
 
+    val pagado: Boolean = false,
+
+    @SerialName("fecha_pago")
+    val fechaPago: Long? = null,
+
     val notas: String? = null,
 
     @SerialName("actualizado_en")
@@ -33,6 +38,8 @@ fun GastoPeriodico.aDto(): GastoPeriodicoDto = GastoPeriodicoDto(
     fecha = fecha,
     periodicidad = periodicidad,
     fechaVencimiento = fechaVencimiento,
+    pagado = pagado,
+    fechaPago = fechaPago,
     notas = notas,
     actualizadoEn = actualizadoEn
 )
@@ -45,6 +52,8 @@ fun GastoPeriodicoDto.aEntidad(): GastoPeriodico = GastoPeriodico(
     fecha = fecha,
     periodicidad = periodicidad,
     fechaVencimiento = fechaVencimiento,
+    pagado = pagado,
+    fechaPago = fechaPago,
     notas = notas,
     actualizadoEn = actualizadoEn
 )

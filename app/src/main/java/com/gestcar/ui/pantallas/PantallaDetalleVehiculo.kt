@@ -53,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.entidades.Vehiculo
 import com.gestcar.ui.componentes.ImagenVehiculo
+import com.gestcar.ui.componentes.EstadoVisualRecordatorio
+import com.gestcar.ui.viewmodel.RecordatorioViewModel
 import com.gestcar.ui.viewmodel.VehiculoViewModel
 import com.gestcar.util.GestorImagenesVehiculo
 import java.text.SimpleDateFormat
@@ -67,10 +69,12 @@ fun PantallaDetalleVehiculo(
     alEditar: () -> Unit,
     alVolver: () -> Unit,
     alEliminar: () -> Unit,
-    viewModel: VehiculoViewModel = viewModel()
+    viewModel: VehiculoViewModel = viewModel(),
+    recordatorioViewModel: RecordatorioViewModel = viewModel()
 ) {
     val vehiculo by viewModel.vehiculoDetalle.collectAsState()
     val estadoLista by viewModel.estadoLista.collectAsState()
+    val estadoRecordatorios by recordatorioViewModel.estadoLista.collectAsState()
     var mostrarDialogoEliminar by remember { mutableStateOf(false) }
     var mostrarMenuFoto by remember { mutableStateOf(false) }
     var uriTemporalCamara by remember { mutableStateOf<Uri?>(null) }
@@ -97,6 +101,7 @@ fun PantallaDetalleVehiculo(
     // cargamos el vehiculo al entrar en la pantalla
     LaunchedEffect(vehiculoId) {
         viewModel.cargarDetalle(vehiculoId)
+        recordatorioViewModel.cargarRecordatorios(vehiculoId)
     }
 
     Scaffold(
@@ -225,6 +230,44 @@ fun PantallaDetalleVehiculo(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+
+                val recordatoriosActivos = estadoRecordatorios.recordatorios.filter { !it.completado }
+                val vencidos = recordatoriosActivos.count {
+                    calcularEstadoVisual(it, v) == EstadoVisualRecordatorio.VENCIDO
+                }
+
+                if (recordatoriosActivos.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (vencidos > 0) {
+                                MaterialTheme.colorScheme.errorContainer
+                            } else {
+                                MaterialTheme.colorScheme.secondaryContainer
+                            }
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = if (vencidos > 0) "Recordatorios vencidos" else "Recordatorios pendientes",
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            Text(
+                                text = if (vencidos > 0) {
+                                    "$vencidos vencidos de ${recordatoriosActivos.size} pendientes"
+                                } else {
+                                    "${recordatoriosActivos.size} recordatorios pendientes"
+                                },
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
 
                 // en futuras fases aqui iran las secciones de repostajes, mantenimientos, etc
                 Card(

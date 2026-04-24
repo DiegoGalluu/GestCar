@@ -28,6 +28,7 @@ object Rutas {
     const val DETALLE_GASTO = "detalle_gasto/{vehiculoId}/{gastoId}"
     const val RECORDATORIOS = "recordatorios"
     const val FORMULARIO_RECORDATORIO = "formulario_recordatorio/{vehiculoId}/{recordatorioId}"
+    const val DETALLE_RECORDATORIO = "detalle_recordatorio/{vehiculoId}/{recordatorioId}"
     const val ESTADISTICAS = "estadisticas"
 
     // funciones helper para construir rutas con parametros
@@ -57,4 +58,7 @@ object Rutas {
 
     fun formularioRecordatorio(vehiculoId: String, recordatorioId: String = "nuevo") =
         "formulario_recordatorio/$vehiculoId/$recordatorioId"
+
+    fun detalleRecordatorio(vehiculoId: String, recordatorioId: String) =
+        "detalle_recordatorio/$vehiculoId/$recordatorioId"
 }

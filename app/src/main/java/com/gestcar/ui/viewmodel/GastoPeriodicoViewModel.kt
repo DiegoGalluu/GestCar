@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.UUID
 
 const val PERIODICIDAD_MENSUAL = "MENSUAL"
@@ -144,5 +145,78 @@ class GastoPeriodicoViewModel(aplicacion: Application) : AndroidViewModel(aplica
             repositorio.eliminar(gasto)
             PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
         }
+    }
+
+    fun marcarComoPagado(
+        gasto: GastoPeriodico,
+        crearSiguienteAviso: Boolean
+    ) {
+        viewModelScope.launch {
+            val ahora = System.currentTimeMillis()
+            val gastoPagado = gasto.copy(
+                pagado = true,
+                fechaPago = ahora,
+                actualizadoEn = ahora
+            )
+
+            val resultadoPago = repositorio.guardar(gastoPagado)
+            if (resultadoPago.isFailure) {
+                _estadoLista.value = _estadoLista.value.copy(
+                    mensajeError = "No se ha podido marcar el gasto como pagado"
+                )
+                return@launch
+            }
+
+            if (crearSiguienteAviso && esRecurrente(gasto.periodicidad)) {
+                val siguiente = crearSiguienteGasto(gasto, ahora)
+                val resultadoSiguiente = repositorio.guardar(siguiente)
+
+                if (resultadoSiguiente.isFailure) {
+                    _estadoLista.value = _estadoLista.value.copy(
+                        mensajeError = "Se ha marcado como pagado, pero no se ha podido crear el siguiente aviso"
+                    )
+                }
+            }
+
+            PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
+        }
+    }
+
+    private fun esRecurrente(periodicidad: String?): Boolean {
+        return periodicidad != null && periodicidad != PERIODICIDAD_UNICO
+    }
+
+    private fun crearSiguienteGasto(
+        gasto: GastoPeriodico,
+        fechaPago: Long
+    ): GastoPeriodico {
+        val siguienteVencimiento = sumarPeriodo(fechaPago, gasto.periodicidad)
+
+        return gasto.copy(
+            id = UUID.randomUUID().toString(),
+            fecha = fechaPago,
+            fechaVencimiento = siguienteVencimiento,
+            pagado = false,
+            fechaPago = null,
+            actualizadoEn = fechaPago
+        )
+    }
+
+    private fun sumarPeriodo(
+        fechaBase: Long,
+        periodicidad: String?
+    ): Long {
+        val calendario = Calendar.getInstance().apply {
+            timeInMillis = fechaBase
+        }
+
+        when (periodicidad) {
+            PERIODICIDAD_MENSUAL -> calendario.add(Calendar.MONTH, 1)
+            PERIODICIDAD_TRIMESTRAL -> calendario.add(Calendar.MONTH, 3)
+            PERIODICIDAD_SEMESTRAL -> calendario.add(Calendar.MONTH, 6)
+            PERIODICIDAD_ANUAL -> calendario.add(Calendar.YEAR, 1)
+        }
+
+        return calendario.timeInMillis
     }
 }

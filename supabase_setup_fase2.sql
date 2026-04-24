@@ -156,10 +156,15 @@ create table if not exists gastos_periodicos (
     fecha bigint not null,
     periodicidad text,
     fecha_vencimiento bigint,
+    pagado boolean not null default false,
+    fecha_pago bigint,
     notas text,
     actualizado_en bigint not null,
     created_at timestamptz default now()
 );
+
+alter table gastos_periodicos add column if not exists pagado boolean not null default false;
+alter table gastos_periodicos add column if not exists fecha_pago bigint;
 
 create index if not exists idx_gastos_periodicos_vehiculo_id on gastos_periodicos(vehiculo_id);
 alter table gastos_periodicos enable row level security;

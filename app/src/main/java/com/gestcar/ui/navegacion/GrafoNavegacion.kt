@@ -26,18 +26,22 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.gestcar.ui.pantallas.PantallaDetalleGasto
+import com.gestcar.ui.pantallas.PantallaDetalleRecordatorio
 import com.gestcar.ui.pantallas.PantallaDetalleVehiculo
 import com.gestcar.ui.pantallas.PantallaDetalleMantenimiento
 import com.gestcar.ui.pantallas.PantallaDetalleRepostaje
 import com.gestcar.ui.pantallas.PantallaFormularioGasto
 import com.gestcar.ui.pantallas.PantallaFormularioMantenimiento
+import com.gestcar.ui.pantallas.PantallaFormularioRecordatorio
 import com.gestcar.ui.pantallas.PantallaFormularioVehiculo
 import com.gestcar.ui.pantallas.PantallaFormularioRepostaje
 import com.gestcar.ui.pantallas.PantallaInicioSesion
 import com.gestcar.ui.pantallas.PantallaListaGastos
 import com.gestcar.ui.pantallas.PantallaListaMantenimientos
+import com.gestcar.ui.pantallas.PantallaListaRecordatorios
 import com.gestcar.ui.pantallas.PantallaListaVehiculos
 import com.gestcar.ui.pantallas.PantallaListaRepostajes
+import com.gestcar.ui.pantallas.PantallaMasOpciones
 import com.gestcar.ui.pantallas.PantallaPlaceholder
 import com.gestcar.ui.pantallas.PantallaRegistro
 import com.gestcar.ui.pantallas.PantallaRestablecerContrasena
@@ -229,6 +233,65 @@ fun GrafoNavegacion(
                 )
             }
 
+            composable(Rutas.MAS_OPCIONES) {
+                PantallaMasOpciones(
+                    alIrARecordatorios = {
+                        controladorNav.navigate(Rutas.RECORDATORIOS)
+                    },
+                    alIrAEstadisticas = {
+                        controladorNav.navigate(Rutas.ESTADISTICAS)
+                    }
+                )
+            }
+
+            composable(Rutas.RECORDATORIOS) {
+                PantallaListaRecordatorios(
+                    usuarioId = usuarioId,
+                    alCrearRecordatorio = { vehiculoId ->
+                        controladorNav.navigate(Rutas.formularioRecordatorio(vehiculoId))
+                    },
+                    alVerDetalleRecordatorio = { vehiculoId, recordatorioId ->
+                        controladorNav.navigate(Rutas.detalleRecordatorio(vehiculoId, recordatorioId))
+                    }
+                )
+            }
+
+            composable(
+                route = Rutas.DETALLE_RECORDATORIO,
+                arguments = listOf(
+                    navArgument("vehiculoId") { type = NavType.StringType },
+                    navArgument("recordatorioId") { type = NavType.StringType }
+                )
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId") ?: ""
+                val recordatorioId = entrada.arguments?.getString("recordatorioId") ?: ""
+                PantallaDetalleRecordatorio(
+                    recordatorioId = recordatorioId,
+                    alEditar = { _, id ->
+                        controladorNav.navigate(Rutas.formularioRecordatorio(vehiculoId, id))
+                    },
+                    alVolver = { controladorNav.popBackStack() },
+                    alEliminar = { controladorNav.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Rutas.FORMULARIO_RECORDATORIO,
+                arguments = listOf(
+                    navArgument("vehiculoId") { type = NavType.StringType },
+                    navArgument("recordatorioId") { type = NavType.StringType }
+                )
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId") ?: ""
+                val recordatorioId = entrada.arguments?.getString("recordatorioId") ?: "nuevo"
+                PantallaFormularioRecordatorio(
+                    vehiculoId = vehiculoId,
+                    recordatorioId = recordatorioId,
+                    alGuardar = { controladorNav.popBackStack() },
+                    alVolver = { controladorNav.popBackStack() }
+                )
+            }
+
             composable(
                 route = Rutas.DETALLE_GASTO,
                 arguments = listOf(
@@ -338,7 +401,7 @@ fun GrafoNavegacion(
             }
 
             // pantallas placeholder para las secciones que aun no estan implementadas
-            composable(Rutas.MAS_OPCIONES) { PantallaPlaceholder("Mas opciones") }
+            composable(Rutas.ESTADISTICAS) { PantallaPlaceholder("Estadisticas") }
         }
     }
 }

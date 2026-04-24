@@ -7,6 +7,7 @@ import com.gestcar.datos.basedatos.GestCarBaseDatos
 import com.gestcar.datos.entidades.Vehiculo
 import com.gestcar.datos.repositorio.GastoPeriodicoRepositorio
 import com.gestcar.datos.repositorio.MantenimientoRepositorio
+import com.gestcar.datos.repositorio.RecordatorioRepositorio
 import com.gestcar.datos.repositorio.RepostajeRepositorio
 import com.gestcar.datos.repositorio.VehiculoRepositorio
 import kotlinx.coroutines.Job
@@ -30,6 +31,7 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
     private val repostajeRepositorio: RepostajeRepositorio
     private val mantenimientoRepositorio: MantenimientoRepositorio
     private val gastoRepositorio: GastoPeriodicoRepositorio
+    private val recordatorioRepositorio: RecordatorioRepositorio
     private var trabajoCarga: Job? = null
 
     init {
@@ -45,6 +47,10 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
         )
         gastoRepositorio = GastoPeriodicoRepositorio(
             gastoPeriodicoDao = baseDatos.gastoPeriodicoDao(),
+            vehiculoDao = baseDatos.vehiculoDao()
+        )
+        recordatorioRepositorio = RecordatorioRepositorio(
+            recordatorioDao = baseDatos.recordatorioDao(),
             vehiculoDao = baseDatos.vehiculoDao()
         )
     }
@@ -65,6 +71,7 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
                 repostajeRepositorio.sincronizarPendientesDelUsuario(usuarioId)
                 mantenimientoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
                 gastoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
+                recordatorioRepositorio.sincronizarPendientesDelUsuario(usuarioId)
             }
 
             repositorio.obtenerVehiculos(usuarioId).collect { vehiculos ->

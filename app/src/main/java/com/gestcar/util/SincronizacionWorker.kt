@@ -7,6 +7,7 @@ import com.gestcar.datos.basedatos.GestCarBaseDatos
 import com.gestcar.datos.remoto.ClienteSupabase
 import com.gestcar.datos.repositorio.GastoPeriodicoRepositorio
 import com.gestcar.datos.repositorio.MantenimientoRepositorio
+import com.gestcar.datos.repositorio.RecordatorioRepositorio
 import com.gestcar.datos.repositorio.RepostajeRepositorio
 import com.gestcar.datos.repositorio.VehiculoRepositorio
 import io.github.jan.supabase.auth.auth
@@ -45,17 +46,23 @@ class SincronizacionWorker(
                 gastoPeriodicoDao = baseDatos.gastoPeriodicoDao(),
                 vehiculoDao = baseDatos.vehiculoDao()
             )
+            val recordatorioRepositorio = RecordatorioRepositorio(
+                recordatorioDao = baseDatos.recordatorioDao(),
+                vehiculoDao = baseDatos.vehiculoDao()
+            )
 
             val resultadoVehiculos = vehiculoRepositorio.sincronizar(usuarioId)
             val resultadoRepostajes = repostajeRepositorio.sincronizarPendientesDelUsuario(usuarioId)
             val resultadoMantenimientos = mantenimientoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
             val resultadoGastos = gastoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
+            val resultadoRecordatorios = recordatorioRepositorio.sincronizarPendientesDelUsuario(usuarioId)
 
             if (
                 resultadoVehiculos.isFailure ||
                 resultadoRepostajes.isFailure ||
                 resultadoMantenimientos.isFailure ||
-                resultadoGastos.isFailure
+                resultadoGastos.isFailure ||
+                resultadoRecordatorios.isFailure
             ) {
                 Result.retry()
             } else {
