@@ -45,6 +45,7 @@ import com.gestcar.ui.viewmodel.VehiculoActivoViewModel
 @Composable
 fun PantallaListaRecordatorios(
     usuarioId: String,
+    vehiculoInicialId: String? = null,
     alCrearRecordatorio: (String) -> Unit,
     alVerDetalleRecordatorio: (String, String) -> Unit,
     alVolver: () -> Unit,
@@ -55,8 +56,8 @@ fun PantallaListaRecordatorios(
     val estadoRecordatorios by recordatorioViewModel.estadoLista.collectAsState()
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
 
-    LaunchedEffect(usuarioId) {
-        vehiculoActivoViewModel.cargarVehiculos(usuarioId)
+    LaunchedEffect(usuarioId, vehiculoInicialId) {
+        vehiculoActivoViewModel.cargarVehiculos(usuarioId, vehiculoInicialId)
     }
 
     LaunchedEffect(vehiculoActivo?.id) {

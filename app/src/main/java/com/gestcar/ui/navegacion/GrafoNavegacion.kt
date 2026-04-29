@@ -90,7 +90,8 @@ fun GrafoNavegacion(
     // miramos la ruta actual para saber si mostramos la barra inferior
     val entradaActual by controladorNav.currentBackStackEntryAsState()
     val rutaActual = entradaActual?.destination?.route
-    val mostrarBarraInferior = rutaActual in rutasConBarraInferior
+    val rutaPrincipalActual = rutaPrincipalDeBarra(rutaActual)
+    val mostrarBarraInferior = rutaPrincipalActual in rutasConBarraInferior
 
     LaunchedEffect(estadoAuth.modoRestablecerContrasena, rutaActual) {
         if (estadoAuth.modoRestablecerContrasena && rutaActual != Rutas.RESTABLECER_CONTRASENA) {
@@ -193,10 +194,10 @@ fun GrafoNavegacion(
                     },
                     alVolver = { controladorNav.popBackStack() },
                     alEliminar = { controladorNav.popBackStack() },
-                    alVerRepostajes = { controladorNav.navegarASeccionPrincipal(Rutas.REPOSTAJES) },
-                    alVerMantenimientos = { controladorNav.navegarASeccionPrincipal(Rutas.MANTENIMIENTO) },
-                    alVerGastos = { controladorNav.navegarASeccionPrincipal(Rutas.GASTOS) },
-                    alVerRecordatorios = { controladorNav.navigate(Rutas.RECORDATORIOS) }
+                    alVerRepostajes = { controladorNav.navigate(Rutas.repostajesVehiculo(vehiculoId)) },
+                    alVerMantenimientos = { controladorNav.navigate(Rutas.mantenimientoVehiculo(vehiculoId)) },
+                    alVerGastos = { controladorNav.navigate(Rutas.gastosVehiculo(vehiculoId)) },
+                    alVerRecordatorios = { controladorNav.navigate(Rutas.recordatoriosVehiculo(vehiculoId)) }
                 )
             }
 
@@ -208,6 +209,23 @@ fun GrafoNavegacion(
                     },
                     alVerDetalleRepostaje = { vehiculoId, repostajeId ->
                         controladorNav.navigate(Rutas.detalleRepostaje(vehiculoId, repostajeId))
+                    }
+                )
+            }
+
+            composable(
+                route = Rutas.REPOSTAJES_VEHICULO,
+                arguments = listOf(navArgument("vehiculoId") { type = NavType.StringType })
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId")
+                PantallaListaRepostajes(
+                    usuarioId = usuarioId,
+                    vehiculoInicialId = vehiculoId,
+                    alCrearRepostaje = { id ->
+                        controladorNav.navigate(Rutas.formularioRepostaje(id))
+                    },
+                    alVerDetalleRepostaje = { id, repostajeId ->
+                        controladorNav.navigate(Rutas.detalleRepostaje(id, repostajeId))
                     }
                 )
             }
@@ -224,6 +242,23 @@ fun GrafoNavegacion(
                 )
             }
 
+            composable(
+                route = Rutas.MANTENIMIENTO_VEHICULO,
+                arguments = listOf(navArgument("vehiculoId") { type = NavType.StringType })
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId")
+                PantallaListaMantenimientos(
+                    usuarioId = usuarioId,
+                    vehiculoInicialId = vehiculoId,
+                    alCrearMantenimiento = { id ->
+                        controladorNav.navigate(Rutas.formularioMantenimiento(id))
+                    },
+                    alVerDetalleMantenimiento = { id, mantenimientoId ->
+                        controladorNav.navigate(Rutas.detalleMantenimiento(id, mantenimientoId))
+                    }
+                )
+            }
+
             composable(Rutas.GASTOS) {
                 PantallaListaGastos(
                     usuarioId = usuarioId,
@@ -232,6 +267,23 @@ fun GrafoNavegacion(
                     },
                     alVerDetalleGasto = { vehiculoId, gastoId ->
                         controladorNav.navigate(Rutas.detalleGasto(vehiculoId, gastoId))
+                    }
+                )
+            }
+
+            composable(
+                route = Rutas.GASTOS_VEHICULO,
+                arguments = listOf(navArgument("vehiculoId") { type = NavType.StringType })
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId")
+                PantallaListaGastos(
+                    usuarioId = usuarioId,
+                    vehiculoInicialId = vehiculoId,
+                    alCrearGasto = { id ->
+                        controladorNav.navigate(Rutas.formularioGasto(id))
+                    },
+                    alVerDetalleGasto = { id, gastoId ->
+                        controladorNav.navigate(Rutas.detalleGasto(id, gastoId))
                     }
                 )
             }
@@ -256,6 +308,24 @@ fun GrafoNavegacion(
                     },
                     alVerDetalleRecordatorio = { vehiculoId, recordatorioId ->
                         controladorNav.navigate(Rutas.detalleRecordatorio(vehiculoId, recordatorioId))
+                    },
+                    alVolver = { controladorNav.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Rutas.RECORDATORIOS_VEHICULO,
+                arguments = listOf(navArgument("vehiculoId") { type = NavType.StringType })
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId")
+                PantallaListaRecordatorios(
+                    usuarioId = usuarioId,
+                    vehiculoInicialId = vehiculoId,
+                    alCrearRecordatorio = { id ->
+                        controladorNav.navigate(Rutas.formularioRecordatorio(id))
+                    },
+                    alVerDetalleRecordatorio = { id, recordatorioId ->
+                        controladorNav.navigate(Rutas.detalleRecordatorio(id, recordatorioId))
                     },
                     alVolver = { controladorNav.popBackStack() }
                 )
@@ -427,7 +497,7 @@ fun BarraNavegacionInferior(
             NavigationBarItem(
                 icon = { Icon(elemento.icono, contentDescription = elemento.titulo) },
                 label = { Text(elemento.titulo) },
-                selected = rutaActual == elemento.ruta,
+                selected = rutaActual == elemento.ruta || rutaPrincipalDeBarra(rutaActual) == elemento.ruta,
                 onClick = {
                     controladorNav.navegarASeccionPrincipal(elemento.ruta)
                 }
@@ -436,9 +506,20 @@ fun BarraNavegacionInferior(
     }
 }
 
+private fun rutaPrincipalDeBarra(ruta: String?): String? {
+    return when (ruta) {
+        Rutas.LISTA_VEHICULOS -> Rutas.LISTA_VEHICULOS
+        Rutas.GASTOS, Rutas.GASTOS_VEHICULO -> Rutas.GASTOS
+        Rutas.REPOSTAJES, Rutas.REPOSTAJES_VEHICULO -> Rutas.REPOSTAJES
+        Rutas.MANTENIMIENTO, Rutas.MANTENIMIENTO_VEHICULO -> Rutas.MANTENIMIENTO
+        Rutas.MAS_OPCIONES -> Rutas.MAS_OPCIONES
+        else -> null
+    }
+}
+
 private fun NavHostController.navegarASeccionPrincipal(ruta: String) {
     val rutaActual = currentBackStackEntry?.destination?.route
-    if (rutaActual == ruta) {
+    if (rutaPrincipalDeBarra(rutaActual) == ruta) {
         return
     }
 

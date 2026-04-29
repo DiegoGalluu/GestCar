@@ -48,6 +48,7 @@ import com.gestcar.ui.viewmodel.VehiculoActivoViewModel
 @Composable
 fun PantallaListaMantenimientos(
     usuarioId: String,
+    vehiculoInicialId: String? = null,
     alCrearMantenimiento: (String) -> Unit,
     alVerDetalleMantenimiento: (String, String) -> Unit,
     mantenimientoViewModel: MantenimientoViewModel = viewModel(),
@@ -58,8 +59,8 @@ fun PantallaListaMantenimientos(
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
     var mostrarRealizadas by remember { mutableStateOf(false) }
 
-    LaunchedEffect(usuarioId) {
-        vehiculoActivoViewModel.cargarVehiculos(usuarioId)
+    LaunchedEffect(usuarioId, vehiculoInicialId) {
+        vehiculoActivoViewModel.cargarVehiculos(usuarioId, vehiculoInicialId)
     }
 
     LaunchedEffect(vehiculoActivo?.id) {

@@ -44,6 +44,7 @@ import com.gestcar.ui.viewmodel.VehiculoActivoViewModel
 @Composable
 fun PantallaListaRepostajes(
     usuarioId: String,
+    vehiculoInicialId: String? = null,
     alCrearRepostaje: (String) -> Unit,
     alVerDetalleRepostaje: (String, String) -> Unit,
     repostajeViewModel: RepostajeViewModel = viewModel(),
@@ -53,8 +54,8 @@ fun PantallaListaRepostajes(
     val estadoRepostajes by repostajeViewModel.estadoLista.collectAsState()
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
 
-    LaunchedEffect(usuarioId) {
-        vehiculoActivoViewModel.cargarVehiculos(usuarioId)
+    LaunchedEffect(usuarioId, vehiculoInicialId) {
+        vehiculoActivoViewModel.cargarVehiculos(usuarioId, vehiculoInicialId)
     }
 
     LaunchedEffect(vehiculoActivo?.id) {

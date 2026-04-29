@@ -18,6 +18,10 @@ object Rutas {
     const val REPOSTAJES = "repostajes"
     const val MANTENIMIENTO = "mantenimiento"
     const val MAS_OPCIONES = "mas_opciones"
+    const val GASTOS_VEHICULO = "gastos/{vehiculoId}"
+    const val REPOSTAJES_VEHICULO = "repostajes/{vehiculoId}"
+    const val MANTENIMIENTO_VEHICULO = "mantenimiento/{vehiculoId}"
+    const val RECORDATORIOS_VEHICULO = "recordatorios/{vehiculoId}"
 
     // pantallas secundarias de gestion
     const val FORMULARIO_REPOSTAJE = "formulario_repostaje/{vehiculoId}/{repostajeId}"
@@ -41,11 +45,17 @@ object Rutas {
     fun formularioRepostaje(vehiculoId: String, repostajeId: String = "nuevo") =
         "formulario_repostaje/$vehiculoId/$repostajeId"
 
+    fun repostajesVehiculo(vehiculoId: String) =
+        "repostajes/$vehiculoId"
+
     fun detalleRepostaje(vehiculoId: String, repostajeId: String) =
         "detalle_repostaje/$vehiculoId/$repostajeId"
 
     fun formularioMantenimiento(vehiculoId: String, mantenimientoId: String = "nuevo") =
         "formulario_mantenimiento/$vehiculoId/$mantenimientoId"
+
+    fun mantenimientoVehiculo(vehiculoId: String) =
+        "mantenimiento/$vehiculoId"
 
     fun detalleMantenimiento(vehiculoId: String, mantenimientoId: String) =
         "detalle_mantenimiento/$vehiculoId/$mantenimientoId"
@@ -53,11 +63,17 @@ object Rutas {
     fun formularioGasto(vehiculoId: String, gastoId: String = "nuevo") =
         "formulario_gasto/$vehiculoId/$gastoId"
 
+    fun gastosVehiculo(vehiculoId: String) =
+        "gastos/$vehiculoId"
+
     fun detalleGasto(vehiculoId: String, gastoId: String) =
         "detalle_gasto/$vehiculoId/$gastoId"
 
     fun formularioRecordatorio(vehiculoId: String, recordatorioId: String = "nuevo") =
         "formulario_recordatorio/$vehiculoId/$recordatorioId"
+
+    fun recordatoriosVehiculo(vehiculoId: String) =
+        "recordatorios/$vehiculoId"
 
     fun detalleRecordatorio(vehiculoId: String, recordatorioId: String) =
         "detalle_recordatorio/$vehiculoId/$recordatorioId"

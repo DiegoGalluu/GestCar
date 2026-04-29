@@ -50,6 +50,7 @@ import com.gestcar.ui.viewmodel.VehiculoActivoViewModel
 @Composable
 fun PantallaListaGastos(
     usuarioId: String,
+    vehiculoInicialId: String? = null,
     alCrearGasto: (String) -> Unit,
     alVerDetalleGasto: (String, String) -> Unit,
     gastoViewModel: GastoPeriodicoViewModel = viewModel(),
@@ -60,8 +61,8 @@ fun PantallaListaGastos(
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
     var mostrarPagados by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(usuarioId) {
-        vehiculoActivoViewModel.cargarVehiculos(usuarioId)
+    LaunchedEffect(usuarioId, vehiculoInicialId) {
+        vehiculoActivoViewModel.cargarVehiculos(usuarioId, vehiculoInicialId)
     }
 
     LaunchedEffect(vehiculoActivo?.id) {

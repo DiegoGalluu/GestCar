@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 data class EstadoVehiculoActivo(
     val vehiculos: List<Vehiculo> = emptyList(),
     val vehiculoActivo: Vehiculo? = null,
+    val vehiculoPreferidoId: String? = null,
     val estaCargando: Boolean = false,
     val mensajeError: String? = null
 )
@@ -58,10 +59,14 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
     private val _estado = MutableStateFlow(EstadoVehiculoActivo())
     val estado: StateFlow<EstadoVehiculoActivo> = _estado.asStateFlow()
 
-    fun cargarVehiculos(usuarioId: String) {
+    fun cargarVehiculos(usuarioId: String, vehiculoPreferidoId: String? = null) {
         trabajoCarga?.cancel()
         trabajoCarga = viewModelScope.launch {
-            _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
+            _estado.value = _estado.value.copy(
+                vehiculoPreferidoId = vehiculoPreferidoId ?: _estado.value.vehiculoPreferidoId,
+                estaCargando = true,
+                mensajeError = null
+            )
 
             val resultadoSincronizacion = repositorio.sincronizar(usuarioId)
 
@@ -76,8 +81,10 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
 
             repositorio.obtenerVehiculos(usuarioId).collect { vehiculos ->
                 val vehiculoActual = _estado.value.vehiculoActivo
+                val preferidoId = _estado.value.vehiculoPreferidoId
                 val vehiculoActivo = when {
                     vehiculos.isEmpty() -> null
+                    preferidoId != null && vehiculos.any { it.id == preferidoId } -> vehiculos.first { it.id == preferidoId }
                     vehiculoActual == null -> vehiculos.first()
                     vehiculos.none { it.id == vehiculoActual.id } -> vehiculos.first()
                     else -> vehiculos.first { it.id == vehiculoActual.id }
@@ -86,6 +93,7 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
                 _estado.value = EstadoVehiculoActivo(
                     vehiculos = vehiculos,
                     vehiculoActivo = vehiculoActivo,
+                    vehiculoPreferidoId = preferidoId,
                     estaCargando = false,
                     mensajeError = resultadoSincronizacion.exceptionOrNull()?.message
                 )
@@ -94,6 +102,9 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
     }
 
     fun seleccionarVehiculo(vehiculo: Vehiculo) {
-        _estado.value = _estado.value.copy(vehiculoActivo = vehiculo)
+        _estado.value = _estado.value.copy(
+            vehiculoActivo = vehiculo,
+            vehiculoPreferidoId = vehiculo.id
+        )
     }
 }
