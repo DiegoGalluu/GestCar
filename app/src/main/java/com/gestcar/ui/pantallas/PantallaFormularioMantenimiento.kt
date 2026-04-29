@@ -42,6 +42,9 @@ import com.gestcar.ui.viewmodel.CATEGORIA_MANTENIMIENTO
 import com.gestcar.ui.viewmodel.CATEGORIA_REPARACION
 import com.gestcar.ui.viewmodel.MantenimientoViewModel
 import com.gestcar.ui.viewmodel.tiposMantenimientoPredefinidos
+import com.gestcar.util.limpiarEntradaDecimal
+import com.gestcar.util.parsearDecimalFlexible
+import com.gestcar.util.textoDecimalEditable
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +60,7 @@ fun PantallaFormularioMantenimiento(
     val mantenimiento = estado.mantenimiento
     var intentoGuardar by remember { mutableStateOf(false) }
     var mostrarSugerencias by remember { mutableStateOf(false) }
+    var costeTexto by remember { mutableStateOf("") }
     val tipoVacio = mantenimiento.tipo.isBlank()
     val faltaTipo = intentoGuardar && tipoVacio
     val faltanCamposObligatorios = tipoVacio
@@ -67,6 +71,10 @@ fun PantallaFormularioMantenimiento(
         } else {
             viewModel.cargarParaEditar(mantenimientoId)
         }
+    }
+
+    LaunchedEffect(mantenimiento.id) {
+        costeTexto = textoDecimalEditable(mantenimiento.coste)
     }
 
     LaunchedEffect(estado.guardadoExitoso) {
@@ -172,10 +180,12 @@ fun PantallaFormularioMantenimiento(
             )
 
             OutlinedTextField(
-                value = if (mantenimiento.coste > 0) mantenimiento.coste.toString() else "",
+                value = costeTexto,
                 onValueChange = {
+                    val textoLimpio = limpiarEntradaDecimal(it)
+                    costeTexto = textoLimpio
                     viewModel.actualizarFormulario(
-                        mantenimiento.copy(coste = it.replace(",", ".").toDoubleOrNull() ?: 0.0)
+                        mantenimiento.copy(coste = parsearDecimalFlexible(textoLimpio) ?: 0.0)
                     )
                 },
                 label = { Text(if (mantenimiento.realizado) "Coste" else "Coste estimado") },

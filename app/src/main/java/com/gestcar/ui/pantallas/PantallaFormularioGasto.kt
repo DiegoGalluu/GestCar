@@ -52,6 +52,9 @@ import com.gestcar.ui.viewmodel.PERIODICIDAD_SEMESTRAL
 import com.gestcar.ui.viewmodel.PERIODICIDAD_TRIMESTRAL
 import com.gestcar.ui.viewmodel.PERIODICIDAD_UNICO
 import com.gestcar.ui.viewmodel.conceptosGastoPredefinidos
+import com.gestcar.util.limpiarEntradaDecimal
+import com.gestcar.util.parsearDecimalFlexible
+import com.gestcar.util.textoDecimalEditable
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -67,6 +70,7 @@ fun PantallaFormularioGasto(
     val gasto = estado.gasto
     var intentoGuardar by remember { mutableStateOf(false) }
     var mostrarSugerencias by remember { mutableStateOf(false) }
+    var importeTexto by remember { mutableStateOf("") }
     val conceptoVacio = gasto.concepto.isBlank()
     val importeVacio = gasto.importe <= 0
     val faltaConcepto = intentoGuardar && conceptoVacio
@@ -79,6 +83,10 @@ fun PantallaFormularioGasto(
         } else {
             viewModel.cargarParaEditar(gastoId)
         }
+    }
+
+    LaunchedEffect(gasto.id) {
+        importeTexto = textoDecimalEditable(gasto.importe)
     }
 
     LaunchedEffect(estado.guardadoExitoso) {
@@ -145,10 +153,12 @@ fun PantallaFormularioGasto(
             }
 
             OutlinedTextField(
-                value = if (gasto.importe > 0) gasto.importe.toString() else "",
+                value = importeTexto,
                 onValueChange = {
+                    val textoLimpio = limpiarEntradaDecimal(it)
+                    importeTexto = textoLimpio
                     viewModel.actualizarFormulario(
-                        gasto.copy(importe = it.replace(",", ".").toDoubleOrNull() ?: 0.0)
+                        gasto.copy(importe = parsearDecimalFlexible(textoLimpio) ?: 0.0)
                     )
                 },
                 label = { Text("Importe *") },

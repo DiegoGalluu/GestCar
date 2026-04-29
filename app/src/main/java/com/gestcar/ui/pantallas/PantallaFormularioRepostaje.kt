@@ -42,6 +42,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.CampoFecha
 import com.gestcar.ui.viewmodel.RepostajeViewModel
+import com.gestcar.util.limpiarEntradaDecimal
+import com.gestcar.util.parsearDecimalFlexible
+import com.gestcar.util.textoDecimalEditable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +59,8 @@ fun PantallaFormularioRepostaje(
     val esNuevo = repostajeId == "nuevo"
     val repostaje = estado.repostaje
     var intentoGuardar by remember { mutableStateOf(false) }
+    var litrosTexto by remember { mutableStateOf("") }
+    var precioPorLitroTexto by remember { mutableStateOf("") }
     val kilometrosVacios = repostaje.kilometros <= 0
     val litrosVacios = repostaje.litros <= 0
     val precioPorLitroVacio = repostaje.precioPorLitro <= 0
@@ -70,6 +75,11 @@ fun PantallaFormularioRepostaje(
         } else {
             viewModel.cargarParaEditar(repostajeId)
         }
+    }
+
+    LaunchedEffect(repostaje.id) {
+        litrosTexto = textoDecimalEditable(repostaje.litros)
+        precioPorLitroTexto = textoDecimalEditable(repostaje.precioPorLitro)
     }
 
     LaunchedEffect(estado.guardadoExitoso) {
@@ -118,10 +128,12 @@ fun PantallaFormularioRepostaje(
             )
 
             OutlinedTextField(
-                value = if (repostaje.litros > 0) repostaje.litros.toString() else "",
+                value = litrosTexto,
                 onValueChange = {
+                    val textoLimpio = limpiarEntradaDecimal(it)
+                    litrosTexto = textoLimpio
                     viewModel.actualizarFormulario(
-                        repostaje.copy(litros = it.replace(",", ".").toDoubleOrNull() ?: 0.0)
+                        repostaje.copy(litros = parsearDecimalFlexible(textoLimpio) ?: 0.0)
                     )
                 },
                 label = { Text("Litros *") },
@@ -132,10 +144,12 @@ fun PantallaFormularioRepostaje(
             )
 
             OutlinedTextField(
-                value = if (repostaje.precioPorLitro > 0) repostaje.precioPorLitro.toString() else "",
+                value = precioPorLitroTexto,
                 onValueChange = {
+                    val textoLimpio = limpiarEntradaDecimal(it)
+                    precioPorLitroTexto = textoLimpio
                     viewModel.actualizarFormulario(
-                        repostaje.copy(precioPorLitro = it.replace(",", ".").toDoubleOrNull() ?: 0.0)
+                        repostaje.copy(precioPorLitro = parsearDecimalFlexible(textoLimpio) ?: 0.0)
                     )
                 },
                 label = { Text("Precio por litro *") },
