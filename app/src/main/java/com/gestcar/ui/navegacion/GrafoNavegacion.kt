@@ -193,9 +193,9 @@ fun GrafoNavegacion(
                     },
                     alVolver = { controladorNav.popBackStack() },
                     alEliminar = { controladorNav.popBackStack() },
-                    alVerRepostajes = { controladorNav.navigate(Rutas.REPOSTAJES) },
-                    alVerMantenimientos = { controladorNav.navigate(Rutas.MANTENIMIENTO) },
-                    alVerGastos = { controladorNav.navigate(Rutas.GASTOS) },
+                    alVerRepostajes = { controladorNav.navegarASeccionPrincipal(Rutas.REPOSTAJES) },
+                    alVerMantenimientos = { controladorNav.navegarASeccionPrincipal(Rutas.MANTENIMIENTO) },
+                    alVerGastos = { controladorNav.navegarASeccionPrincipal(Rutas.GASTOS) },
                     alVerRecordatorios = { controladorNav.navigate(Rutas.RECORDATORIOS) }
                 )
             }
@@ -429,14 +429,23 @@ fun BarraNavegacionInferior(
                 label = { Text(elemento.titulo) },
                 selected = rutaActual == elemento.ruta,
                 onClick = {
-                    // navegamos a la ruta del elemento, evitando duplicados en la pila
-                    controladorNav.navigate(elemento.ruta) {
-                        popUpTo(Rutas.LISTA_VEHICULOS) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    controladorNav.navegarASeccionPrincipal(elemento.ruta)
                 }
             )
         }
+    }
+}
+
+private fun NavHostController.navegarASeccionPrincipal(ruta: String) {
+    val rutaActual = currentBackStackEntry?.destination?.route
+    if (rutaActual == ruta) {
+        return
+    }
+
+    navigate(ruta) {
+        popUpTo(Rutas.LISTA_VEHICULOS) {
+            inclusive = false
+        }
+        launchSingleTop = true
     }
 }
