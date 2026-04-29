@@ -1,5 +1,6 @@
 package com.gestcar.ui.pantallas
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,12 +24,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -53,6 +56,7 @@ fun PantallaListaMantenimientos(
     val estadoVehiculo by vehiculoActivoViewModel.estado.collectAsState()
     val estadoMantenimientos by mantenimientoViewModel.estadoLista.collectAsState()
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
+    var mostrarRealizadas by remember { mutableStateOf(false) }
 
     LaunchedEffect(usuarioId) {
         vehiculoActivoViewModel.cargarVehiculos(usuarioId)
@@ -117,19 +121,73 @@ fun PantallaListaMantenimientos(
                 }
 
                 else -> {
+                    val pendientes = estadoMantenimientos.mantenimientosPendientes
+                    val realizadas = estadoMantenimientos.mantenimientosRealizados
+
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(estadoMantenimientos.mantenimientosFiltrados) { mantenimiento ->
+                        if (pendientes.isNotEmpty()) {
+                            item { EncabezadoSeccionMantenimientos("Pendientes") }
+                        }
+
+                        items(pendientes) { mantenimiento ->
                             TarjetaMantenimiento(
                                 mantenimiento = mantenimiento,
                                 alPulsar = { alVerDetalleMantenimiento(mantenimiento.vehiculoId, mantenimiento.id) }
                             )
                         }
+
+                        if (realizadas.isNotEmpty()) {
+                            item {
+                                EncabezadoSeccionMantenimientos(
+                                    titulo = "Realizadas (${realizadas.size})",
+                                    estaDesplegada = mostrarRealizadas,
+                                    alPulsar = { mostrarRealizadas = !mostrarRealizadas }
+                                )
+                            }
+
+                            if (mostrarRealizadas) {
+                                items(realizadas) { mantenimiento ->
+                                    TarjetaMantenimiento(
+                                        mantenimiento = mantenimiento,
+                                        alPulsar = { alVerDetalleMantenimiento(mantenimiento.vehiculoId, mantenimiento.id) }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EncabezadoSeccionMantenimientos(
+    titulo: String,
+    estaDesplegada: Boolean? = null,
+    alPulsar: (() -> Unit)? = null
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (alPulsar != null) Modifier.clickable { alPulsar() } else Modifier)
+            .padding(top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            text = titulo,
+            style = MaterialTheme.typography.titleMedium
+        )
+        estaDesplegada?.let {
+            Text(
+                text = if (it) "v" else ">",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

@@ -18,6 +18,10 @@ data class MantenimientoDto(
     val coste: Double = 0.0,
     val taller: String? = null,
     val descripcion: String? = null,
+    val realizado: Boolean = true,
+
+    @SerialName("fecha_realizado")
+    val fechaRealizado: Long? = null,
 
     @SerialName("actualizado_en")
     val actualizadoEn: Long = 0
@@ -33,6 +37,8 @@ fun Mantenimiento.aDto(): MantenimientoDto = MantenimientoDto(
     coste = coste,
     taller = taller,
     descripcion = descripcion,
+    realizado = realizado,
+    fechaRealizado = fechaRealizado,
     actualizadoEn = actualizadoEn
 )
 
@@ -46,5 +52,7 @@ fun MantenimientoDto.aEntidad(): Mantenimiento = Mantenimiento(
     coste = coste,
     taller = taller,
     descripcion = descripcion,
+    realizado = realizado,
+    fechaRealizado = fechaRealizado,
     actualizadoEn = actualizadoEn
 )

@@ -15,21 +15,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -117,7 +111,7 @@ fun PantallaFormularioMantenimiento(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = if (mostrarSugerencias) "▼" else "▶",
+                    text = if (mostrarSugerencias) "v" else ">",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -138,13 +132,25 @@ fun PantallaFormularioMantenimiento(
                 }
             }
 
+            SelectorEstadoMantenimiento(
+                realizado = mantenimiento.realizado,
+                alSeleccionar = {
+                    viewModel.actualizarFormulario(
+                        mantenimiento.copy(
+                            realizado = it,
+                            fechaRealizado = if (it) mantenimiento.fechaRealizado else null
+                        )
+                    )
+                }
+            )
+
             SelectorCategoriaMantenimiento(
                 categoria = mantenimiento.categoria,
                 alSeleccionar = { viewModel.actualizarFormulario(mantenimiento.copy(categoria = it)) }
             )
 
             CampoFecha(
-                etiqueta = "Fecha *",
+                etiqueta = if (mantenimiento.realizado) "Fecha *" else "Fecha prevista o detección *",
                 fecha = mantenimiento.fecha,
                 alSeleccionarFecha = {
                     viewModel.actualizarFormulario(mantenimiento.copy(fecha = it))
@@ -172,7 +178,7 @@ fun PantallaFormularioMantenimiento(
                         mantenimiento.copy(coste = it.replace(",", ".").toDoubleOrNull() ?: 0.0)
                     )
                 },
-                label = { Text("Coste") },
+                label = { Text(if (mantenimiento.realizado) "Coste" else "Coste estimado") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
@@ -232,6 +238,25 @@ fun PantallaFormularioMantenimiento(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SelectorEstadoMantenimiento(
+    realizado: Boolean,
+    alSeleccionar: (Boolean) -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(
+            selected = !realizado,
+            onClick = { alSeleccionar(false) },
+            label = { Text("Pendiente") }
+        )
+        FilterChip(
+            selected = realizado,
+            onClick = { alSeleccionar(true) },
+            label = { Text("Realizada") }
+        )
     }
 }
 

@@ -10,23 +10,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,7 +39,6 @@ import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.viewmodel.CATEGORIA_REPARACION
 import com.gestcar.ui.viewmodel.MantenimientoViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaDetalleMantenimiento(
     mantenimientoId: String,
@@ -89,7 +85,7 @@ fun PantallaDetalleMantenimiento(
             Icon(
                 imageVector = if (esReparacion) Icons.Default.Warning else Icons.Default.Build,
                 contentDescription = null,
-                tint = if (esReparacion) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -99,7 +95,11 @@ fun PantallaDetalleMantenimiento(
                 style = MaterialTheme.typography.headlineMedium
             )
             Text(
-                text = if (esReparacion) "Reparación" else "Mantenimiento",
+                text = buildString {
+                    append(if (esReparacion) "Reparación" else "Mantenimiento")
+                    append(" · ")
+                    append(if (mantenimiento.realizado) "Realizada" else "Pendiente")
+                },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -114,11 +114,32 @@ fun PantallaDetalleMantenimiento(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    FilaDato("Fecha", formatearFecha(mantenimiento.fecha))
-                    mantenimiento.kilometros?.let { FilaDato("Kilómetros", "${String.format("%,.0f", it)} km") }
-                    FilaDato("Coste", if (mantenimiento.coste > 0) "${String.format("%.2f", mantenimiento.coste)} €" else "Sin coste")
+                    FilaDato(
+                        if (mantenimiento.realizado) "Fecha" else "Fecha prevista o detección",
+                        formatearFecha(mantenimiento.fecha)
+                    )
+                    mantenimiento.fechaRealizado?.let {
+                        FilaDato("Marcada como realizada", formatearFecha(it))
+                    }
+                    mantenimiento.kilometros?.let {
+                        FilaDato("Kilómetros", "${String.format("%,.0f", it)} km")
+                    }
+                    FilaDato(
+                        if (mantenimiento.realizado) "Coste" else "Coste estimado",
+                        if (mantenimiento.coste > 0) "${String.format("%.2f", mantenimiento.coste)} €" else "Sin coste"
+                    )
                     mantenimiento.taller?.takeIf { it.isNotBlank() }?.let { FilaDato("Taller", it) }
                     BloqueComentarios(mantenimiento.descripcion?.takeIf { it.isNotBlank() } ?: "Sin comentarios")
+                }
+            }
+
+            if (mantenimiento.id.isNotBlank()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { viewModel.cambiarEstadoRealizado(mantenimiento) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (mantenimiento.realizado) "Marcar como pendiente" else "Marcar como realizada")
                 }
             }
         }

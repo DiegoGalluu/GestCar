@@ -42,12 +42,21 @@ data class EstadoListaMantenimientos(
     val estaCargando: Boolean = false,
     val mensajeError: String? = null
 ) {
-    val mantenimientosFiltrados: List<Mantenimiento>
+    private val mantenimientosPorCategoria: List<Mantenimiento>
         get() = when (filtroCategoria) {
             CATEGORIA_MANTENIMIENTO -> mantenimientos.filter { it.categoria == CATEGORIA_MANTENIMIENTO }
             CATEGORIA_REPARACION -> mantenimientos.filter { it.categoria == CATEGORIA_REPARACION }
             else -> mantenimientos
         }
+
+    val mantenimientosFiltrados: List<Mantenimiento>
+        get() = mantenimientosPorCategoria
+
+    val mantenimientosPendientes: List<Mantenimiento>
+        get() = mantenimientosPorCategoria.filter { !it.realizado }
+
+    val mantenimientosRealizados: List<Mantenimiento>
+        get() = mantenimientosPorCategoria.filter { it.realizado }
 }
 
 data class EstadoFormularioMantenimiento(
@@ -98,7 +107,9 @@ class MantenimientoViewModel(aplicacion: Application) : AndroidViewModel(aplicac
         _estadoFormulario.value = EstadoFormularioMantenimiento(
             mantenimiento = Mantenimiento(
                 id = UUID.randomUUID().toString(),
-                vehiculoId = vehiculoId
+                vehiculoId = vehiculoId,
+                realizado = false,
+                fechaRealizado = null
             )
         )
     }
@@ -152,6 +163,27 @@ class MantenimientoViewModel(aplicacion: Application) : AndroidViewModel(aplicac
     fun eliminarMantenimiento(mantenimiento: Mantenimiento) {
         viewModelScope.launch {
             repositorio.eliminar(mantenimiento)
+            PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
+        }
+    }
+
+    fun cambiarEstadoRealizado(mantenimiento: Mantenimiento) {
+        viewModelScope.launch {
+            val ahora = System.currentTimeMillis()
+            val mantenimientoActualizado = if (mantenimiento.realizado) {
+                mantenimiento.copy(
+                    realizado = false,
+                    fechaRealizado = null
+                )
+            } else {
+                mantenimiento.copy(
+                    realizado = true,
+                    fechaRealizado = ahora
+                )
+            }
+
+            repositorio.guardar(mantenimientoActualizado)
+            _estadoFormulario.value = _estadoFormulario.value.copy(mantenimiento = mantenimientoActualizado)
             PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
         }
     }

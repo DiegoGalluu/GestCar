@@ -44,7 +44,7 @@ fun TarjetaMantenimiento(
             Icon(
                 imageVector = if (esReparacion) Icons.Default.Warning else Icons.Default.Build,
                 contentDescription = null,
-                tint = if (esReparacion) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Column(modifier = Modifier.weight(1f)) {
@@ -67,7 +67,7 @@ fun TarjetaMantenimiento(
             }
 
             Text(
-                text = "${String.format("%.2f", mantenimiento.coste)} €",
+                text = textoCosteMantenimiento(mantenimiento),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.secondary
             )
@@ -79,5 +79,14 @@ private fun textoDetalleMantenimiento(mantenimiento: Mantenimiento): String {
     val kilometros = mantenimiento.kilometros
         ?.let { " · ${String.format("%,.0f", it)} km" }
         .orEmpty()
-    return "${formatearFechaCorta(mantenimiento.fecha)}$kilometros"
+    val estado = if (mantenimiento.realizado) "Realizada" else "Pendiente"
+    return "$estado · ${formatearFechaCorta(mantenimiento.fecha)}$kilometros"
+}
+
+private fun textoCosteMantenimiento(mantenimiento: Mantenimiento): String {
+    return when {
+        mantenimiento.coste > 0 -> "${String.format("%.2f", mantenimiento.coste)} €"
+        mantenimiento.realizado -> "Sin coste"
+        else -> "Sin definir"
+    }
 }

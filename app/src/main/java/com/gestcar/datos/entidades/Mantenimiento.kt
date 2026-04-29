@@ -1,5 +1,6 @@
 package com.gestcar.datos.entidades
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -29,5 +30,8 @@ data class Mantenimiento(
     val coste: Double = 0.0,
     val taller: String? = null,
     val descripcion: String? = null,
+    @ColumnInfo(defaultValue = "1")
+    val realizado: Boolean = true,
+    val fechaRealizado: Long? = null,
     val actualizadoEn: Long = System.currentTimeMillis()
 )

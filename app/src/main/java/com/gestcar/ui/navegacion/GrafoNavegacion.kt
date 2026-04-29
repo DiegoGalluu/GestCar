@@ -192,7 +192,11 @@ fun GrafoNavegacion(
                         controladorNav.navigate(Rutas.formularioVehiculo(vehiculoId))
                     },
                     alVolver = { controladorNav.popBackStack() },
-                    alEliminar = { controladorNav.popBackStack() }
+                    alEliminar = { controladorNav.popBackStack() },
+                    alVerRepostajes = { controladorNav.navigate(Rutas.REPOSTAJES) },
+                    alVerMantenimientos = { controladorNav.navigate(Rutas.MANTENIMIENTO) },
+                    alVerGastos = { controladorNav.navigate(Rutas.GASTOS) },
+                    alVerRecordatorios = { controladorNav.navigate(Rutas.RECORDATORIOS) }
                 )
             }
 
