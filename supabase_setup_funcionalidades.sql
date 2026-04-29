@@ -1,4 +1,4 @@
--- setup de supabase para la fase 2 de gestcar
+-- setup de supabase para las funcionalidades principales de gestcar
 -- es seguro ejecutarlo varias veces porque usa create table if not exists y drop policy if exists
 
 create table if not exists repostajes (

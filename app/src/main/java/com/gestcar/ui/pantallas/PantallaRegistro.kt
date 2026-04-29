@@ -144,10 +144,10 @@ fun PantallaRegistro(
 
         Button(
             onClick = { viewModel.registrarse(email, contrasena) },
-            enabled = !estado.estaCargando
-                    && email.isNotBlank()
-                    && contrasena.isNotBlank()
-                    && contrasena == confirmarContrasena,
+            enabled = !estado.estaCargando &&
+                email.isNotBlank() &&
+                contrasena.isNotBlank() &&
+                contrasena == confirmarContrasena,
             modifier = Modifier.fillMaxWidth()
         ) {
             if (estado.estaCargando) {

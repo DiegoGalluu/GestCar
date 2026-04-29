@@ -1,15 +1,23 @@
-# GestCar - Fase 1
+# GestCar
 
-Aplicacion Android para la gestion de mantenimiento y costes vehiculares.
+Aplicacion Android para la gestion de vehiculos, mantenimientos y costes asociados.
 
-## Que incluye esta fase
+## Funcionalidades
 
-- Autenticacion con Supabase (login y registro con email)
-- CRUD completo de vehiculos (crear, ver, editar, eliminar)
-- Base de datos local con Room (funciona sin internet)
-- Sincronizacion con Supabase (los datos se guardan en la nube)
-- Navegacion con barra inferior (solo vehiculos funcional, el resto proximamente)
-- Tema Material Design 3 con la paleta de colores del documento de diseno
+- Autenticacion con Supabase mediante email y contrasena
+- Recuperacion de contrasena con deep links
+- Persistencia de sesion
+- CRUD completo de vehiculos
+- Fotos de vehiculos desde camara o galeria
+- Gestion de repostajes
+- Gestion de mantenimientos y reparaciones
+- Gestion de gastos periodicos con control de pagos y vencimientos
+- Recordatorios por fecha o kilometraje
+- Base de datos local con Room para uso offline
+- Sincronizacion con Supabase
+- Storage privado para imagenes
+- Navegacion con barra inferior
+- Tema Material Design 3 con paleta personalizada
 
 ## Como configurar
 
@@ -19,12 +27,14 @@ Aplicacion Android para la gestion de mantenimiento y costes vehiculares.
 2. Crea un nuevo proyecto (pon el nombre que quieras y una contrasena para la bd)
 3. Espera a que se cree el proyecto (tarda unos segundos)
 
-### 2. Crear la tabla de vehiculos
+### 2. Crear la base de datos remota
 
 1. En el dashboard de supabase ve a **SQL Editor**
 2. Crea una nueva query
 3. Copia y pega el contenido del archivo `supabase_setup.sql`
-4. Dale a **Run** para ejecutar el script
+4. Dale a **Run** para crear la estructura inicial
+5. Copia y pega el contenido del archivo `supabase_setup_funcionalidades.sql`
+6. Dale a **Run** para crear las tablas de repostajes, mantenimientos, gastos y recordatorios
 
 ### 3. Configurar las credenciales en la app
 
@@ -53,13 +63,7 @@ com.gestcar/
   ui/
     tema/          -> colores y tema material 3
     navegacion/    -> rutas y grafo de navegacion
-    pantallas/     -> pantallas de la app (login, lista, formulario, detalle)
+    pantallas/     -> pantallas de la app
     componentes/   -> componentes reutilizables (tarjeta vehiculo, etc)
     viewmodel/     -> viewmodels con la logica de presentacion
 ```
-
-## Proximas fases
-
-- Fase 2: Repostajes y mantenimientos
-- Fase 3: Gastos periodicos y recordatorios
-- Fase 4: Estadisticas, graficos y exportacion CSV

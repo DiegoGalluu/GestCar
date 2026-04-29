@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
+import java.net.URL
 import kotlin.math.max
 
 private const val MAX_LADO_IMAGEN = 1600
@@ -47,6 +48,39 @@ object GestorImagenesVehiculo {
         bitmap.recycle()
 
         return Uri.fromFile(archivo).toString()
+    }
+
+    fun obtenerUriLocalVehiculo(
+        context: Context,
+        usuarioId: String,
+        vehiculoId: String
+    ): String? {
+        val archivo = File(context.filesDir, "vehiculos_imagenes/$usuarioId/$vehiculoId.jpg")
+        return if (archivo.exists()) {
+            Uri.fromFile(archivo).toString()
+        } else {
+            null
+        }
+    }
+
+    fun guardarImagenRemotaEnCache(
+        context: Context,
+        imagenUrl: String,
+        usuarioId: String,
+        vehiculoId: String
+    ): String? {
+        return try {
+            val directorio = File(context.filesDir, "vehiculos_imagenes/$usuarioId").apply { mkdirs() }
+            val archivo = File(directorio, "$vehiculoId.jpg")
+            URL(imagenUrl).openStream().use { entrada ->
+                FileOutputStream(archivo).use { salida ->
+                    entrada.copyTo(salida)
+                }
+            }
+            Uri.fromFile(archivo).toString()
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun decodificarBitmapReducido(context: Context, uri: Uri): Bitmap? {

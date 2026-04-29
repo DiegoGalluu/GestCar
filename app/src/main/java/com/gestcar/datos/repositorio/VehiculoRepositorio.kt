@@ -157,7 +157,6 @@ class VehiculoRepositorio(
             actualizadoEn = System.currentTimeMillis()
         )
         vehiculoDao.actualizar(vehiculoConImagenRemota)
-        archivoImagen.delete()
         return vehiculoConImagenRemota
     }
 }

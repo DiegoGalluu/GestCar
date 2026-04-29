@@ -119,9 +119,9 @@ fun PantallaRestablecerContrasena(
 
         Button(
             onClick = { viewModel.actualizarContrasena(nuevaContrasena) },
-            enabled = !estado.estaCargando
-                    && nuevaContrasena.isNotBlank()
-                    && nuevaContrasena == confirmarContrasena,
+            enabled = !estado.estaCargando &&
+                nuevaContrasena.isNotBlank() &&
+                nuevaContrasena == confirmarContrasena,
             modifier = Modifier.fillMaxWidth()
         ) {
             if (estado.estaCargando) {

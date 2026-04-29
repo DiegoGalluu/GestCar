@@ -3,8 +3,8 @@ package com.gestcar.ui.pantallas
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
@@ -36,8 +35,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,16 +42,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.entidades.Vehiculo
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
-import com.gestcar.ui.componentes.ImagenVehiculo
 import com.gestcar.ui.componentes.EstadoVisualRecordatorio
+import com.gestcar.ui.componentes.ImagenVehiculo
 import com.gestcar.ui.viewmodel.RecordatorioViewModel
 import com.gestcar.ui.viewmodel.VehiculoViewModel
 import com.gestcar.util.GestorImagenesVehiculo
@@ -108,14 +105,14 @@ fun PantallaDetalleVehiculo(
     Scaffold(
         topBar = {
             BarraSuperiorCompacta(
-                titulo = "Detalle del vehiculo",
+                titulo = "Detalle del vehículo",
                 alVolver = alVolver,
                 acciones = {
                     IconButton(onClick = alEditar) {
-                        Icon(Icons.Default.Edit, contentDescription = "editar vehiculo")
+                        Icon(Icons.Default.Edit, contentDescription = "Editar vehículo")
                     }
                     IconButton(onClick = { mostrarDialogoEliminar = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "eliminar vehiculo")
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar vehículo")
                     }
                 }
             )
@@ -130,9 +127,7 @@ fun PantallaDetalleVehiculo(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
-                    contentAlignment = Alignment.BottomEnd
-                ) {
+                Box(contentAlignment = Alignment.BottomEnd) {
                     ImagenVehiculo(
                         vehiculo = v,
                         modifier = Modifier.size(220.dp),
@@ -146,7 +141,7 @@ fun PantallaDetalleVehiculo(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
-                            contentDescription = "anadir foto",
+                            contentDescription = "Añadir foto",
                             tint = Color.White
                         )
                     }
@@ -156,7 +151,7 @@ fun PantallaDetalleVehiculo(
                         onDismissRequest = { mostrarMenuFoto = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Elegir de la galeria") },
+                            text = { Text("Elegir de la galería") },
                             leadingIcon = {
                                 Icon(Icons.Default.Image, contentDescription = null)
                             },
@@ -186,7 +181,6 @@ fun PantallaDetalleVehiculo(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // nombre del vehiculo
                 Text(
                     text = "${v.marca} ${v.modelo}",
                     style = MaterialTheme.typography.headlineMedium
@@ -200,7 +194,6 @@ fun PantallaDetalleVehiculo(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // tarjeta con los datos principales
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -258,30 +251,6 @@ fun PantallaDetalleVehiculo(
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                // en futuras fases aqui iran las secciones de repostajes, mantenimientos, etc
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Proximamente",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "Aqui se mostraran los repostajes, mantenimientos y estadisticas",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
                 estadoLista.mensajeError?.let { mensaje ->
                     Spacer(modifier = Modifier.height(16.dp))
                     Snackbar {
@@ -296,8 +265,8 @@ fun PantallaDetalleVehiculo(
     if (mostrarDialogoEliminar) {
         AlertDialog(
             onDismissRequest = { mostrarDialogoEliminar = false },
-            title = { Text("Eliminar vehiculo") },
-            text = { Text("Estas seguro de que quieres eliminar este vehiculo? Se borraran todos sus datos asociados") },
+            title = { Text("Eliminar vehículo") },
+            text = { Text("¿Estás seguro de que quieres eliminar este vehículo? Se borrarán todos sus datos asociados.") },
             confirmButton = {
                 TextButton(
                     onClick = {

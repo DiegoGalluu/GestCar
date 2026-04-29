@@ -13,13 +13,13 @@ object Rutas {
     const val FORMULARIO_VEHICULO = "formulario_vehiculo/{vehiculoId}"
     const val DETALLE_VEHICULO = "detalle_vehiculo/{vehiculoId}"
 
-    // pantallas placeholder para futuras fases
+    // secciones principales de la barra inferior
     const val GASTOS = "gastos"
     const val REPOSTAJES = "repostajes"
     const val MANTENIMIENTO = "mantenimiento"
     const val MAS_OPCIONES = "mas_opciones"
 
-    // pantallas de fase 2
+    // pantallas secundarias de gestion
     const val FORMULARIO_REPOSTAJE = "formulario_repostaje/{vehiculoId}/{repostajeId}"
     const val DETALLE_REPOSTAJE = "detalle_repostaje/{vehiculoId}/{repostajeId}"
     const val FORMULARIO_MANTENIMIENTO = "formulario_mantenimiento/{vehiculoId}/{mantenimientoId}"

@@ -56,11 +56,11 @@ data class ElementoNavegacion(
 
 // lista de elementos que aparecen en la barra inferior
 val elementosNavegacion = listOf(
-    ElementoNavegacion(Rutas.LISTA_VEHICULOS, "Vehiculos", Icons.Default.DirectionsCar),
+    ElementoNavegacion(Rutas.LISTA_VEHICULOS, "Vehículos", Icons.Default.DirectionsCar),
     ElementoNavegacion(Rutas.GASTOS, "Gastos", Icons.Default.Payments),
     ElementoNavegacion(Rutas.REPOSTAJES, "Repostajes", Icons.Default.LocalGasStation),
     ElementoNavegacion(Rutas.MANTENIMIENTO, "Mantenim.", Icons.Default.Build),
-    ElementoNavegacion(Rutas.MAS_OPCIONES, "Mas", Icons.Default.MoreHoriz)
+    ElementoNavegacion(Rutas.MAS_OPCIONES, "Más", Icons.Default.MoreHoriz)
 )
 
 // rutas en las que se muestra la barra de navegacion inferior
