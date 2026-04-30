@@ -51,6 +51,12 @@ data class Vehiculo(
     // notas opcionales que el usuario quiera poner
     val notas: String? = null,
 
+    // indica si el vehiculo debe aparecer en el bloque principal de la lista
+    val habitual: Boolean = true,
+
+    // orden elegido por el usuario para priorizar vehiculos en listas y selectores
+    val ordenLista: Int = 0,
+
     // fecha de la ultima modificacion, se usa para la sincronizacion con supabase
     val actualizadoEn: Long = System.currentTimeMillis()
 )

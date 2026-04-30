@@ -39,6 +39,25 @@ class VehiculoRepositorio(
         return vehiculoDao.obtenerPorId(id)
     }
 
+    suspend fun prepararOrganizacionSiEsNuevo(vehiculo: Vehiculo): Vehiculo {
+        if (vehiculoDao.obtenerPorId(vehiculo.id) != null) {
+            return vehiculo
+        }
+
+        val vehiculos = obtenerVehiculosLocales(vehiculo.usuarioId)
+        val hayHabituales = vehiculos.any { it.habitual }
+        val siguienteOrden = (vehiculos.maxOfOrNull { it.ordenLista } ?: -1) + 1
+
+        return vehiculo.copy(
+            habitual = !hayHabituales,
+            ordenLista = siguienteOrden
+        )
+    }
+
+    suspend fun guardarOrganizacion(vehiculos: List<Vehiculo>) {
+        vehiculoDao.actualizarVehiculos(vehiculos)
+    }
+
     // guardar un vehiculo nuevo, primero en local y luego intenta subirlo a supabase
     suspend fun guardar(vehiculo: Vehiculo): Result<Unit> {
         return try {
@@ -99,7 +118,18 @@ class VehiculoRepositorio(
 
             // guardamos cada vehiculo remoto en local, replace si ya existe
             vehiculosRemotos.forEach { dto ->
-                vehiculoDao.insertar(dto.aEntidad())
+                val vehiculoLocal = vehiculoDao.obtenerPorId(dto.id)
+                val vehiculoRemoto = dto.aEntidad()
+                vehiculoDao.insertar(
+                    if (vehiculoLocal != null) {
+                        vehiculoRemoto.copy(
+                            habitual = vehiculoLocal.habitual,
+                            ordenLista = vehiculoLocal.ordenLista
+                        )
+                    } else {
+                        vehiculoRemoto
+                    }
+                )
             }
 
             return Result.success(Unit)

@@ -27,7 +27,7 @@ import com.gestcar.datos.entidades.Vehiculo
         GastoPeriodico::class,
         Recordatorio::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class GestCarBaseDatos : RoomDatabase() {
@@ -222,6 +222,23 @@ abstract class GestCarBaseDatos : RoomDatabase() {
             }
         }
 
+        private val MIGRACION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    ALTER TABLE vehiculos
+                    ADD COLUMN habitual INTEGER NOT NULL DEFAULT 1
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    ALTER TABLE vehiculos
+                    ADD COLUMN ordenLista INTEGER NOT NULL DEFAULT 0
+                    """.trimIndent()
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCIA: GestCarBaseDatos? = null
 
@@ -235,7 +252,8 @@ abstract class GestCarBaseDatos : RoomDatabase() {
                     MIGRACION_1_2,
                     MIGRACION_2_3,
                     MIGRACION_3_4,
-                    MIGRACION_4_5
+                    MIGRACION_4_5,
+                    MIGRACION_5_6
                 ).build()
                 INSTANCIA = instancia
                 instancia

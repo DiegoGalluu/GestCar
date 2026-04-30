@@ -135,7 +135,8 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
                 return@launch
             }
 
-            val resultado = repositorio.guardar(vehiculo)
+            val vehiculoPreparado = repositorio.prepararOrganizacionSiEsNuevo(vehiculo)
+            val resultado = repositorio.guardar(vehiculoPreparado)
             _estadoFormulario.value = if (resultado.isSuccess) {
                 _estadoFormulario.value.copy(
                     estaCargando = false,
@@ -149,6 +150,23 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
                     mensajeError = "Se ha guardado en local, pero Supabase ha rechazado la sincronizacion. ${resultado.exceptionOrNull()?.message ?: ""}".trim()
                 )
             }
+        }
+    }
+
+    fun guardarOrganizacion(vehiculosOrganizados: List<Vehiculo>) {
+        viewModelScope.launch {
+            val ahora = System.currentTimeMillis()
+            val habituales = vehiculosOrganizados.filter { it.habitual }
+            val otros = vehiculosOrganizados.filter { !it.habitual }
+            val listaNormalizada = (habituales + otros).mapIndexed { indice, vehiculo ->
+                vehiculo.copy(
+                    habitual = if (habituales.isEmpty() && indice == 0) true else vehiculo.habitual,
+                    ordenLista = indice,
+                    actualizadoEn = ahora
+                )
+            }
+
+            repositorio.guardarOrganizacion(listaNormalizada)
         }
     }
 

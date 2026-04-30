@@ -15,11 +15,11 @@ interface VehiculoDao {
 
     // obtener todos los vehiculos de un usuario como flow
     // flow hace que la lista se actualice automaticamente cuando hay cambios
-    @Query("SELECT * FROM vehiculos WHERE usuarioId = :usuarioId ORDER BY fechaAlta DESC")
+    @Query("SELECT * FROM vehiculos WHERE usuarioId = :usuarioId ORDER BY habitual DESC, ordenLista ASC, fechaAlta DESC")
     fun obtenerVehiculosPorUsuario(usuarioId: String): Flow<List<Vehiculo>>
 
     // obtener todos los vehiculos de un usuario una sola vez, util para sincronizaciones
-    @Query("SELECT * FROM vehiculos WHERE usuarioId = :usuarioId ORDER BY fechaAlta DESC")
+    @Query("SELECT * FROM vehiculos WHERE usuarioId = :usuarioId ORDER BY habitual DESC, ordenLista ASC, fechaAlta DESC")
     suspend fun obtenerVehiculosPorUsuarioLista(usuarioId: String): List<Vehiculo>
 
     // obtener un vehiculo concreto por su id
@@ -34,6 +34,10 @@ interface VehiculoDao {
     // actualizar un vehiculo existente
     @Update
     suspend fun actualizar(vehiculo: Vehiculo)
+
+    // actualiza varios vehiculos de golpe al guardar la organizacion manual
+    @Update
+    suspend fun actualizarVehiculos(vehiculos: List<Vehiculo>)
 
     // eliminar un vehiculo
     @Delete

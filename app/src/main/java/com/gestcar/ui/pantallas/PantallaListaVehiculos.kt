@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,16 +22,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gestcar.datos.entidades.Vehiculo
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.TarjetaVehiculo
 import com.gestcar.ui.viewmodel.VehiculoViewModel
@@ -45,6 +49,8 @@ fun PantallaListaVehiculos(
     viewModel: VehiculoViewModel = viewModel()
 ) {
     val estado by viewModel.estadoLista.collectAsState()
+    var modoOrganizacion by remember { mutableStateOf(false) }
+    var vehiculosOrganizacion by remember { mutableStateOf(emptyList<Vehiculo>()) }
 
     LaunchedEffect(usuarioId) {
         viewModel.cargarVehiculos(usuarioId)
@@ -52,14 +58,39 @@ fun PantallaListaVehiculos(
 
     Scaffold(
         topBar = {
-            BarraSuperiorCompacta(titulo = "Mis vehículos")
+            BarraSuperiorCompacta(
+                titulo = if (modoOrganizacion) "Organizar veh\u00EDculos" else "Mis veh\u00EDculos",
+                acciones = {
+                    if (modoOrganizacion) {
+                        TextButton(
+                            onClick = {
+                                modoOrganizacion = false
+                                vehiculosOrganizacion = emptyList()
+                            }
+                        ) {
+                            Text("Cancelar", color = MaterialTheme.colorScheme.onPrimary)
+                        }
+                        TextButton(
+                            onClick = {
+                                viewModel.guardarOrganizacion(vehiculosOrganizacion)
+                                modoOrganizacion = false
+                                vehiculosOrganizacion = emptyList()
+                            }
+                        ) {
+                            Text("Listo", color = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    }
+                }
+            )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = alAnadirVehiculo,
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir vehículo")
+            if (!modoOrganizacion) {
+                FloatingActionButton(
+                    onClick = alAnadirVehiculo,
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "A\u00F1adir veh\u00EDculo")
+                }
             }
         }
     ) { padding ->
@@ -88,12 +119,12 @@ fun PantallaListaVehiculos(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "No tienes vehículos registrados",
+                            text = "No tienes veh\u00EDculos registrados",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "Pulsa + para añadir el primero",
+                            text = "Pulsa + para a\u00F1adir el primero",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -101,19 +132,147 @@ fun PantallaListaVehiculos(
                 }
 
                 else -> {
+                    val vehiculosVisibles = if (modoOrganizacion) vehiculosOrganizacion else estado.vehiculos
+                    val habituales = vehiculosVisibles.filter { it.habitual }
+                    val otros = vehiculosVisibles.filter { !it.habitual }
+                    val mostrarSecciones = modoOrganizacion || otros.isNotEmpty()
+
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(estado.vehiculos) { vehiculo ->
-                            TarjetaVehiculo(
+                        if (mostrarSecciones && habituales.isNotEmpty()) {
+                            item {
+                                TituloSeccionVehiculos(
+                                    titulo = if (habituales.size == 1) {
+                                        "Veh\u00EDculo habitual"
+                                    } else {
+                                        "Veh\u00EDculos habituales"
+                                    }
+                                )
+                            }
+                        }
+
+                        items(habituales, key = { it.id }) { vehiculo ->
+                            TarjetaVehiculoOrganizable(
                                 vehiculo = vehiculo,
-                                alPulsar = { alPulsarVehiculo(vehiculo.id) }
+                                vehiculos = vehiculosVisibles,
+                                modoOrganizacion = modoOrganizacion,
+                                alPulsar = { if (!modoOrganizacion) alPulsarVehiculo(vehiculo.id) },
+                                alPulsacionLarga = {
+                                    vehiculosOrganizacion = estado.vehiculos
+                                    modoOrganizacion = true
+                                },
+                                alMover = { direccion ->
+                                    vehiculosOrganizacion = moverVehiculoOrganizacion(
+                                        vehiculosOrganizacion,
+                                        vehiculo.id,
+                                        direccion
+                                    )
+                                }
+                            )
+                        }
+
+                        if (mostrarSecciones && otros.isNotEmpty()) {
+                            item {
+                                TituloSeccionVehiculos(titulo = "Otros veh\u00EDculos")
+                            }
+                        }
+
+                        items(otros, key = { it.id }) { vehiculo ->
+                            TarjetaVehiculoOrganizable(
+                                vehiculo = vehiculo,
+                                vehiculos = vehiculosVisibles,
+                                modoOrganizacion = modoOrganizacion,
+                                alPulsar = { if (!modoOrganizacion) alPulsarVehiculo(vehiculo.id) },
+                                alPulsacionLarga = {
+                                    vehiculosOrganizacion = estado.vehiculos
+                                    modoOrganizacion = true
+                                },
+                                alMover = { direccion ->
+                                    vehiculosOrganizacion = moverVehiculoOrganizacion(
+                                        vehiculosOrganizacion,
+                                        vehiculo.id,
+                                        direccion
+                                    )
+                                }
                             )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TituloSeccionVehiculos(titulo: String) {
+    Text(
+        text = titulo,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+    )
+}
+
+@Composable
+private fun TarjetaVehiculoOrganizable(
+    vehiculo: Vehiculo,
+    vehiculos: List<Vehiculo>,
+    modoOrganizacion: Boolean,
+    alPulsar: () -> Unit,
+    alPulsacionLarga: () -> Unit,
+    alMover: (Int) -> Unit
+) {
+    val indice = vehiculos.indexOfFirst { it.id == vehiculo.id }
+    TarjetaVehiculo(
+        vehiculo = vehiculo,
+        alPulsar = alPulsar,
+        alPulsacionLarga = alPulsacionLarga,
+        modoOrganizacion = modoOrganizacion,
+        alMoverArriba = if (indice > 0) {
+            { alMover(-1) }
+        } else {
+            null
+        },
+        alMoverAbajo = if (indice in 0 until vehiculos.lastIndex) {
+            { alMover(1) }
+        } else {
+            null
+        }
+    )
+}
+
+private fun moverVehiculoOrganizacion(
+    vehiculos: List<Vehiculo>,
+    vehiculoId: String,
+    direccion: Int
+): List<Vehiculo> {
+    if (vehiculos.size <= 1) {
+        return vehiculos
+    }
+
+    val lista = vehiculos.toMutableList()
+    val indice = lista.indexOfFirst { it.id == vehiculoId }
+    if (indice == -1) {
+        return vehiculos
+    }
+
+    val destino = (indice + direccion).coerceIn(0, lista.lastIndex)
+    if (indice == destino) {
+        return vehiculos
+    }
+
+    val cantidadHabituales = lista.count { it.habitual }.coerceAtLeast(1)
+    val vehiculoMovido = lista.removeAt(indice)
+    lista.add(destino, vehiculoMovido)
+
+    return lista.mapIndexed { nuevoIndice, vehiculo ->
+        vehiculo.copy(
+            habitual = nuevoIndice < cantidadHabituales,
+            ordenLista = nuevoIndice
+        )
     }
 }
