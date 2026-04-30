@@ -1,5 +1,8 @@
 package com.gestcar.ui.navegacion
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
@@ -81,7 +84,8 @@ fun GrafoNavegacion(
     authViewModel: AutenticacionViewModel,
     estaAutenticado: Boolean,
     usuarioId: String,
-    alCerrarSesion: () -> Unit
+    alCerrarSesion: () -> Unit,
+    alListaVehiculosCargada: () -> Unit = {}
 ) {
     // determinamos la pantalla de inicio segun si el usuario esta logueado o no
     val pantallaInicio = if (estaAutenticado) Rutas.LISTA_VEHICULOS else Rutas.INICIO_SESION
@@ -112,7 +116,11 @@ fun GrafoNavegacion(
         NavHost(
             navController = controladorNav,
             startDestination = pantallaInicio,
-            modifier = Modifier.padding(paddingInterior)
+            modifier = Modifier.padding(paddingInterior),
+            enterTransition = { fadeIn(animationSpec = tween(180)) },
+            exitTransition = { fadeOut(animationSpec = tween(120)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(180)) },
+            popExitTransition = { fadeOut(animationSpec = tween(120)) }
         ) {
             // pantalla de inicio de sesion
             composable(Rutas.INICIO_SESION) {
@@ -158,6 +166,7 @@ fun GrafoNavegacion(
             composable(Rutas.LISTA_VEHICULOS) {
                 PantallaListaVehiculos(
                     usuarioId = usuarioId,
+                    alCargaInicialCompletada = alListaVehiculosCargada,
                     alPulsarVehiculo = { vehiculoId ->
                         controladorNav.navigate(Rutas.detalleVehiculo(vehiculoId))
                     },

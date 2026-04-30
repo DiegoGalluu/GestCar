@@ -22,7 +22,9 @@ data class EstadoAutenticacion(
     // mensaje de error si algo ha fallado
     val mensajeError: String? = null,
     // indica si debemos mostrar la pantalla de nueva contrasena
-    val modoRestablecerContrasena: Boolean = false
+    val modoRestablecerContrasena: Boolean = false,
+    // evita mostrar el login mientras supabase recupera la sesion guardada
+    val estaComprobandoSesion: Boolean = true
 )
 
 // viewmodel que gestiona todo lo relacionado con la autenticacion
@@ -42,6 +44,7 @@ class AutenticacionViewModel : ViewModel() {
     // comprueba si hay una sesion activa en supabase
     fun comprobarSesion() {
         viewModelScope.launch {
+            _estado.value = _estado.value.copy(estaComprobandoSesion = true)
             try {
                 ClienteSupabase.cliente.auth.awaitInitialization()
                 ClienteSupabase.cliente.auth.loadFromStorage()
@@ -49,12 +52,25 @@ class AutenticacionViewModel : ViewModel() {
                 if (sesion != null) {
                     _estado.value = EstadoAutenticacion(
                         estaAutenticado = true,
-                        usuarioId = sesion.user?.id ?: ""
+                        usuarioId = sesion.user?.id ?: "",
+                        estaComprobandoSesion = false
                     )
+                } else {
+                    _estado.value = _estado.value.copy(estaComprobandoSesion = false)
                 }
             } catch (e: Exception) {
-                // si falla simplemente no hay sesion activa
+                _estado.value = _estado.value.copy(
+                    estaAutenticado = false,
+                    usuarioId = "",
+                    estaComprobandoSesion = false
+                )
             }
+        }
+    }
+
+    fun marcarSesionComprobada() {
+        if (_estado.value.estaComprobandoSesion) {
+            _estado.value = _estado.value.copy(estaComprobandoSesion = false)
         }
     }
 
@@ -121,7 +137,7 @@ class AutenticacionViewModel : ViewModel() {
             } catch (e: Exception) {
                 // aunque falle el logout remoto, cerramos la sesion local
             }
-            _estado.value = EstadoAutenticacion()
+            _estado.value = EstadoAutenticacion(estaComprobandoSesion = false)
         }
     }
 
@@ -213,14 +229,16 @@ class AutenticacionViewModel : ViewModel() {
         _estado.value = if (sesion != null && usuario?.id?.isNotBlank() == true) {
             EstadoAutenticacion(
                 estaAutenticado = true,
-                usuarioId = usuario.id
+                usuarioId = usuario.id,
+                estaComprobandoSesion = false
             )
         } else {
             EstadoAutenticacion(
                 estaAutenticado = false,
                 usuarioId = "",
                 estaCargando = false,
-                mensajeError = errorSinSesion
+                mensajeError = errorSinSesion,
+                estaComprobandoSesion = false
             )
         }
     }

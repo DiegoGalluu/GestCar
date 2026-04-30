@@ -47,6 +47,7 @@ import com.gestcar.ui.viewmodel.VehiculoViewModel
 @Composable
 fun PantallaListaVehiculos(
     usuarioId: String,
+    alCargaInicialCompletada: () -> Unit = {},
     alPulsarVehiculo: (String) -> Unit,
     alAnadirVehiculo: () -> Unit,
     viewModel: VehiculoViewModel = viewModel()
@@ -54,9 +55,22 @@ fun PantallaListaVehiculos(
     val estado by viewModel.estadoLista.collectAsState()
     var modoOrganizacion by remember { mutableStateOf(false) }
     var vehiculosOrganizacion by remember { mutableStateOf(emptyList<Vehiculo>()) }
+    var haVistoCargaInicial by remember { mutableStateOf(false) }
+    var avisoCargaInicialEnviado by remember { mutableStateOf(false) }
 
     LaunchedEffect(usuarioId) {
+        haVistoCargaInicial = false
+        avisoCargaInicialEnviado = false
         viewModel.cargarVehiculos(usuarioId)
+    }
+
+    LaunchedEffect(estado.estaCargando) {
+        if (estado.estaCargando) {
+            haVistoCargaInicial = true
+        } else if (haVistoCargaInicial && !avisoCargaInicialEnviado) {
+            avisoCargaInicialEnviado = true
+            alCargaInicialCompletada()
+        }
     }
 
     Scaffold(
