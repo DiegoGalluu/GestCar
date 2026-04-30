@@ -169,6 +169,7 @@ fun PantallaDetalleVehiculo(
 
                 ResumenRapidoVehiculo(
                     consumoMedio = resumen.consumoMedio,
+                    costeCombustibleCada100Km = resumen.costeCombustibleCada100Km,
                     costePorKilometro = resumen.costePorKilometro,
                     costeTotal = resumen.costeTotal
                 )
@@ -347,6 +348,7 @@ private fun TarjetaDatosVehiculo(vehiculo: Vehiculo) {
 @Composable
 private fun ResumenRapidoVehiculo(
     consumoMedio: Double,
+    costeCombustibleCada100Km: Double,
     costePorKilometro: Double,
     costeTotal: Double
 ) {
@@ -361,8 +363,8 @@ private fun ResumenRapidoVehiculo(
             modifier = Modifier.weight(1f)
         )
         TarjetaMetrica(
-            titulo = "Coste/km",
-            valor = if (costePorKilometro > 0) "${formatearDecimal(costePorKilometro)} €/km" else "Sin datos",
+            titulo = "Combustible /100 km",
+            valor = if (costeCombustibleCada100Km > 0) "${formatearDecimal(costeCombustibleCada100Km)} €" else "Sin datos",
             icono = Icons.Default.TrendingUp,
             modifier = Modifier.weight(1f)
         )
@@ -370,12 +372,23 @@ private fun ResumenRapidoVehiculo(
 
     Spacer(modifier = Modifier.height(8.dp))
 
-    TarjetaMetrica(
-        titulo = "Coste total registrado",
-        valor = "${formatearDecimal(costeTotal)} €",
-        icono = Icons.Default.Payments,
-        modifier = Modifier.fillMaxWidth()
-    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        TarjetaMetrica(
+            titulo = "Gasto registrado",
+            valor = "${formatearDecimal(costeTotal)} €",
+            icono = Icons.Default.Payments,
+            modifier = Modifier.weight(1f)
+        )
+        TarjetaMetrica(
+            titulo = "Gasto total/km",
+            valor = if (costePorKilometro > 0) "${formatearDecimal(costePorKilometro)} €/km" else "Sin datos",
+            icono = Icons.Default.TrendingUp,
+            modifier = Modifier.weight(1f)
+        )
+    }
 }
 
 @Composable

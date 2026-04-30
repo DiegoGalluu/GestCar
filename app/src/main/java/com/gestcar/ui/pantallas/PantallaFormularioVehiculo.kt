@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +29,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -40,8 +43,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gestcar.datos.entidades.Vehiculo
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.viewmodel.VehiculoViewModel
+import com.gestcar.util.normalizarMatricula
 
 private val tiposVehiculo = listOf("COCHE", "MOTO", "FURGONETA")
 private val tiposCombustible = listOf("Gasolina", "Diesel", "Electrico", "Hibrido", "GLP")
@@ -79,6 +84,7 @@ fun PantallaFormularioVehiculo(
 
     val vehiculo = estado.vehiculo
     var intentoGuardar by remember { mutableStateOf(false) }
+    var vehiculoPendienteConfirmacion by remember { mutableStateOf<Vehiculo?>(null) }
     val marcaVacia = vehiculo.marca.isBlank()
     val modeloVacio = vehiculo.modelo.isBlank()
     val anioFabricacionVacio = vehiculo.anioFabricacion <= 0
@@ -219,7 +225,14 @@ fun PantallaFormularioVehiculo(
                 onClick = {
                     intentoGuardar = true
                     if (!faltanCamposObligatorios) {
-                        viewModel.guardarVehiculo()
+                        val resultadoMatricula = normalizarMatricula(vehiculo.matricula)
+                        val vehiculoNormalizado = vehiculo.copy(matricula = resultadoMatricula.matriculaParaGuardar)
+
+                        if (resultadoMatricula.reconocida) {
+                            viewModel.guardarVehiculo(vehiculoNormalizado)
+                        } else {
+                            vehiculoPendienteConfirmacion = vehiculoNormalizado
+                        }
                     }
                 },
                 enabled = !estado.estaCargando,
@@ -247,6 +260,36 @@ fun PantallaFormularioVehiculo(
                 }
             }
         }
+    }
+
+    vehiculoPendienteConfirmacion?.let { vehiculoConfirmado ->
+        AlertDialog(
+            onDismissRequest = { vehiculoPendienteConfirmacion = null },
+            title = { Text("Matrícula no reconocida") },
+            text = {
+                Text("No reconocemos el formato de esta matrícula. ¿Deseas introducirla de todas maneras?")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        vehiculoPendienteConfirmacion = null
+                        viewModel.guardarVehiculo(vehiculoConfirmado)
+                    }
+                ) {
+                    Text("Sí, guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { vehiculoPendienteConfirmacion = null },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("No, revisar")
+                }
+            }
+        )
     }
 }
 

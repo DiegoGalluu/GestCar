@@ -21,6 +21,7 @@ data class EstadoResumenDetalleVehiculo(
     val gastosActivos: List<GastoPeriodico> = emptyList(),
     val recordatoriosPendientes: List<Recordatorio> = emptyList(),
     val consumoMedio: Double = 0.0,
+    val costeCombustibleCada100Km: Double = 0.0,
     val costePorKilometro: Double = 0.0,
     val costeTotal: Double = 0.0
 )
@@ -53,6 +54,7 @@ class DetalleVehiculoResumenViewModel(aplicacion: Application) : AndroidViewMode
                         .filter { !it.completado }
                         .take(3),
                     consumoMedio = calcularConsumoMedio(repostajes),
+                    costeCombustibleCada100Km = calcularCosteCombustibleCada100Km(repostajes),
                     costePorKilometro = calcularCostePorKilometro(
                         kilometrajeActual = kilometrajeActual,
                         repostajes = repostajes,
@@ -68,24 +70,19 @@ class DetalleVehiculoResumenViewModel(aplicacion: Application) : AndroidViewMode
     }
 
     private fun calcularConsumoMedio(repostajes: List<Repostaje>): Double {
-        val llenos = repostajes
-            .filter { it.llenoCompleto }
-            .sortedBy { it.kilometros }
-
-        if (llenos.size < 2) {
-            return 0.0
-        }
-
-        val consumos = llenos.zipWithNext().mapNotNull { (anterior, actual) ->
-            val distancia = actual.kilometros - anterior.kilometros
-            if (distancia <= 0 || actual.litros <= 0) {
-                null
-            } else {
-                (actual.litros / distancia) * 100
-            }
+        val consumos = obtenerTramosValidos(repostajes).map { tramo ->
+            (tramo.actual.litros / tramo.kilometrosRecorridos) * 100
         }
 
         return consumos.takeIf { it.isNotEmpty() }?.average() ?: 0.0
+    }
+
+    private fun calcularCosteCombustibleCada100Km(repostajes: List<Repostaje>): Double {
+        val costes = obtenerTramosValidos(repostajes).map { tramo ->
+            (tramo.actual.importeTotal / tramo.kilometrosRecorridos) * 100
+        }
+
+        return costes.takeIf { it.isNotEmpty() }?.average() ?: 0.0
     }
 
     private fun calcularCosteTotal(
@@ -116,4 +113,24 @@ class DetalleVehiculoResumenViewModel(aplicacion: Application) : AndroidViewMode
 
         return calcularCosteTotal(repostajes, mantenimientos, gastos) / kilometrosRecorridos
     }
+
+    private fun obtenerTramosValidos(repostajes: List<Repostaje>): List<TramoRepostaje> {
+        val llenos = repostajes
+            .filter { it.llenoCompleto }
+            .sortedBy { it.kilometros }
+
+        return llenos.zipWithNext().mapNotNull { (anterior, actual) ->
+            val distancia = actual.kilometros - anterior.kilometros
+            if (distancia <= 0 || actual.litros <= 0) {
+                null
+            } else {
+                TramoRepostaje(actual = actual, kilometrosRecorridos = distancia)
+            }
+        }
+    }
+
+    private data class TramoRepostaje(
+        val actual: Repostaje,
+        val kilometrosRecorridos: Double
+    )
 }

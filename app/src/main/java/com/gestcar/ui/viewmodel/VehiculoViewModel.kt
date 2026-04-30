@@ -104,9 +104,10 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
     }
 
     // guarda el vehiculo del formulario, ya sea nuevo o editado
-    fun guardarVehiculo() {
+    fun guardarVehiculo(vehiculoParaGuardar: Vehiculo? = null) {
         viewModelScope.launch {
-            val vehiculo = _estadoFormulario.value.vehiculo
+            val vehiculo = vehiculoParaGuardar ?: _estadoFormulario.value.vehiculo
+            _estadoFormulario.value = _estadoFormulario.value.copy(vehiculo = vehiculo)
             _estadoFormulario.value = _estadoFormulario.value.copy(estaCargando = true)
 
             // validamos los campos obligatorios
