@@ -14,16 +14,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,22 +65,30 @@ fun PantallaListaVehiculos(
                 titulo = if (modoOrganizacion) "Organizar veh\u00EDculos" else "Mis veh\u00EDculos",
                 acciones = {
                     if (modoOrganizacion) {
-                        TextButton(
+                        IconButton(
                             onClick = {
                                 modoOrganizacion = false
                                 vehiculosOrganizacion = emptyList()
                             }
                         ) {
-                            Text("Cancelar", color = MaterialTheme.colorScheme.onPrimary)
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cancelar",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
                         }
-                        TextButton(
+                        IconButton(
                             onClick = {
                                 viewModel.guardarOrganizacion(vehiculosOrganizacion)
                                 modoOrganizacion = false
                                 vehiculosOrganizacion = emptyList()
                             }
                         ) {
-                            Text("Listo", color = MaterialTheme.colorScheme.onPrimary)
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Guardar organizaci\u00F3n",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
                         }
                     }
                 }
@@ -221,7 +231,7 @@ private fun ZonaVaciaOtrosVehiculos() {
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Text(
-                text = "Suelta aqu\u00ED los veh\u00EDculos menos usados",
+                text = "Sin veh\u00EDculos secundarios",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.Center)
@@ -292,14 +302,32 @@ private fun moverVehiculoOrganizacion(
 
     val cantidadHabituales = lista.count { it.habitual }.coerceAtLeast(1)
     val esUltimoHabitual = indice == cantidadHabituales - 1
+    val esPrimerSecundario = indice == cantidadHabituales
 
-    if (direccion > 0 && esUltimoHabitual && cantidadHabituales > 1 && indice == lista.lastIndex) {
+    if (direccion > 0 && esUltimoHabitual && cantidadHabituales > 1) {
         return lista.mapIndexed { nuevoIndice, vehiculo ->
             vehiculo.copy(
-                habitual = nuevoIndice < cantidadHabituales - 1,
+                habitual = if (vehiculo.id == vehiculoId) {
+                    false
+                } else {
+                    nuevoIndice < cantidadHabituales - 1
+                },
                 ordenLista = nuevoIndice
             )
-        }
+        }.ordenarParaMostrar()
+    }
+
+    if (direccion < 0 && esPrimerSecundario) {
+        return lista.mapIndexed { nuevoIndice, vehiculo ->
+            vehiculo.copy(
+                habitual = if (vehiculo.id == vehiculoId) {
+                    true
+                } else {
+                    nuevoIndice < cantidadHabituales
+                },
+                ordenLista = nuevoIndice
+            )
+        }.ordenarParaMostrar()
     }
 
     val destino = (indice + direccion).coerceIn(0, lista.lastIndex)
@@ -316,4 +344,9 @@ private fun moverVehiculoOrganizacion(
             ordenLista = nuevoIndice
         )
     }
+}
+
+private fun List<Vehiculo>.ordenarParaMostrar(): List<Vehiculo> {
+    return sortedWith(compareByDescending<Vehiculo> { it.habitual }.thenBy { it.ordenLista })
+        .mapIndexed { indice, vehiculo -> vehiculo.copy(ordenLista = indice) }
 }
