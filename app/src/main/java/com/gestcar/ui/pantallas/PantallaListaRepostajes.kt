@@ -16,18 +16,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocalGasStation
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,9 +37,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
-import com.gestcar.ui.componentes.CampoFecha
+import com.gestcar.ui.componentes.DialogoFiltroPeriodo
+import com.gestcar.ui.componentes.DialogoRangoPeriodo
 import com.gestcar.ui.componentes.FilaSelectorVehiculoConFiltro
 import com.gestcar.ui.componentes.TarjetaRepostaje
+import com.gestcar.ui.componentes.hayFiltroPeriodoActivo
 import com.gestcar.ui.viewmodel.PeriodoRepostajes
 import com.gestcar.ui.viewmodel.RepostajeViewModel
 import com.gestcar.ui.viewmodel.VehiculoActivoViewModel
@@ -97,7 +96,7 @@ fun PantallaListaRepostajes(
                 vehiculoActivo = vehiculoActivo,
                 alSeleccionarVehiculo = { vehiculoActivoViewModel.seleccionarVehiculo(it) },
                 alPulsarFiltro = { mostrarFiltroPeriodo = true },
-                filtroActivo = estadoRepostajes.periodoSeleccionado != PeriodoRepostajes.TODO
+                filtroActivo = hayFiltroPeriodoActivo(estadoRepostajes.periodoSeleccionado)
             )
 
             when {
@@ -157,7 +156,8 @@ fun PantallaListaRepostajes(
     }
 
     if (mostrarFiltroPeriodo) {
-        DialogoFiltroPeriodoRepostajes(
+        DialogoFiltroPeriodo(
+            titulo = "Filtrar repostajes",
             periodoSeleccionado = estadoRepostajes.periodoSeleccionado,
             alSeleccionarPeriodo = { periodo ->
                 mostrarFiltroPeriodo = false
@@ -172,7 +172,7 @@ fun PantallaListaRepostajes(
     }
 
     if (mostrarRangoPersonalizado) {
-        DialogoRangoRepostajes(
+        DialogoRangoPeriodo(
             fechaInicioInicial = estadoRepostajes.fechaInicioPersonalizada ?: System.currentTimeMillis(),
             fechaFinInicial = estadoRepostajes.fechaFinPersonalizada ?: System.currentTimeMillis(),
             alConfirmar = { inicio, fin ->
@@ -182,45 +182,6 @@ fun PantallaListaRepostajes(
             alCancelar = { mostrarRangoPersonalizado = false }
         )
     }
-}
-
-@Composable
-private fun DialogoFiltroPeriodoRepostajes(
-    periodoSeleccionado: PeriodoRepostajes,
-    alSeleccionarPeriodo: (PeriodoRepostajes) -> Unit,
-    alCancelar: () -> Unit
-) {
-    val opciones = listOf(
-        PeriodoRepostajes.HOY to "Hoy",
-        PeriodoRepostajes.SEMANA to "Semana",
-        PeriodoRepostajes.MES to "Mes",
-        PeriodoRepostajes.ANIO to "A\u00F1o",
-        PeriodoRepostajes.TODO to "Todo",
-        PeriodoRepostajes.PERSONALIZADO to "Personalizado"
-    )
-
-    AlertDialog(
-        onDismissRequest = alCancelar,
-        title = { Text("Filtrar repostajes") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                opciones.forEach { (periodo, etiqueta) ->
-                    FilterChip(
-                        selected = periodoSeleccionado == periodo,
-                        onClick = { alSeleccionarPeriodo(periodo) },
-                        label = { Text(etiqueta) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = alCancelar) {
-                Text("Cerrar")
-            }
-        }
-    )
 }
 
 @Composable
@@ -268,46 +229,6 @@ private fun TarjetaDatoConsumo(
             )
         }
     }
-}
-
-@Composable
-private fun DialogoRangoRepostajes(
-    fechaInicioInicial: Long,
-    fechaFinInicial: Long,
-    alConfirmar: (Long, Long) -> Unit,
-    alCancelar: () -> Unit
-) {
-    var fechaInicio by remember { mutableStateOf(fechaInicioInicial) }
-    var fechaFin by remember { mutableStateOf(fechaFinInicial) }
-
-    AlertDialog(
-        onDismissRequest = alCancelar,
-        title = { Text("Rango personalizado") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                CampoFecha(
-                    etiqueta = "Desde",
-                    fecha = fechaInicio,
-                    alSeleccionarFecha = { fechaInicio = it }
-                )
-                CampoFecha(
-                    etiqueta = "Hasta",
-                    fecha = fechaFin,
-                    alSeleccionarFecha = { fechaFin = it }
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { alConfirmar(fechaInicio, fechaFin) }) {
-                Text("Aplicar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = alCancelar) {
-                Text("Cancelar")
-            }
-        }
-    )
 }
 
 @Composable

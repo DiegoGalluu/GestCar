@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,17 +14,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -33,7 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,9 +38,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.entidades.Recordatorio
 import com.gestcar.datos.entidades.Vehiculo
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
+import com.gestcar.ui.componentes.DialogoFiltroPeriodo
+import com.gestcar.ui.componentes.DialogoRangoPeriodo
 import com.gestcar.ui.componentes.EstadoVisualRecordatorio
 import com.gestcar.ui.componentes.FilaSelectorVehiculoConFiltro
 import com.gestcar.ui.componentes.TarjetaRecordatorio
+import com.gestcar.ui.componentes.fechaDentroDePeriodo
+import com.gestcar.ui.componentes.hayFiltroPeriodoActivo
+import com.gestcar.ui.viewmodel.PeriodoRepostajes
 import com.gestcar.ui.viewmodel.RecordatorioViewModel
 import com.gestcar.ui.viewmodel.VehiculoActivoViewModel
 
@@ -62,8 +63,11 @@ fun PantallaListaRecordatorios(
     val estadoVehiculo by vehiculoActivoViewModel.estado.collectAsState()
     val estadoRecordatorios by recordatorioViewModel.estadoLista.collectAsState()
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
-    var mostrarFiltroRecordatorios by rememberSaveable { mutableStateOf(false) }
-    var filtroRecordatorios by rememberSaveable { mutableStateOf(FILTRO_RECORDATORIOS_TODOS) }
+    var mostrarFiltroPeriodo by remember { mutableStateOf(false) }
+    var mostrarRangoPersonalizado by remember { mutableStateOf(false) }
+    var periodoSeleccionado by remember { mutableStateOf(PeriodoRepostajes.TODO) }
+    var fechaInicioPersonalizada by remember { mutableStateOf<Long?>(null) }
+    var fechaFinPersonalizada by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(usuarioId, vehiculoInicialId) {
         vehiculoActivoViewModel.cargarVehiculos(usuarioId, vehiculoInicialId)
@@ -100,8 +104,8 @@ fun PantallaListaRecordatorios(
                 vehiculos = estadoVehiculo.vehiculos,
                 vehiculoActivo = vehiculoActivo,
                 alSeleccionarVehiculo = { vehiculoActivoViewModel.seleccionarVehiculo(it) },
-                alPulsarFiltro = { mostrarFiltroRecordatorios = true },
-                filtroActivo = filtroRecordatorios != FILTRO_RECORDATORIOS_TODOS
+                alPulsarFiltro = { mostrarFiltroPeriodo = true },
+                filtroActivo = hayFiltroPeriodoActivo(periodoSeleccionado)
             )
 
             when {
@@ -127,7 +131,14 @@ fun PantallaListaRecordatorios(
 
                 else -> {
                     val recordatoriosOrdenados = estadoRecordatorios.recordatorios
-                        .filtrarPorEstadoRecordatorio(filtroRecordatorios, vehiculoActivo)
+                        .filter {
+                            fechaDentroDePeriodo(
+                                fecha = fechaReferenciaFiltroRecordatorio(it),
+                                periodo = periodoSeleccionado,
+                                fechaInicioPersonalizada = fechaInicioPersonalizada,
+                                fechaFinPersonalizada = fechaFinPersonalizada
+                            )
+                        }
                         .sortedWith(compareBy({ prioridadEstado(it, vehiculoActivo) }, { it.fechaLimite ?: Long.MAX_VALUE }))
 
                     androidx.compose.foundation.lazy.LazyColumn(
@@ -137,7 +148,7 @@ fun PantallaListaRecordatorios(
                         if (recordatoriosOrdenados.isEmpty()) {
                             item {
                                 Text(
-                                    text = "No hay recordatorios con este filtro",
+                                    text = "No hay recordatorios en este periodo",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -159,14 +170,33 @@ fun PantallaListaRecordatorios(
         }
     }
 
-    if (mostrarFiltroRecordatorios) {
-        DialogoFiltroRecordatorios(
-            filtroActual = filtroRecordatorios,
-            alCambiarFiltro = {
-                filtroRecordatorios = it
-                mostrarFiltroRecordatorios = false
+    if (mostrarFiltroPeriodo) {
+        DialogoFiltroPeriodo(
+            titulo = "Filtrar recordatorios",
+            periodoSeleccionado = periodoSeleccionado,
+            alSeleccionarPeriodo = { periodo ->
+                mostrarFiltroPeriodo = false
+                if (periodo == PeriodoRepostajes.PERSONALIZADO) {
+                    mostrarRangoPersonalizado = true
+                } else {
+                    periodoSeleccionado = periodo
+                }
             },
-            alCancelar = { mostrarFiltroRecordatorios = false }
+            alCancelar = { mostrarFiltroPeriodo = false }
+        )
+    }
+
+    if (mostrarRangoPersonalizado) {
+        DialogoRangoPeriodo(
+            fechaInicioInicial = fechaInicioPersonalizada ?: System.currentTimeMillis(),
+            fechaFinInicial = fechaFinPersonalizada ?: System.currentTimeMillis(),
+            alConfirmar = { inicio, fin ->
+                fechaInicioPersonalizada = inicio
+                fechaFinPersonalizada = fin
+                periodoSeleccionado = PeriodoRepostajes.PERSONALIZADO
+                mostrarRangoPersonalizado = false
+            },
+            alCancelar = { mostrarRangoPersonalizado = false }
         )
     }
 }
@@ -237,63 +267,8 @@ private fun prioridadEstado(recordatorio: Recordatorio, vehiculo: Vehiculo?): In
     }
 }
 
-private const val FILTRO_RECORDATORIOS_TODOS = "TODOS"
-private const val FILTRO_RECORDATORIOS_VENCIDOS = "VENCIDOS"
-private const val FILTRO_RECORDATORIOS_PROXIMOS = "PROXIMOS"
-private const val FILTRO_RECORDATORIOS_PENDIENTES = "PENDIENTES"
-private const val FILTRO_RECORDATORIOS_COMPLETADOS = "COMPLETADOS"
-
-private fun List<Recordatorio>.filtrarPorEstadoRecordatorio(
-    filtro: String,
-    vehiculo: Vehiculo?
-): List<Recordatorio> {
-    return when (filtro) {
-        FILTRO_RECORDATORIOS_VENCIDOS -> filter { calcularEstadoVisual(it, vehiculo) == EstadoVisualRecordatorio.VENCIDO }
-        FILTRO_RECORDATORIOS_PROXIMOS -> filter { calcularEstadoVisual(it, vehiculo) == EstadoVisualRecordatorio.PROXIMO }
-        FILTRO_RECORDATORIOS_PENDIENTES -> filter { calcularEstadoVisual(it, vehiculo) == EstadoVisualRecordatorio.PENDIENTE }
-        FILTRO_RECORDATORIOS_COMPLETADOS -> filter { calcularEstadoVisual(it, vehiculo) == EstadoVisualRecordatorio.COMPLETADO }
-        else -> this
-    }
-}
-
-@Composable
-private fun DialogoFiltroRecordatorios(
-    filtroActual: String,
-    alCambiarFiltro: (String) -> Unit,
-    alCancelar: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = alCancelar,
-        title = { Text("Filtrar recordatorios") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OpcionFiltroRecordatorio("Todos", FILTRO_RECORDATORIOS_TODOS, filtroActual, alCambiarFiltro)
-                OpcionFiltroRecordatorio("Vencidos", FILTRO_RECORDATORIOS_VENCIDOS, filtroActual, alCambiarFiltro)
-                OpcionFiltroRecordatorio("Próximos", FILTRO_RECORDATORIOS_PROXIMOS, filtroActual, alCambiarFiltro)
-                OpcionFiltroRecordatorio("Pendientes", FILTRO_RECORDATORIOS_PENDIENTES, filtroActual, alCambiarFiltro)
-                OpcionFiltroRecordatorio("Completados", FILTRO_RECORDATORIOS_COMPLETADOS, filtroActual, alCambiarFiltro)
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = alCancelar) {
-                Text("Cerrar")
-            }
-        }
-    )
-}
-
-@Composable
-private fun OpcionFiltroRecordatorio(
-    texto: String,
-    filtro: String,
-    filtroActual: String,
-    alCambiarFiltro: (String) -> Unit
-) {
-    FilterChip(
-        selected = filtroActual == filtro,
-        onClick = { alCambiarFiltro(filtro) },
-        label = { Text(texto) },
-        modifier = Modifier.fillMaxWidth()
-    )
+private fun fechaReferenciaFiltroRecordatorio(recordatorio: Recordatorio): Long {
+    return recordatorio.fechaLimite
+        ?: recordatorio.fechaCompletado
+        ?: recordatorio.actualizadoEn
 }

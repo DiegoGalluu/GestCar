@@ -51,7 +51,7 @@ fun FilaSelectorVehiculoConFiltro(
         ) {
             Icon(
                 imageVector = Icons.Default.FilterList,
-                contentDescription = "Filtrar"
+                contentDescription = "Filtrar por periodo"
             )
         }
     }
