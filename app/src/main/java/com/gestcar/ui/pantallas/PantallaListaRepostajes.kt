@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -42,7 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.CampoFecha
-import com.gestcar.ui.componentes.SelectorVehiculoActivo
+import com.gestcar.ui.componentes.FilaSelectorVehiculoConFiltro
 import com.gestcar.ui.componentes.TarjetaRepostaje
 import com.gestcar.ui.viewmodel.PeriodoRepostajes
 import com.gestcar.ui.viewmodel.RepostajeViewModel
@@ -62,6 +61,7 @@ fun PantallaListaRepostajes(
     val estadoVehiculo by vehiculoActivoViewModel.estado.collectAsState()
     val estadoRepostajes by repostajeViewModel.estadoLista.collectAsState()
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
+    var mostrarFiltroPeriodo by remember { mutableStateOf(false) }
     var mostrarRangoPersonalizado by remember { mutableStateOf(false) }
 
     LaunchedEffect(usuarioId, vehiculoInicialId) {
@@ -92,11 +92,12 @@ fun PantallaListaRepostajes(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            SelectorVehiculoActivo(
+            FilaSelectorVehiculoConFiltro(
                 vehiculos = estadoVehiculo.vehiculos,
                 vehiculoActivo = vehiculoActivo,
-                alSeleccionar = { vehiculoActivoViewModel.seleccionarVehiculo(it) },
-                modifier = Modifier.padding(16.dp)
+                alSeleccionarVehiculo = { vehiculoActivoViewModel.seleccionarVehiculo(it) },
+                alPulsarFiltro = { mostrarFiltroPeriodo = true },
+                filtroActivo = estadoRepostajes.periodoSeleccionado != PeriodoRepostajes.TODO
             )
 
             when {
@@ -125,19 +126,6 @@ fun PantallaListaRepostajes(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        item {
-                            SelectorPeriodoRepostajes(
-                                periodoSeleccionado = estadoRepostajes.periodoSeleccionado,
-                                alSeleccionarPeriodo = { periodo ->
-                                    if (periodo == PeriodoRepostajes.PERSONALIZADO) {
-                                        mostrarRangoPersonalizado = true
-                                    } else {
-                                        repostajeViewModel.seleccionarPeriodo(periodo)
-                                    }
-                                }
-                            )
-                        }
-
                         item {
                             ResumenConsumoRepostajes(
                                 consumoMedio = estadoRepostajes.consumoMedio,
@@ -168,6 +156,21 @@ fun PantallaListaRepostajes(
         }
     }
 
+    if (mostrarFiltroPeriodo) {
+        DialogoFiltroPeriodoRepostajes(
+            periodoSeleccionado = estadoRepostajes.periodoSeleccionado,
+            alSeleccionarPeriodo = { periodo ->
+                mostrarFiltroPeriodo = false
+                if (periodo == PeriodoRepostajes.PERSONALIZADO) {
+                    mostrarRangoPersonalizado = true
+                } else {
+                    repostajeViewModel.seleccionarPeriodo(periodo)
+                }
+            },
+            alCancelar = { mostrarFiltroPeriodo = false }
+        )
+    }
+
     if (mostrarRangoPersonalizado) {
         DialogoRangoRepostajes(
             fechaInicioInicial = estadoRepostajes.fechaInicioPersonalizada ?: System.currentTimeMillis(),
@@ -182,9 +185,10 @@ fun PantallaListaRepostajes(
 }
 
 @Composable
-private fun SelectorPeriodoRepostajes(
+private fun DialogoFiltroPeriodoRepostajes(
     periodoSeleccionado: PeriodoRepostajes,
-    alSeleccionarPeriodo: (PeriodoRepostajes) -> Unit
+    alSeleccionarPeriodo: (PeriodoRepostajes) -> Unit,
+    alCancelar: () -> Unit
 ) {
     val opciones = listOf(
         PeriodoRepostajes.HOY to "Hoy",
@@ -195,18 +199,28 @@ private fun SelectorPeriodoRepostajes(
         PeriodoRepostajes.PERSONALIZADO to "Personalizado"
     )
 
-    LazyRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(opciones) { (periodo, etiqueta) ->
-            FilterChip(
-                selected = periodoSeleccionado == periodo,
-                onClick = { alSeleccionarPeriodo(periodo) },
-                label = { Text(etiqueta) }
-            )
+    AlertDialog(
+        onDismissRequest = alCancelar,
+        title = { Text("Filtrar repostajes") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                opciones.forEach { (periodo, etiqueta) ->
+                    FilterChip(
+                        selected = periodoSeleccionado == periodo,
+                        onClick = { alSeleccionarPeriodo(periodo) },
+                        label = { Text(etiqueta) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = alCancelar) {
+                Text("Cerrar")
+            }
         }
-    }
+    )
 }
 
 @Composable

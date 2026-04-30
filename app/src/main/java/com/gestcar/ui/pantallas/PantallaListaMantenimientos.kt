@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -24,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
-import com.gestcar.ui.componentes.SelectorVehiculoActivo
+import com.gestcar.ui.componentes.FilaSelectorVehiculoConFiltro
 import com.gestcar.ui.componentes.TarjetaMantenimiento
 import com.gestcar.ui.viewmodel.CATEGORIA_MANTENIMIENTO
 import com.gestcar.ui.viewmodel.CATEGORIA_REPARACION
@@ -57,6 +59,7 @@ fun PantallaListaMantenimientos(
     val estadoVehiculo by vehiculoActivoViewModel.estado.collectAsState()
     val estadoMantenimientos by mantenimientoViewModel.estadoLista.collectAsState()
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
+    var mostrarFiltroMantenimiento by remember { mutableStateOf(false) }
     var mostrarRealizadas by remember { mutableStateOf(false) }
 
     LaunchedEffect(usuarioId, vehiculoInicialId) {
@@ -87,17 +90,12 @@ fun PantallaListaMantenimientos(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            SelectorVehiculoActivo(
+            FilaSelectorVehiculoConFiltro(
                 vehiculos = estadoVehiculo.vehiculos,
                 vehiculoActivo = vehiculoActivo,
-                alSeleccionar = { vehiculoActivoViewModel.seleccionarVehiculo(it) },
-                modifier = Modifier.padding(16.dp)
-            )
-
-            FiltrosMantenimiento(
-                filtroActual = estadoMantenimientos.filtroCategoria,
-                alCambiarFiltro = { mantenimientoViewModel.cambiarFiltroCategoria(it) },
-                modifier = Modifier.padding(horizontal = 16.dp)
+                alSeleccionarVehiculo = { vehiculoActivoViewModel.seleccionarVehiculo(it) },
+                alPulsarFiltro = { mostrarFiltroMantenimiento = true },
+                filtroActivo = estadoMantenimientos.filtroCategoria != FILTRO_TODOS_MANTENIMIENTOS
             )
 
             when {
@@ -163,6 +161,17 @@ fun PantallaListaMantenimientos(
             }
         }
     }
+
+    if (mostrarFiltroMantenimiento) {
+        DialogoFiltroMantenimientos(
+            filtroActual = estadoMantenimientos.filtroCategoria,
+            alCambiarFiltro = { filtro ->
+                mantenimientoViewModel.cambiarFiltroCategoria(filtro)
+                mostrarFiltroMantenimiento = false
+            },
+            alCancelar = { mostrarFiltroMantenimiento = false }
+        )
+    }
 }
 
 @Composable
@@ -194,31 +203,43 @@ private fun EncabezadoSeccionMantenimientos(
 }
 
 @Composable
-private fun FiltrosMantenimiento(
+private fun DialogoFiltroMantenimientos(
     filtroActual: String,
     alCambiarFiltro: (String) -> Unit,
-    modifier: Modifier = Modifier
+    alCancelar: () -> Unit
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        FilterChip(
-            selected = filtroActual == FILTRO_TODOS_MANTENIMIENTOS,
-            onClick = { alCambiarFiltro(FILTRO_TODOS_MANTENIMIENTOS) },
-            label = { Text("Todos") }
-        )
-        FilterChip(
-            selected = filtroActual == CATEGORIA_MANTENIMIENTO,
-            onClick = { alCambiarFiltro(CATEGORIA_MANTENIMIENTO) },
-            label = { Text("Mantenimiento") }
-        )
-        FilterChip(
-            selected = filtroActual == CATEGORIA_REPARACION,
-            onClick = { alCambiarFiltro(CATEGORIA_REPARACION) },
-            label = { Text("Reparación") }
-        )
-    }
+    AlertDialog(
+        onDismissRequest = alCancelar,
+        title = { Text("Filtrar mantenimiento") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = filtroActual == FILTRO_TODOS_MANTENIMIENTOS,
+                    onClick = { alCambiarFiltro(FILTRO_TODOS_MANTENIMIENTOS) },
+                    label = { Text("Todos") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                FilterChip(
+                    selected = filtroActual == CATEGORIA_MANTENIMIENTO,
+                    onClick = { alCambiarFiltro(CATEGORIA_MANTENIMIENTO) },
+                    label = { Text("Mantenimiento") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                FilterChip(
+                    selected = filtroActual == CATEGORIA_REPARACION,
+                    onClick = { alCambiarFiltro(CATEGORIA_REPARACION) },
+                    label = { Text("Reparación") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = alCancelar) {
+                Text("Cerrar")
+            }
+        }
+    )
 }
 
 @Composable

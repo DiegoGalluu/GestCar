@@ -18,14 +18,17 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,7 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.entidades.GastoPeriodico
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.EstadoVisualGasto
-import com.gestcar.ui.componentes.SelectorVehiculoActivo
+import com.gestcar.ui.componentes.FilaSelectorVehiculoConFiltro
 import com.gestcar.ui.componentes.TarjetaGasto
 import com.gestcar.ui.componentes.calcularEstadoVisualGasto
 import com.gestcar.ui.viewmodel.GastoPeriodicoViewModel
@@ -60,6 +63,8 @@ fun PantallaListaGastos(
     val estadoGastos by gastoViewModel.estadoLista.collectAsState()
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
     var mostrarPagados by rememberSaveable { mutableStateOf(false) }
+    var mostrarFiltroGastos by rememberSaveable { mutableStateOf(false) }
+    var filtroGastos by rememberSaveable { mutableStateOf(FILTRO_GASTOS_TODOS) }
 
     LaunchedEffect(usuarioId, vehiculoInicialId) {
         vehiculoActivoViewModel.cargarVehiculos(usuarioId, vehiculoInicialId)
@@ -89,11 +94,12 @@ fun PantallaListaGastos(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            SelectorVehiculoActivo(
+            FilaSelectorVehiculoConFiltro(
                 vehiculos = estadoVehiculo.vehiculos,
                 vehiculoActivo = vehiculoActivo,
-                alSeleccionar = { vehiculoActivoViewModel.seleccionarVehiculo(it) },
-                modifier = Modifier.padding(16.dp)
+                alSeleccionarVehiculo = { vehiculoActivoViewModel.seleccionarVehiculo(it) },
+                alPulsarFiltro = { mostrarFiltroGastos = true },
+                filtroActivo = filtroGastos != FILTRO_GASTOS_TODOS
             )
 
             when {
@@ -118,7 +124,9 @@ fun PantallaListaGastos(
                 }
 
                 else -> {
-                    val gastosPendientes = estadoGastos.gastos
+                    val gastosFiltrados = estadoGastos.gastos.filtrarPorEstadoGasto(filtroGastos)
+
+                    val gastosPendientes = gastosFiltrados
                         .filter { !it.pagado }
                         .sortedWith(
                             compareBy<GastoPeriodico>(
@@ -128,7 +136,7 @@ fun PantallaListaGastos(
                             )
                         )
 
-                    val gastosPagados = estadoGastos.gastos
+                    val gastosPagados = gastosFiltrados
                         .filter { it.pagado }
                         .sortedByDescending { it.fechaPago ?: it.fecha }
 
@@ -149,20 +157,34 @@ fun PantallaListaGastos(
                             }
                         }
 
+                        if (gastosFiltrados.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "No hay gastos con este filtro",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
                         if (gastosPagados.isNotEmpty()) {
                             item {
                                 if (gastosPendientes.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
-                                TituloSeccionGastosDesplegable(
-                                    titulo = "Pagados",
-                                    cantidad = gastosPagados.size,
-                                    expandido = mostrarPagados,
-                                    alCambiarExpandido = { mostrarPagados = !mostrarPagados }
-                                )
+                                if (filtroGastos == FILTRO_GASTOS_PAGADOS) {
+                                    TituloSeccionGastos("Pagados")
+                                } else {
+                                    TituloSeccionGastosDesplegable(
+                                        titulo = "Pagados",
+                                        cantidad = gastosPagados.size,
+                                        expandido = mostrarPagados,
+                                        alCambiarExpandido = { mostrarPagados = !mostrarPagados }
+                                    )
+                                }
                             }
 
-                            if (mostrarPagados) {
+                            if (mostrarPagados || filtroGastos == FILTRO_GASTOS_PAGADOS) {
                                 items(gastosPagados) { gasto ->
                                     TarjetaGasto(
                                         gasto = gasto,
@@ -175,6 +197,17 @@ fun PantallaListaGastos(
                 }
             }
         }
+    }
+
+    if (mostrarFiltroGastos) {
+        DialogoFiltroGastos(
+            filtroActual = filtroGastos,
+            alCambiarFiltro = {
+                filtroGastos = it
+                mostrarFiltroGastos = false
+            },
+            alCancelar = { mostrarFiltroGastos = false }
+        )
     }
 }
 
@@ -257,4 +290,56 @@ private fun prioridadEstadoGasto(gasto: GastoPeriodico): Int {
         EstadoVisualGasto.SIN_VENCIMIENTO -> 3
         EstadoVisualGasto.PAGADO -> 4
     }
+}
+
+private const val FILTRO_GASTOS_TODOS = "TODOS"
+private const val FILTRO_GASTOS_PENDIENTES = "PENDIENTES"
+private const val FILTRO_GASTOS_PAGADOS = "PAGADOS"
+
+private fun List<GastoPeriodico>.filtrarPorEstadoGasto(filtro: String): List<GastoPeriodico> {
+    return when (filtro) {
+        FILTRO_GASTOS_PENDIENTES -> filter { !it.pagado }
+        FILTRO_GASTOS_PAGADOS -> filter { it.pagado }
+        else -> this
+    }
+}
+
+@Composable
+private fun DialogoFiltroGastos(
+    filtroActual: String,
+    alCambiarFiltro: (String) -> Unit,
+    alCancelar: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = alCancelar,
+        title = { Text("Filtrar gastos") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OpcionFiltroGasto("Todos", FILTRO_GASTOS_TODOS, filtroActual, alCambiarFiltro)
+                OpcionFiltroGasto("Pendientes", FILTRO_GASTOS_PENDIENTES, filtroActual, alCambiarFiltro)
+                OpcionFiltroGasto("Pagados", FILTRO_GASTOS_PAGADOS, filtroActual, alCambiarFiltro)
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = alCancelar) {
+                Text("Cerrar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun OpcionFiltroGasto(
+    texto: String,
+    filtro: String,
+    filtroActual: String,
+    alCambiarFiltro: (String) -> Unit
+) {
+    FilterChip(
+        selected = filtroActual == filtro,
+        onClick = { alCambiarFiltro(filtro) },
+        label = { Text(texto) },
+        modifier = Modifier.fillMaxWidth()
+    )
 }
