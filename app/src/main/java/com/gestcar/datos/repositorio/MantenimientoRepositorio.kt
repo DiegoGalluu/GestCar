@@ -18,6 +18,8 @@ class MantenimientoRepositorio(
     private val tablaRemota = "mantenimientos"
     private val tablaVehiculosRemota = "vehiculos"
 
+    // mantenimientos tambien funciona como checklist
+    // una operacion puede estar pendiente o realizada sin salir de la misma tabla
     fun obtenerMantenimientos(vehiculoId: String): Flow<List<Mantenimiento>> {
         return mantenimientoDao.obtenerPorVehiculo(vehiculoId)
     }
@@ -28,6 +30,8 @@ class MantenimientoRepositorio(
 
     suspend fun guardar(mantenimiento: Mantenimiento): Result<Unit> {
         return try {
+            // normalizamos texto y categoria antes de guardar
+            // asi evitamos duplicados visuales por espacios o mayusculas mezcladas
             val mantenimientoActualizado = mantenimiento.copy(
                 tipo = mantenimiento.tipo.trim(),
                 categoria = mantenimiento.categoria.uppercase(),
@@ -67,10 +71,12 @@ class MantenimientoRepositorio(
 
     suspend fun sincronizar(vehiculoId: String): Result<Unit> {
         return try {
+            // subimos primero lo local para no perder trabajos creados offline
             mantenimientoDao.obtenerPorVehiculoLista(vehiculoId).forEach { mantenimiento ->
                 runCatching { sincronizarMantenimiento(mantenimiento) }
             }
 
+            // despues incorporamos lo remoto para mantener varios dispositivos alineados
             val mantenimientosRemotos = runCatching {
                 ClienteSupabase.cliente.postgrest[tablaRemota]
                     .select { filter { eq("vehiculo_id", vehiculoId) } }
@@ -90,6 +96,8 @@ class MantenimientoRepositorio(
     suspend fun sincronizarPendientesDelUsuario(usuarioId: String): Result<Unit> {
         return try {
             val errores = mutableListOf<Throwable>()
+            // mantenimientos depende de vehiculos
+            // por eso sincronizamos recorriendo los vehiculos del usuario
             vehiculoDao.obtenerVehiculosPorUsuarioLista(usuarioId).forEach { vehiculo ->
                 mantenimientoDao.obtenerPorVehiculoLista(vehiculo.id).forEach { mantenimiento ->
                     runCatching { sincronizarMantenimiento(mantenimiento) }
@@ -122,6 +130,8 @@ class MantenimientoRepositorio(
     private suspend fun sincronizarVehiculoPadreSiHaceFalta(vehiculoId: String) {
         val vehiculo = vehiculoDao.obtenerPorId(vehiculoId) ?: return
 
+        // si el mantenimiento se creo sin internet puede que el vehiculo tampoco este remoto
+        // hacemos upsert del padre antes del hijo para respetar foreign keys y rls
         ClienteSupabase.cliente.postgrest[tablaVehiculosRemota]
             .upsert(
                 value = vehiculo.aDto(),
@@ -138,6 +148,8 @@ class MantenimientoRepositorio(
             return
         }
 
+        // algunas operaciones se hacen a mas kilometros que la ficha actual
+        // actualizarlo aqui evita pedir ese dato por duplicado al usuario
         vehiculoDao.actualizar(
             vehiculo.copy(
                 kilometraje = kilometros,

@@ -37,6 +37,8 @@ object Rutas {
     const val CUENTA = "cuenta"
 
     // funciones helper para construir rutas con parametros
+    // centralizar esto evita errores de escribir a mano strings con ids
+    // tambien facilita cambiar una ruta sin tocar todas las pantallas
     fun formularioVehiculo(vehiculoId: String = "nuevo") =
         "formulario_vehiculo/$vehiculoId"
 

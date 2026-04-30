@@ -44,6 +44,8 @@ class VehiculoRepositorio(
             return vehiculo
         }
 
+        // el primer vehiculo pasa a ser habitual automaticamente
+        // los siguientes quedan como secundarios hasta que el usuario los organice
         val vehiculos = obtenerVehiculosLocales(vehiculo.usuarioId)
         val hayHabituales = vehiculos.any { it.habitual }
         val siguienteOrden = (vehiculos.maxOfOrNull { it.ordenLista } ?: -1) + 1
@@ -55,6 +57,8 @@ class VehiculoRepositorio(
     }
 
     suspend fun guardarOrganizacion(vehiculos: List<Vehiculo>) {
+        // la organizacion es una preferencia de uso de la app
+        // se guarda localmente para no depender de red al ordenar la lista
         vehiculoDao.actualizarVehiculos(vehiculos)
     }
 
@@ -122,6 +126,8 @@ class VehiculoRepositorio(
                 val vehiculoRemoto = dto.aEntidad()
                 vehiculoDao.insertar(
                     if (vehiculoLocal != null) {
+                        // respetamos el orden local elegido por el usuario
+                        // supabase guarda los datos del vehiculo pero la prioridad visual es local
                         vehiculoRemoto.copy(
                             habitual = vehiculoLocal.habitual,
                             ordenLista = vehiculoLocal.ordenLista
@@ -139,6 +145,8 @@ class VehiculoRepositorio(
     }
 
     suspend fun actualizarImagenVehiculo(vehiculo: Vehiculo, imagenUriLocal: String): Result<Vehiculo> {
+        // primero enlazamos la foto local para que se vea al instante
+        // luego intentamos subirla y sustituir la ruta por la ruta remota
         val vehiculoActualizado = vehiculo.copy(
             imagenUri = imagenUriLocal,
             actualizadoEn = System.currentTimeMillis()
@@ -154,6 +162,8 @@ class VehiculoRepositorio(
     }
 
     private suspend fun sincronizarVehiculo(vehiculo: Vehiculo): Vehiculo {
+        // antes de subir el vehiculo comprobamos si su imagen todavia es un archivo local
+        // si lo es, la subimos al bucket privado y guardamos la ruta remota
         val vehiculoPreparado = subirImagenSiHaceFalta(vehiculo)
         ClienteSupabase.cliente.postgrest[tablaRemota]
             .upsert(
@@ -168,14 +178,20 @@ class VehiculoRepositorio(
     private suspend fun subirImagenSiHaceFalta(vehiculo: Vehiculo): Vehiculo {
         val imagenUri = normalizarRutaImagenVehiculo(vehiculo.imagenUri) ?: return vehiculo
         if (!imagenUri.startsWith("file://")) {
+            // si no empieza por file ya es una ruta remota o una ruta normalizada
+            // no hay nada pesado que subir en este momento
             return vehiculo.copy(imagenUri = imagenUri)
         }
 
         val archivoImagen = File(requireNotNull(android.net.Uri.parse(imagenUri).path))
         if (!archivoImagen.exists()) {
+            // si la foto local ya no existe evitamos dejar una ruta rota
+            // es mejor volver al icono por defecto que mostrar una imagen inexistente
             return vehiculo.copy(imagenUri = null)
         }
 
+        // ruta por usuario y vehiculo
+        // asi no mezclamos fotos de usuarios diferentes dentro del mismo bucket
         val rutaRemota = "${vehiculo.usuarioId}/${vehiculo.id}.jpg"
         val bucket = ClienteSupabase.cliente.storage.from(ClienteSupabase.BUCKET_FOTOS_VEHICULOS)
         bucket.upload(rutaRemota, archivoImagen.readBytes()) {

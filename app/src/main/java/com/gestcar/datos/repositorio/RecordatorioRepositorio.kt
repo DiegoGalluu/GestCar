@@ -18,6 +18,8 @@ class RecordatorioRepositorio(
     private val tablaRemota = "recordatorios"
     private val tablaVehiculosRemota = "vehiculos"
 
+    // los recordatorios son independientes de gastos o mantenimientos
+    // sirven para avisos libres del usuario por fecha kilometraje o ambas cosas
     fun obtenerRecordatorios(vehiculoId: String): Flow<List<Recordatorio>> {
         return recordatorioDao.obtenerPorVehiculo(vehiculoId)
     }
@@ -28,6 +30,8 @@ class RecordatorioRepositorio(
 
     suspend fun guardar(recordatorio: Recordatorio): Result<Unit> {
         return try {
+            // recortar el concepto evita que dos recordatorios parezcan distintos
+            // solo por espacios introducidos con el teclado
             val recordatorioActualizado = recordatorio.copy(
                 concepto = recordatorio.concepto.trim(),
                 actualizadoEn = System.currentTimeMillis()
@@ -61,6 +65,8 @@ class RecordatorioRepositorio(
 
     suspend fun sincronizar(vehiculoId: String): Result<Unit> {
         return try {
+            // el usuario puede crear recordatorios sin red
+            // al volver la conexion se suben antes de descargar lo remoto
             recordatorioDao.obtenerPorVehiculoLista(vehiculoId).forEach { recordatorio ->
                 runCatching { sincronizarRecordatorio(recordatorio) }
             }
@@ -116,6 +122,8 @@ class RecordatorioRepositorio(
     private suspend fun sincronizarVehiculoPadreSiHaceFalta(vehiculoId: String) {
         val vehiculo = vehiculoDao.obtenerPorId(vehiculoId) ?: return
 
+        // la rls de supabase valida la propiedad a traves del vehiculo
+        // por eso debe existir el vehiculo remoto antes de insertar recordatorios
         ClienteSupabase.cliente.postgrest[tablaVehiculosRemota]
             .upsert(
                 value = vehiculo.aDto(),

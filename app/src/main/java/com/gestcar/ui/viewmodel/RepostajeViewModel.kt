@@ -15,6 +15,8 @@ import java.util.Calendar
 import java.util.UUID
 
 enum class PeriodoRepostajes {
+    // estos periodos alimentan los filtros visuales de la pantalla de repostajes
+    // personalizado permite elegir rango concreto desde calendario
     HOY,
     SEMANA,
     MES,
@@ -65,6 +67,8 @@ class RepostajeViewModel(aplicacion: Application) : AndroidViewModel(aplicacion)
     fun cargarRepostajes(vehiculoId: String) {
         viewModelScope.launch {
             _estadoLista.value = _estadoLista.value.copy(estaCargando = true, mensajeError = null)
+            // sincronizamos antes de escuchar room
+            // si falla igualmente se mostrara lo local y el error queda disponible
             val resultadoSincronizacion = repositorio.sincronizar(vehiculoId)
 
             repositorio.obtenerRepostajes(vehiculoId).collect { repostajes ->
@@ -118,6 +122,8 @@ class RepostajeViewModel(aplicacion: Application) : AndroidViewModel(aplicacion)
     }
 
     fun actualizarFormulario(repostaje: Repostaje) {
+        // el total se recalcula en cada cambio
+        // asi no hay riesgo de que litros precio y total queden desalineados
         _estadoFormulario.value = _estadoFormulario.value.copy(
             repostaje = repostaje.copy(importeTotal = repostaje.litros * repostaje.precioPorLitro),
             mensajeError = null
@@ -138,6 +144,8 @@ class RepostajeViewModel(aplicacion: Application) : AndroidViewModel(aplicacion)
             }
 
             if (!permitirKilometrajeMenor && ultimoKilometraje != null && repostaje.kilometros < ultimoKilometraje) {
+                // no lo bloqueamos de forma absoluta
+                // puede haber errores de odometro o repostajes antiguos introducidos tarde
                 _estadoFormulario.value = estadoActual.copy(necesitaConfirmarKilometrajeMenor = true)
                 return@launch
             }
@@ -150,6 +158,8 @@ class RepostajeViewModel(aplicacion: Application) : AndroidViewModel(aplicacion)
 
             val resultado = repositorio.guardar(repostaje)
             _estadoFormulario.value = if (resultado.isSuccess) {
+                // ademas del intento inmediato del repositorio pedimos una sync puntual
+                // esto ayuda a subir otros datos pendientes que puedan estar relacionados
                 PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
                 _estadoFormulario.value.copy(
                     estaCargando = false,
@@ -201,6 +211,8 @@ class RepostajeViewModel(aplicacion: Application) : AndroidViewModel(aplicacion)
         estadoActual: EstadoListaRepostajes,
         mensajeError: String? = estadoActual.mensajeError
     ): EstadoListaRepostajes {
+        // todos los indicadores se calculan sobre la lista filtrada
+        // asi al cambiar periodo no se mezclan importes o consumos de otros meses
         val filtrados = filtrarPorPeriodo(
             repostajes = repostajes,
             periodo = estadoActual.periodoSeleccionado,
@@ -219,6 +231,8 @@ class RepostajeViewModel(aplicacion: Application) : AndroidViewModel(aplicacion)
     }
 
     private fun obtenerTramosValidos(repostajes: List<Repostaje>): List<TramoRepostaje> {
+        // consumo real necesita dos llenados completos consecutivos
+        // el primer repostaje marca punto de partida y el segundo aporta litros consumidos
         val repostajesLlenos = repostajes
             .filter { it.llenoCompleto }
             .sortedBy { it.kilometros }
@@ -252,6 +266,8 @@ class RepostajeViewModel(aplicacion: Application) : AndroidViewModel(aplicacion)
     ): Pair<Long, Long>? {
         val calendario = Calendar.getInstance()
 
+        // usamos rangos cerrados de dia completo para evitar perder datos por horas o minutos
+        // esto es importante cuando la fecha viene de un datepicker sin hora visible
         return when (periodo) {
             PeriodoRepostajes.TODO -> null
             PeriodoRepostajes.HOY -> inicioYFin(calendario)

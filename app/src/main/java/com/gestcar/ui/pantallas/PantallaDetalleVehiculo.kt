@@ -98,6 +98,8 @@ fun PantallaDetalleVehiculo(
     val selectorGaleria = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
+        // la galeria devuelve una uri temporal del sistema
+        // el viewmodel la copia y comprime dentro de almacenamiento privado
         if (uri != null) {
             viewModel.actualizarImagenVehiculo(uri)
         }
@@ -107,6 +109,8 @@ fun PantallaDetalleVehiculo(
         contract = ActivityResultContracts.TakePicture()
     ) { imagenGuardada ->
         val uriCaptura = uriTemporalCamara
+        // takepicture escribe directamente en la uri que le damos
+        // si el resultado es correcto procesamos esa misma uri como cualquier imagen
         if (imagenGuardada && uriCaptura != null) {
             viewModel.actualizarImagenVehiculo(uriCaptura)
         }
@@ -118,6 +122,8 @@ fun PantallaDetalleVehiculo(
     }
 
     LaunchedEffect(vehiculo?.id, vehiculo?.kilometraje) {
+        // el resumen depende del kilometraje porque algunas metricas son coste por km
+        // si el vehiculo cambia o se actualiza el odometro recalculamos
         vehiculo?.let { resumenViewModel.cargarResumen(it.id, it.kilometraje) }
     }
 
@@ -167,6 +173,8 @@ fun PantallaDetalleVehiculo(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // resumen rapido para evitar que el detalle sea solo una ficha estatica
+                // aqui se ve de un vistazo consumo gastos y coste por kilometro
                 ResumenRapidoVehiculo(
                     consumoMedio = resumen.consumoMedio,
                     costeCombustibleCada100Km = resumen.costeCombustibleCada100Km,
@@ -270,6 +278,8 @@ private fun CabeceraVehiculoDetalle(
     alHacerFoto: () -> Unit
 ) {
     Box(contentAlignment = Alignment.BottomEnd) {
+        // imagenvehiculo ya decide si usa foto local remota o icono por defecto
+        // esta pantalla solo se preocupa de mostrarla y ofrecer cambiarla
         ImagenVehiculo(
             vehiculo = vehiculo,
             modifier = Modifier.size(220.dp),
@@ -435,6 +445,8 @@ private fun SeccionResumen(
     alVerTodos: () -> Unit,
     contenido: @Composable ColumnScope.() -> Unit
 ) {
+    // componente comun para bloques de resumen del detalle
+    // mantiene la misma estructura visual para repostajes gastos mantenimiento y recordatorios
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -581,6 +593,8 @@ private fun textoDetalleRecordatorioResumen(
 ): String {
     val partes = mutableListOf<String>()
 
+    // construimos el texto solo con los limites que existan
+    // un recordatorio puede depender de fecha kilometraje o ambas cosas
     recordatorio.fechaLimite?.let { partes.add("Fecha: ${formatearFechaCorta(it)}") }
     recordatorio.kilometrajeLimite?.let { partes.add("Km: ${formatearNumero(it)}") }
 

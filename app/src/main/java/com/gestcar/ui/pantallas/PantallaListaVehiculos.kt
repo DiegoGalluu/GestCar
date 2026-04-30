@@ -59,6 +59,8 @@ fun PantallaListaVehiculos(
     var avisoCargaInicialEnviado by remember { mutableStateOf(false) }
 
     LaunchedEffect(usuarioId) {
+        // reiniciamos el aviso para que el splash inicial no desaparezca antes de tiempo
+        // se usa sobre todo cuando la app recupera una sesion guardada
         haVistoCargaInicial = false
         avisoCargaInicialEnviado = false
         viewModel.cargarVehiculos(usuarioId)
@@ -157,6 +159,8 @@ fun PantallaListaVehiculos(
                 }
 
                 else -> {
+                    // en modo organizacion trabajamos con una copia temporal
+                    // si el usuario cancela no tocamos los datos reales de room
                     val vehiculosVisibles = if (modoOrganizacion) vehiculosOrganizacion else estado.vehiculos
                     val habituales = vehiculosVisibles.filter { it.habitual }
                     val otros = vehiculosVisibles.filter { !it.habitual }
@@ -238,6 +242,8 @@ fun PantallaListaVehiculos(
 
 @Composable
 private fun ZonaVaciaOtrosVehiculos() {
+    // aunque no haya secundarios mantenemos una zona visible
+    // asi el usuario entiende que puede mover vehiculos a esa seccion
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -277,6 +283,8 @@ private fun TarjetaVehiculoOrganizable(
 ) {
     val indice = vehiculos.indexOfFirst { it.id == vehiculo.id }
     val cantidadHabituales = vehiculos.count { it.habitual }
+    // solo permitimos bajar el ultimo habitual a secundarios
+    // asi no queda un hueco raro en mitad del grupo de habituales
     val puedeBajarAOtros = modoOrganizacion &&
         vehiculo.habitual &&
         cantidadHabituales > 1 &&
@@ -318,6 +326,8 @@ private fun moverVehiculoOrganizacion(
     val esUltimoHabitual = indice == cantidadHabituales - 1
     val esPrimerSecundario = indice == cantidadHabituales
 
+    // bajar el ultimo habitual lo convierte en secundario
+    // mantenemos al menos un habitual para que los selectores tengan vehiculo por defecto
     if (direccion > 0 && esUltimoHabitual && cantidadHabituales > 1) {
         return lista.mapIndexed { nuevoIndice, vehiculo ->
             vehiculo.copy(
@@ -331,6 +341,8 @@ private fun moverVehiculoOrganizacion(
         }.ordenarParaMostrar()
     }
 
+    // subir el primer secundario lo convierte en habitual
+    // esto permite crear varios habituales ordenados por prioridad
     if (direccion < 0 && esPrimerSecundario) {
         return lista.mapIndexed { nuevoIndice, vehiculo ->
             vehiculo.copy(
@@ -352,6 +364,8 @@ private fun moverVehiculoOrganizacion(
     val vehiculoMovido = lista.removeAt(indice)
     lista.add(destino, vehiculoMovido)
 
+    // despues de mover recalculamos flags y orden
+    // es mas seguro que intentar parchear solo dos elementos
     return lista.mapIndexed { nuevoIndice, vehiculo ->
         vehiculo.copy(
             habitual = nuevoIndice < cantidadHabituales,
@@ -361,6 +375,8 @@ private fun moverVehiculoOrganizacion(
 }
 
 private fun List<Vehiculo>.ordenarParaMostrar(): List<Vehiculo> {
+    // habituales siempre arriba, secundarios debajo
+    // dentro de cada bloque manda el orden elegido por el usuario
     return sortedWith(compareByDescending<Vehiculo> { it.habitual }.thenBy { it.ordenLista })
         .mapIndexed { indice, vehiculo -> vehiculo.copy(ordenLista = indice) }
 }

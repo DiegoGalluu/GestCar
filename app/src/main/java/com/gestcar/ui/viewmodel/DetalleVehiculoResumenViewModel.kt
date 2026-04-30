@@ -37,6 +37,8 @@ class DetalleVehiculoResumenViewModel(aplicacion: Application) : AndroidViewMode
     fun cargarResumen(vehiculoId: String, kilometrajeActual: Double) {
         trabajoCarga?.cancel()
         trabajoCarga = viewModelScope.launch {
+            // combinamos las cuatro tablas operativas del vehiculo
+            // cada cambio en repostajes gastos mantenimientos o recordatorios recalcula el resumen
             combine(
                 baseDatos.repostajeDao().obtenerPorVehiculo(vehiculoId),
                 baseDatos.mantenimientoDao().obtenerPorVehiculo(vehiculoId),
@@ -45,6 +47,8 @@ class DetalleVehiculoResumenViewModel(aplicacion: Application) : AndroidViewMode
             ) { repostajes, mantenimientos, gastos, recordatorios ->
                 EstadoResumenDetalleVehiculo(
                     ultimosRepostajes = repostajes.take(3),
+                    // solo mostramos mantenimientos realizados en el resumen
+                    // los pendientes ya tienen su propio bloque de tareas en mantenimiento
                     ultimosMantenimientos = mantenimientos.filter { it.realizado }.take(3),
                     gastosActivos = gastos
                         .filter { !it.pagado }
@@ -90,6 +94,8 @@ class DetalleVehiculoResumenViewModel(aplicacion: Application) : AndroidViewMode
         mantenimientos: List<Mantenimiento>,
         gastos: List<GastoPeriodico>
     ): Double {
+        // coste total registrado no pretende ser valor real del vehiculo
+        // solo suma lo que el usuario ha ido anotando en la app
         return repostajes.sumOf { it.importeTotal } +
             mantenimientos.filter { it.realizado }.sumOf { it.coste } +
             gastos.sumOf { it.importe }
@@ -101,6 +107,8 @@ class DetalleVehiculoResumenViewModel(aplicacion: Application) : AndroidViewMode
         mantenimientos: List<Mantenimiento>,
         gastos: List<GastoPeriodico>
     ): Double {
+        // tomamos como kilometraje inicial el menor dato operativo que exista
+        // si no hay historico suficiente devolvemos cero para no inventar metricas
         val kilometrajeInicial = (repostajes.map { it.kilometros } + mantenimientos.filter { it.realizado }.mapNotNull { it.kilometros })
             .filter { it > 0 }
             .minOrNull()
@@ -115,6 +123,8 @@ class DetalleVehiculoResumenViewModel(aplicacion: Application) : AndroidViewMode
     }
 
     private fun obtenerTramosValidos(repostajes: List<Repostaje>): List<TramoRepostaje> {
+        // el mismo criterio que en repostajes
+        // solo tramos entre llenos completos para no falsear consumo ni coste por cien kilometros
         val llenos = repostajes
             .filter { it.llenoCompleto }
             .sortedBy { it.kilometros }

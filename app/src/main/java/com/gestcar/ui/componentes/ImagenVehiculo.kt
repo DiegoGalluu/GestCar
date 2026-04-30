@@ -40,6 +40,8 @@ fun ImagenVehiculo(
 ) {
     val contexto = LocalContext.current
     val imagenNormalizada = normalizarRutaImagenVehiculo(vehiculo.imagenUri)
+    // prioridad absoluta a la copia local
+    // mejora rendimiento y permite ver fotos sin conexion
     val imagenLocal = remember(vehiculo.usuarioId, vehiculo.id, vehiculo.imagenUri) {
         GestorImagenesVehiculo.obtenerUriLocalVehiculo(
             context = contexto,
@@ -55,11 +57,15 @@ fun ImagenVehiculo(
             imagenNormalizada.isNullOrBlank() -> null
             esRutaRemotaPrivadaImagen(imagenNormalizada) -> {
                 try {
+                    // el bucket es privado
+                    // generamos una signed url temporal solo cuando hace falta mostrar la imagen
                     val urlFirmada = ClienteSupabase.cliente.storage
                         .from(ClienteSupabase.BUCKET_FOTOS_VEHICULOS)
                         .createSignedUrl(imagenNormalizada, 6.hours)
 
                     withContext(Dispatchers.IO) {
+                        // despues de descargar desde supabase guardamos copia local
+                        // asi la siguiente carga no necesita red ni signed url
                         GestorImagenesVehiculo.guardarImagenRemotaEnCache(
                             context = contexto,
                             imagenUrl = urlFirmada,
@@ -77,6 +83,8 @@ fun ImagenVehiculo(
     }
 
     val icono = when (vehiculo.tipo) {
+        // si no hay foto usamos un icono contextual
+        // mantiene la tarjeta reconocible aunque la imagen sea opcional
         "MOTO" -> Icons.Default.Moped
         "FURGONETA" -> Icons.Default.LocalShipping
         else -> Icons.Default.DirectionsCar

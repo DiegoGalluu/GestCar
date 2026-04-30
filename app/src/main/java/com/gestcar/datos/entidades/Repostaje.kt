@@ -21,12 +21,18 @@ import androidx.room.PrimaryKey
 data class Repostaje(
     @PrimaryKey
     val id: String = "",
+    // vinculamos cada repostaje con su vehiculo
+    // la relacion local replica la foreign key que tambien existe en supabase
     val vehiculoId: String = "",
     val fecha: Long = System.currentTimeMillis(),
+    // kilometros es el odometro en el momento de repostar
+    // no son kilometros recorridos desde el ultimo repostaje
     val kilometros: Double = 0.0,
     val litros: Double = 0.0,
     val precioPorLitro: Double = 0.0,
+    // se guarda calculado para que listados y estadisticas no recalculen siempre
     val importeTotal: Double = 0.0,
+    // solo los llenos completos sirven para calcular consumo medio fiable
     val llenoCompleto: Boolean = true,
     val gasolinera: String? = null,
     val notas: String? = null,

@@ -21,6 +21,8 @@ data class ResultadoMatricula(
 
 private const val LETRAS_MATRICULA_ACTUAL = "BCDFGHJKLMNPRSTVWXYZ"
 
+// lista de distintivos provinciales que existian en los formatos antiguos
+// esto nos permite reconocer matriculas clasicas sin confundirlas con textos raros
 private val distintivosProvinciales = setOf(
     "A", "AB", "AL", "AV",
     "B", "BA", "BI", "BU",
@@ -50,6 +52,8 @@ private val matriculaAntiguaNumerica = Regex("^([A-Z]{1,2})([0-9]{1,6})$")
 
 fun normalizarMatricula(texto: String): ResultadoMatricula {
     val original = texto.trim()
+    // compactamos lo que escribe el usuario
+    // da igual si pone espacios guiones o minusculas, intentamos reconocerlo igualmente
     val compacta = original
         .uppercase()
         .replace(Regex("[^A-Z0-9]"), "")
@@ -64,6 +68,7 @@ fun normalizarMatricula(texto: String): ResultadoMatricula {
     }
 
     // miramos primero formatos civiles especificos, asi evitamos que se confundan con provinciales antiguas
+    // no normalizamos diplomaticas ni cuerpos especiales por criterio de privacidad y seguridad
     matriculaHistorica.matchEntire(compacta)?.let {
         return ResultadoMatricula(texto, "H ${it.groupValues[1]} ${it.groupValues[2]}", TipoMatriculaDetectada.Historica, true)
     }

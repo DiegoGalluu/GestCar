@@ -99,6 +99,8 @@ fun GrafoNavegacion(
     val mostrarBarraInferior = rutaPrincipalActual in rutasConBarraInferior
 
     LaunchedEffect(estadoAuth.modoRestablecerContrasena, rutaActual) {
+        // si el usuario llega desde el enlace de recuperacion de contrasena
+        // forzamos la ruta correcta aunque la app estuviese abierta en otra pantalla
         if (estadoAuth.modoRestablecerContrasena && rutaActual != Rutas.RESTABLECER_CONTRASENA) {
             controladorNav.navigate(Rutas.RESTABLECER_CONTRASENA)
         }
@@ -118,6 +120,8 @@ fun GrafoNavegacion(
             navController = controladorNav,
             startDestination = pantallaInicio,
             modifier = Modifier.padding(paddingInterior),
+            // transiciones cortas para que la navegacion no sea brusca
+            // no usamos animaciones largas porque la app es utilitaria y debe sentirse agil
             enterTransition = { fadeIn(animationSpec = tween(180)) },
             exitTransition = { fadeOut(animationSpec = tween(120)) },
             popEnterTransition = { fadeIn(animationSpec = tween(180)) },
@@ -167,6 +171,8 @@ fun GrafoNavegacion(
             composable(Rutas.LISTA_VEHICULOS) {
                 PantallaListaVehiculos(
                     usuarioId = usuarioId,
+                    // avisa a actividadprincipal cuando ya se puede retirar el splash inicial
+                    // asi no se ve el login ni una pantalla vacia durante la carga de sesion
                     alCargaInicialCompletada = alListaVehiculosCargada,
                     alPulsarVehiculo = { vehiculoId ->
                         controladorNav.navigate(Rutas.detalleVehiculo(vehiculoId))
@@ -529,6 +535,8 @@ fun BarraNavegacionInferior(
 }
 
 private fun rutaPrincipalDeBarra(ruta: String?): String? {
+    // algunas pantallas tienen rutas con parametros
+    // las agrupamos bajo la seccion principal para que la bottom bar marque bien el icono
     return when (ruta) {
         Rutas.LISTA_VEHICULOS -> Rutas.LISTA_VEHICULOS
         Rutas.GASTOS, Rutas.GASTOS_VEHICULO -> Rutas.GASTOS
@@ -545,6 +553,8 @@ private fun NavHostController.navegarASeccionPrincipal(ruta: String) {
         return
     }
 
+    // al tocar la barra inferior volvemos a la seccion principal
+    // popupto evita apilar pantallas infinitas al navegar entre tabs
     navigate(ruta) {
         popUpTo(Rutas.LISTA_VEHICULOS) {
             inclusive = false

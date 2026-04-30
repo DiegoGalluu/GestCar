@@ -51,6 +51,8 @@ fun BarraSuperiorCompacta(
     acciones: @Composable RowScope.() -> Unit = {}
 ) {
     val contexto = LocalContext.current
+    // producestate convierte el flow de conectividad en estado compose
+    // asi cualquier pantalla que use esta barra recibe el banner automaticamente
     val hayConexion by produceState<Boolean?>(initialValue = null, contexto) {
         ObservadorConectividad(contexto).observarConexion().collect { conectado ->
             value = conectado
@@ -62,12 +64,15 @@ fun BarraSuperiorCompacta(
     LaunchedEffect(hayConexion) {
         when (hayConexion) {
             false -> {
+                // recordamos que hubo corte para poder mostrar despues el mensaje verde
                 huboDesconexion = true
                 mostrarConexionRestablecida = false
             }
 
             true -> {
                 if (huboDesconexion) {
+                    // solo mostramos "vuelves a tener conexion" si antes hubo una perdida real
+                    // asi no aparece cada vez que la pantalla se recompone
                     mostrarConexionRestablecida = true
                     delay(3000)
                     mostrarConexionRestablecida = false
@@ -80,6 +85,8 @@ fun BarraSuperiorCompacta(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
+        // reservamos el alto de la status bar manualmente
+        // nuestra barra es custom y por eso no delegamos esto en topappbar
         Spacer(
             modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars)
         )
@@ -127,6 +134,8 @@ fun BarraSuperiorCompacta(
         }
 
         BannerConexion(
+            // si no hay conexion se queda visible
+            // si vuelve internet se muestra unos segundos y desaparece
             visible = hayConexion == false || mostrarConexionRestablecida,
             texto = if (hayConexion == false) "No hay conexión" else "Vuelves a tener conexión",
             color = if (hayConexion == false) Color(0xFF3A3A3A) else Color(0xFF2E8B57)

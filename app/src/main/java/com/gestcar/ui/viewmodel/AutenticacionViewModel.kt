@@ -46,6 +46,8 @@ class AutenticacionViewModel : ViewModel() {
     // comprueba si hay una sesion activa en supabase
     fun comprobarSesion() {
         viewModelScope.launch {
+            // durante esta comprobacion actividadprincipal mantiene el splash
+            // asi evitamos que se vea el login si en realidad habia sesion guardada
             _estado.value = _estado.value.copy(estaComprobandoSesion = true)
             try {
                 ClienteSupabase.cliente.auth.awaitInitialization()
@@ -83,6 +85,8 @@ class AutenticacionViewModel : ViewModel() {
         viewModelScope.launch {
             _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
             try {
+                // limpiamos cualquier sesion vieja antes de entrar
+                // esto evita mezclar usuarios si se cambia de cuenta en el mismo dispositivo
                 ClienteSupabase.cliente.auth.clearSession()
                 ClienteSupabase.cliente.auth.signInWith(Email) {
                     this.email = email.trim()
@@ -109,6 +113,8 @@ class AutenticacionViewModel : ViewModel() {
         viewModelScope.launch {
             _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
             try {
+                // registro con redirect para que la confirmacion de correo vuelva a la app
+                // si supabase exige confirmar correo no damos acceso hasta tener sesion valida
                 ClienteSupabase.cliente.auth.clearSession()
                 ClienteSupabase.cliente.auth.signUpWith(
                     provider = Email,
@@ -162,6 +168,8 @@ class AutenticacionViewModel : ViewModel() {
 
             _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
             try {
+                // el correo lo manda supabase usando el smtp configurado
+                // la app solo solicita el flujo y espera el deeplink de vuelta
                 ClienteSupabase.cliente.auth.resetPasswordForEmail(
                     email = correo,
                     redirectUrl = ClienteSupabase.AUTH_DEEP_LINK
@@ -204,6 +212,8 @@ class AutenticacionViewModel : ViewModel() {
 
             _estado.value = _estado.value.copy(estaCargando = true, mensajeError = null)
             try {
+                // updateuser solo funciona si el deeplink de recuperacion ha creado sesion temporal
+                // por eso esta pantalla depende del flujo de recovery de supabase
                 ClienteSupabase.cliente.auth.updateUser {
                     password = nuevaContrasena
                 }
@@ -226,6 +236,8 @@ class AutenticacionViewModel : ViewModel() {
     }
 
     private suspend fun actualizarEstadoDesdeSesion(errorSinSesion: String) {
+        // despues de login o registro no asumimos exito solo porque no haya excepcion
+        // comprobamos que realmente exista una sesion con usuario valido
         ClienteSupabase.cliente.auth.awaitInitialization()
         val sesion = ClienteSupabase.cliente.auth.currentSessionOrNull()
         val usuario = sesion?.user

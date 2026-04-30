@@ -10,7 +10,12 @@ import io.github.jan.supabase.storage.Storage
 // IMPORTANTE, tienes que poner tu propia url y clave de tu proyecto de supabase
 object ClienteSupabase {
 
+    // bucket privado donde se guardan las fotos de los vehiculos
+    // no se usa un bucket publico porque las matriculas y fotos pueden ser datos sensibles
     const val BUCKET_FOTOS_VEHICULOS = "vehiculos"
+
+    // enlace profundo que permite volver a la app tras confirmar correo o resetear contrasena
+    // debe coincidir con la configuracion de supabase auth y con el intent filter de android
     const val AUTH_DEEP_LINK = "gestcar://login-callback"
 
     // pon aqui la url de tu proyecto de supabase
@@ -21,7 +26,8 @@ object ClienteSupabase {
     // la encuentras en supabase dashboard > settings > api > anon public
     private const val SUPABASE_KEY = "sb_publishable_fy1CfFqjPeO0-SlkQxijcg_1_63QOH5"
 
-    // creamos el cliente con los modulos de autenticacion y base de datos
+    // creamos un unico cliente compartido
+    // asi todos los repositorios usan la misma sesion de supabase y la misma configuracion
     val cliente = createSupabaseClient(
         supabaseUrl = SUPABASE_URL,
         supabaseKey = SUPABASE_KEY

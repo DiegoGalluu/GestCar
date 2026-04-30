@@ -24,6 +24,8 @@ fun DialogoFiltroPeriodo(
     alSeleccionarPeriodo: (PeriodoRepostajes) -> Unit,
     alCancelar: () -> Unit
 ) {
+    // usamos el mismo dialogo para repostajes y otras secciones filtrables
+    // asi el comportamiento temporal es consistente en toda la app
     val opciones = listOf(
         PeriodoRepostajes.HOY to "Hoy",
         PeriodoRepostajes.SEMANA to "Semana",
@@ -64,6 +66,8 @@ fun DialogoRangoPeriodo(
     alConfirmar: (Long, Long) -> Unit,
     alCancelar: () -> Unit
 ) {
+    // guardamos el rango dentro del dialogo hasta que el usuario pulsa aplicar
+    // cancelar no cambia el filtro que ya tenia la pantalla
     var fechaInicio by remember { mutableStateOf(fechaInicioInicial) }
     var fechaFin by remember { mutableStateOf(fechaFinInicial) }
 
@@ -103,6 +107,7 @@ fun fechaDentroDePeriodo(
     fechaInicioPersonalizada: Long?,
     fechaFinPersonalizada: Long?
 ): Boolean {
+    // si el periodo es todo no hay rango y por tanto todos los registros pasan el filtro
     val rango = obtenerRangoPeriodo(periodo, fechaInicioPersonalizada, fechaFinPersonalizada)
         ?: return true
 
@@ -120,6 +125,8 @@ private fun obtenerRangoPeriodo(
 ): Pair<Long, Long>? {
     val calendario = Calendar.getInstance()
 
+    // los rangos se calculan desde el inicio del dia hasta el final del dia
+    // esto evita perder registros por diferencias invisibles de hora
     return when (periodo) {
         PeriodoRepostajes.TODO -> null
         PeriodoRepostajes.HOY -> inicioYFin(calendario)

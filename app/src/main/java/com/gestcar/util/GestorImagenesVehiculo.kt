@@ -16,6 +16,8 @@ private const val CALIDAD_JPEG = 80
 object GestorImagenesVehiculo {
 
     fun crearUriTemporalCamara(context: Context, vehiculoId: String): Uri {
+        // la camara necesita una uri compartible mediante fileprovider
+        // no le damos acceso directo a rutas internas del sistema
         val directorio = File(context.cacheDir, "camera").apply { mkdirs() }
         val archivo = File.createTempFile("vehiculo_${vehiculoId}_", ".jpg", directorio)
         return FileProvider.getUriForFile(
@@ -31,10 +33,14 @@ object GestorImagenesVehiculo {
         usuarioId: String,
         vehiculoId: String
     ): String {
+        // decodificamos reduciendo memoria desde el principio
+        // abrir una foto de camara completa puede ser demasiado pesado para algunos moviles
         val bitmap = decodificarBitmapReducido(context, origenUri)
             ?: error("No se ha podido leer la imagen seleccionada")
 
         val bitmapEscalado = escalarSiHaceFalta(bitmap)
+        // copia privada por usuario y vehiculo
+        // permite ver la foto offline y evita depender de permisos externos
         val directorio = File(context.filesDir, "vehiculos_imagenes/$usuarioId").apply { mkdirs() }
         val archivo = File(directorio, "$vehiculoId.jpg")
 
@@ -55,6 +61,8 @@ object GestorImagenesVehiculo {
         usuarioId: String,
         vehiculoId: String
     ): String? {
+        // antes de pedir una signed url a supabase intentamos usar la copia local
+        // esto hace que las imagenes carguen incluso sin conexion
         val archivo = File(context.filesDir, "vehiculos_imagenes/$usuarioId/$vehiculoId.jpg")
         return if (archivo.exists()) {
             Uri.fromFile(archivo).toString()
@@ -70,6 +78,8 @@ object GestorImagenesVehiculo {
         vehiculoId: String
     ): String? {
         return try {
+            // cuando descargamos una imagen remota la guardamos tambien en local
+            // la proxima apertura sera mas rapida y seguira funcionando offline
             val directorio = File(context.filesDir, "vehiculos_imagenes/$usuarioId").apply { mkdirs() }
             val archivo = File(directorio, "$vehiculoId.jpg")
             URL(imagenUrl).openStream().use { entrada ->
@@ -84,6 +94,8 @@ object GestorImagenesVehiculo {
     }
 
     private fun decodificarBitmapReducido(context: Context, uri: Uri): Bitmap? {
+        // primera pasada solo para medir dimensiones
+        // no cargamos pixeles todavia porque solo queremos calcular el sample size
         val opcionesLimites = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(uri)?.use { flujo ->
             BitmapFactory.decodeStream(flujo, null, opcionesLimites)
@@ -104,6 +116,8 @@ object GestorImagenesVehiculo {
     }
 
     private fun calcularSampleSize(ancho: Int, alto: Int): Int {
+        // sample size siempre es potencia de dos
+        // android decodifica asi de forma mas eficiente
         var sampleSize = 1
         var anchoActual = ancho
         var altoActual = alto
@@ -118,6 +132,8 @@ object GestorImagenesVehiculo {
     }
 
     private fun escalarSiHaceFalta(bitmap: Bitmap): Bitmap {
+        // limitamos el lado mayor para no subir fotos enormes a supabase
+        // visualmente sigue siendo suficiente para una ficha de vehiculo
         val ladoMayor = max(bitmap.width, bitmap.height)
         if (ladoMayor <= MAX_LADO_IMAGEN) {
             return bitmap

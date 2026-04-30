@@ -18,6 +18,8 @@ class RepostajeRepositorio(
     private val tablaRemota = "repostajes"
     private val tablaVehiculosRemota = "vehiculos"
 
+    // room emite la lista como flow
+    // asi la pantalla se actualiza sola cuando se guarda o sincroniza un repostaje
     fun obtenerRepostajes(vehiculoId: String): Flow<List<Repostaje>> {
         return repostajeDao.obtenerPorVehiculo(vehiculoId)
     }
@@ -32,6 +34,8 @@ class RepostajeRepositorio(
 
     suspend fun guardar(repostaje: Repostaje): Result<Unit> {
         return try {
+            // el importe se calcula aqui para que la ui no sea la unica fuente de verdad
+            // si en el futuro se guarda desde otro sitio seguira siendo coherente
             val repostajeActualizado = repostaje.copy(
                 importeTotal = repostaje.litros * repostaje.precioPorLitro,
                 actualizadoEn = System.currentTimeMillis()
@@ -71,10 +75,14 @@ class RepostajeRepositorio(
 
     suspend fun sincronizar(vehiculoId: String): Result<Unit> {
         return try {
+            // primero subimos todo lo local
+            // si el usuario creo repostajes sin cobertura se recuperan en cuanto haya red
             repostajeDao.obtenerPorVehiculoLista(vehiculoId).forEach { repostaje ->
                 runCatching { sincronizarRepostaje(repostaje) }
             }
 
+            // despues bajamos lo remoto
+            // esto permite que otro dispositivo tambien aporte repostajes al mismo vehiculo
             val repostajesRemotos = runCatching {
                 ClienteSupabase.cliente.postgrest[tablaRemota]
                     .select { filter { eq("vehiculo_id", vehiculoId) } }
@@ -94,6 +102,8 @@ class RepostajeRepositorio(
     suspend fun sincronizarPendientesDelUsuario(usuarioId: String): Result<Unit> {
         return try {
             val errores = mutableListOf<Throwable>()
+            // recorremos vehiculo por vehiculo porque repostajes depende de vehiculo_id
+            // esto mantiene el modelo compatible con las reglas rls de supabase
             vehiculoDao.obtenerVehiculosPorUsuarioLista(usuarioId).forEach { vehiculo ->
                 repostajeDao.obtenerPorVehiculoLista(vehiculo.id).forEach { repostaje ->
                     runCatching { sincronizarRepostaje(repostaje) }
@@ -112,6 +122,8 @@ class RepostajeRepositorio(
     }
 
     suspend fun calcularConsumoMedio(vehiculoId: String): Double {
+        // solo usamos repostajes marcados como deposito lleno
+        // si no, el calculo de litros por cien puede salir completamente falseado
         val repostajes = repostajeDao.obtenerPorVehiculoLista(vehiculoId)
             .filter { it.llenoCompleto }
             .sortedBy { it.kilometros }
@@ -164,6 +176,8 @@ class RepostajeRepositorio(
             return
         }
 
+        // si el repostaje trae un odometro mas alto actualizamos la ficha del vehiculo
+        // asi el kilometraje global avanza sin pedirle al usuario que lo edite a mano
         val vehiculoActualizado = vehiculo.copy(
             kilometraje = repostaje.kilometros,
             actualizadoEn = System.currentTimeMillis()

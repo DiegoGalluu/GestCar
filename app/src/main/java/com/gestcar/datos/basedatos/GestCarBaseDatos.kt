@@ -32,6 +32,8 @@ import com.gestcar.datos.entidades.Vehiculo
 )
 abstract class GestCarBaseDatos : RoomDatabase() {
 
+    // cada dao encapsula las consultas de una tabla concreta
+    // room genera la implementacion real en tiempo de compilacion
     abstract fun vehiculoDao(): VehiculoDao
     abstract fun repostajeDao(): RepostajeDao
     abstract fun mantenimientoDao(): MantenimientoDao
@@ -39,6 +41,9 @@ abstract class GestCarBaseDatos : RoomDatabase() {
     abstract fun recordatorioDao(): RecordatorioDao
 
     companion object {
+        // migracion inicial importante
+        // el proyecto empezo usando anio y despues se separo la fecha de fabricacion
+        // se crea una tabla nueva para no perder datos existentes al cambiar columnas
         private val MIGRACION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -107,6 +112,8 @@ abstract class GestCarBaseDatos : RoomDatabase() {
             }
         }
 
+        // fase donde aparecen las operaciones del vehiculo
+        // todas dependen de vehiculos con cascade para mantener la base local coherente
         private val MIGRACION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -188,6 +195,8 @@ abstract class GestCarBaseDatos : RoomDatabase() {
             }
         }
 
+        // los gastos empezaron como registros simples
+        // despues se anadio la idea de pagados y pendientes sin destruir historico
         private val MIGRACION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -205,6 +214,8 @@ abstract class GestCarBaseDatos : RoomDatabase() {
             }
         }
 
+        // mantenimientos paso a funcionar como una lista de tareas y operaciones realizadas
+        // por eso se anaden campos opcionales en vez de rehacer la tabla completa
         private val MIGRACION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -222,6 +233,8 @@ abstract class GestCarBaseDatos : RoomDatabase() {
             }
         }
 
+        // estos campos permiten ordenar los vehiculos al gusto del usuario
+        // tambien deciden que vehiculo se carga por defecto en los selectores
         private val MIGRACION_5_6 = object : Migration(5, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -244,6 +257,8 @@ abstract class GestCarBaseDatos : RoomDatabase() {
 
         fun obtenerInstancia(contexto: Context): GestCarBaseDatos {
             return INSTANCIA ?: synchronized(this) {
+                // singleton para que toda la app use la misma conexion room
+                // esto evita abrir varias bases de datos a la vez y simplifica los viewmodels
                 val instancia = Room.databaseBuilder(
                     contexto.applicationContext,
                     GestCarBaseDatos::class.java,

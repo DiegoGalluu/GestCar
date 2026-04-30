@@ -18,6 +18,8 @@ class GastoPeriodicoRepositorio(
     private val tablaRemota = "gastos_periodicos"
     private val tablaVehiculosRemota = "vehiculos"
 
+    // gastos se usa para seguros itv impuestos peajes y pagos sueltos
+    // el estado pagado permite separar pendientes de historico sin duplicar tablas
     fun obtenerGastos(vehiculoId: String): Flow<List<GastoPeriodico>> {
         return gastoPeriodicoDao.obtenerPorVehiculo(vehiculoId)
     }
@@ -28,6 +30,8 @@ class GastoPeriodicoRepositorio(
 
     suspend fun guardar(gasto: GastoPeriodico): Result<Unit> {
         return try {
+            // periodicidad se guarda en mayusculas para que los filtros no dependan del texto de ui
+            // concepto se recorta para evitar espacios invisibles al comparar o mostrar
             val gastoActualizado = gasto.copy(
                 concepto = gasto.concepto.trim(),
                 periodicidad = gasto.periodicidad?.uppercase(),
@@ -66,6 +70,8 @@ class GastoPeriodicoRepositorio(
 
     suspend fun sincronizar(vehiculoId: String): Result<Unit> {
         return try {
+            // subida local primero, descarga remota despues
+            // es el mismo patron offline first que usa el resto de operaciones
             gastoPeriodicoDao.obtenerPorVehiculoLista(vehiculoId).forEach { gasto ->
                 runCatching { sincronizarGasto(gasto) }
             }
@@ -89,6 +95,8 @@ class GastoPeriodicoRepositorio(
     suspend fun sincronizarPendientesDelUsuario(usuarioId: String): Result<Unit> {
         return try {
             val errores = mutableListOf<Throwable>()
+            // si una sync falla devolvemos fallo para que workmanager pueda reintentar
+            // pero seguimos probando con el resto para no bloquear todo por un solo registro
             vehiculoDao.obtenerVehiculosPorUsuarioLista(usuarioId).forEach { vehiculo ->
                 gastoPeriodicoDao.obtenerPorVehiculoLista(vehiculo.id).forEach { gasto ->
                     runCatching { sincronizarGasto(gasto) }
@@ -121,6 +129,8 @@ class GastoPeriodicoRepositorio(
     private suspend fun sincronizarVehiculoPadreSiHaceFalta(vehiculoId: String) {
         val vehiculo = vehiculoDao.obtenerPorId(vehiculoId) ?: return
 
+        // los gastos necesitan que el vehiculo exista en supabase
+        // hacer upsert del padre aqui hace mas robusto el modo offline
         ClienteSupabase.cliente.postgrest[tablaVehiculosRemota]
             .upsert(
                 value = vehiculo.aDto(),

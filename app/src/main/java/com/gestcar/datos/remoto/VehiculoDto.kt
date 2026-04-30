@@ -16,9 +16,6 @@ data class VehiculoDto(
 
     val marca: String = "",
     val modelo: String = "",
-    // compatibilidad temporal con la columna antigua `anio` en Supabase
-    @SerialName("anio")
-    val anioLegacy: Int? = null,
 
     @SerialName("anio_fabricacion")
     val anioFabricacion: Int = 2024,
@@ -48,12 +45,12 @@ data class VehiculoDto(
 )
 
 // extension para convertir de la entidad local al dto de supabase
+// esta capa evita que la app dependa directamente de los nombres de columnas remotas
 fun Vehiculo.aDto(): VehiculoDto = VehiculoDto(
     id = id,
     usuarioId = usuarioId,
     marca = marca,
     modelo = modelo,
-    anioLegacy = anioFabricacion,
     anioFabricacion = anioFabricacion,
     mesFabricacion = mesFabricacion,
     diaFabricacion = diaFabricacion,
@@ -68,12 +65,14 @@ fun Vehiculo.aDto(): VehiculoDto = VehiculoDto(
 )
 
 // extension para convertir del dto de supabase a la entidad local
+// la app ya trabaja solo con anio_fabricacion
+// dejamos atras la columna antigua anio para no mantener dos fuentes de verdad
 fun VehiculoDto.aEntidad(): Vehiculo = Vehiculo(
     id = id,
     usuarioId = usuarioId,
     marca = marca,
     modelo = modelo,
-    anioFabricacion = anioFabricacion.takeIf { it > 0 } ?: anioLegacy ?: 2024,
+    anioFabricacion = anioFabricacion,
     mesFabricacion = mesFabricacion,
     diaFabricacion = diaFabricacion,
     tipo = tipo,

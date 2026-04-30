@@ -19,6 +19,8 @@ class SincronizacionWorker(
 
     override suspend fun doWork(): Result {
         return try {
+            // workmanager puede ejecutar este worker con la app cerrada
+            // por eso cargamos la sesion guardada antes de tocar supabase
             ClienteSupabase.cliente.auth.awaitInitialization()
             ClienteSupabase.cliente.auth.loadFromStorage()
 
@@ -29,6 +31,8 @@ class SincronizacionWorker(
                 .orEmpty()
 
             if (usuarioId.isBlank()) {
+                // si no hay sesion no hay nada que sincronizar
+                // devolvemos success para no entrar en un bucle de reintentos inutil
                 return Result.success()
             }
 
@@ -64,11 +68,15 @@ class SincronizacionWorker(
                 resultadoGastos.isFailure ||
                 resultadoRecordatorios.isFailure
             ) {
+                // retry permite que android lo intente de nuevo con backoff
+                // esto es ideal para errores temporales de red o supabase pausado
                 Result.retry()
             } else {
                 Result.success()
             }
         } catch (e: Exception) {
+            // cualquier error inesperado se trata como temporal
+            // mejor reintentar mas tarde que perder la oportunidad de sincronizar
             Result.retry()
         }
     }

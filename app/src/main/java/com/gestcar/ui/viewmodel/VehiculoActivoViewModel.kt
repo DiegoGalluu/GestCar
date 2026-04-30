@@ -62,6 +62,8 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
     fun cargarVehiculos(usuarioId: String, vehiculoPreferidoId: String? = null) {
         trabajoCarga?.cancel()
         trabajoCarga = viewModelScope.launch {
+            // vehiculoPreferidoId se usa al venir desde el detalle de un vehiculo
+            // asi "ver todos" abre repostajes gastos o mantenimiento ya filtrado por ese coche
             _estado.value = _estado.value.copy(
                 vehiculoPreferidoId = vehiculoPreferidoId ?: _estado.value.vehiculoPreferidoId,
                 estaCargando = true,
@@ -82,6 +84,8 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
             repositorio.obtenerVehiculos(usuarioId).collect { vehiculos ->
                 val vehiculoActual = _estado.value.vehiculoActivo
                 val preferidoId = _estado.value.vehiculoPreferidoId
+                // prioridad de seleccion
+                // primero el vehiculo pedido por navegacion, despues el actual, y si no existe el primero de la lista
                 val vehiculoActivo = when {
                     vehiculos.isEmpty() -> null
                     preferidoId != null && vehiculos.any { it.id == preferidoId } -> vehiculos.first { it.id == preferidoId }

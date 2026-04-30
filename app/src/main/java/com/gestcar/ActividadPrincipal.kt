@@ -34,6 +34,8 @@ import io.github.jan.supabase.auth.handleDeeplinks
 // lo unico que hace es configurar el tema y lanzar el grafo de navegacion
 class ActividadPrincipal : ComponentActivity() {
 
+    // guardamos una referencia ligera al viewmodel para poder reaccionar a deeplinks
+    // android entrega el enlace en onnewintent y ahi ya no estamos dentro del bloque compose
     private var authViewModelRef: AutenticacionViewModel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,6 +51,9 @@ class ActividadPrincipal : ComponentActivity() {
                 val contexto = LocalContext.current
                 var esperandoCargaVehiculos by remember { mutableStateOf(false) }
 
+                // cuando hay una sesion activa observamos la conectividad
+                // cada vez que vuelve internet lanzamos una sincronizacion puntual
+                // esto evita que un dato creado sin cobertura se quede demasiado tiempo solo en local
                 LaunchedEffect(estadoAuth.estaAutenticado, estadoAuth.usuarioId) {
                     if (estadoAuth.estaAutenticado && estadoAuth.usuarioId.isNotBlank()) {
                         ObservadorConectividad(contexto).observarConexion().collect { hayConexion ->
@@ -59,6 +64,8 @@ class ActividadPrincipal : ComponentActivity() {
                     }
                 }
 
+                // si el usuario ya tenia sesion no queremos mostrar login durante un segundo
+                // por eso mantenemos el splash hasta que supabase confirma sesion y vehiculos carga
                 LaunchedEffect(
                     estadoAuth.estaComprobandoSesion,
                     estadoAuth.estaAutenticado,
@@ -69,6 +76,8 @@ class ActividadPrincipal : ComponentActivity() {
                         !estadoAuth.estaComprobandoSesion
                 }
 
+                // el grafo se monta solo cuando la comprobacion de sesion ha terminado
+                // encima dejamos un splash con fade para cubrir la primera carga real de vehiculos
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (!estadoAuth.estaComprobandoSesion) {
                         GrafoNavegacion(
@@ -106,6 +115,8 @@ class ActividadPrincipal : ComponentActivity() {
         val intentSeguro = intent ?: return
         val fragmento = intentSeguro.data?.fragment.orEmpty()
         val esRecuperacion = fragmento.contains("type=recovery")
+        // supabase devuelve el token de recuperacion en el enlace
+        // si es un enlace de recovery mandamos al usuario a cambiar contrasena
         ClienteSupabase.cliente.handleDeeplinks(intentSeguro) {
             if (esRecuperacion) {
                 authViewModelRef?.activarModoRestablecerContrasena()

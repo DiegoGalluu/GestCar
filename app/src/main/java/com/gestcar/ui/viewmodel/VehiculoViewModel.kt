@@ -62,6 +62,7 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
             val resultadoSincronizacion = repositorio.sincronizar(usuarioId)
 
             // nos suscribimos al flow de room para recibir actualizaciones en tiempo real
+            // cuando room cambie por un guardado local o por una descarga remota la ui se repinta sola
             repositorio.obtenerVehiculos(usuarioId).collect { lista ->
                 _estadoLista.value = EstadoListaVehiculos(
                     vehiculos = lista,
@@ -95,6 +96,8 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
 
     // resetea el formulario para crear un vehiculo nuevo
     fun resetearFormulario(usuarioId: String) {
+        // uuid propio para que room y supabase compartan la misma clave primaria
+        // asi el registro creado offline se puede subir despues sin cambiar de identidad
         _estadoFormulario.value = EstadoFormularioVehiculo(
             vehiculo = Vehiculo(
                 id = UUID.randomUUID().toString(),
@@ -127,6 +130,8 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
                 return@launch
             }
 
+            // la fecha de fabricacion permite dia parcial
+            // si hay dia pero no mes la fecha seria ambigua y por eso se bloquea
             if (vehiculo.diaFabricacion != null && vehiculo.mesFabricacion == null) {
                 _estadoFormulario.value = _estadoFormulario.value.copy(
                     estaCargando = false,
@@ -158,6 +163,8 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
             val ahora = System.currentTimeMillis()
             val habituales = vehiculosOrganizados.filter { it.habitual }
             val otros = vehiculosOrganizados.filter { !it.habitual }
+            // normalizamos la lista antes de guardar
+            // si por cualquier bug no queda ningun habitual forzamos que el primero lo sea
             val listaNormalizada = (habituales + otros).mapIndexed { indice, vehiculo ->
                 vehiculo.copy(
                     habitual = if (habituales.isEmpty() && indice == 0) true else vehiculo.habitual,
@@ -182,6 +189,8 @@ class VehiculoViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) 
 
         viewModelScope.launch {
             try {
+                // comprimimos y copiamos la imagen dentro del almacenamiento privado de la app
+                // asi se puede mostrar offline aunque supabase tarde en sincronizar
                 val imagenLocalUri = GestorImagenesVehiculo.guardarImagenComprimida(
                     context = getApplication(),
                     origenUri = origenUri,
