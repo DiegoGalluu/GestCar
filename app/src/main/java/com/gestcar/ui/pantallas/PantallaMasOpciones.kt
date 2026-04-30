@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +33,7 @@ import com.gestcar.ui.componentes.BarraSuperiorCompacta
 fun PantallaMasOpciones(
     alIrARecordatorios: () -> Unit,
     alIrAEstadisticas: () -> Unit,
+    alIrACuenta: () -> Unit,
     alCerrarSesion: () -> Unit
 ) {
     Scaffold(
@@ -45,6 +47,13 @@ fun PantallaMasOpciones(
                 .padding(padding)
                 .padding(16.dp)
         ) {
+            OpcionMas(
+                titulo = "Cuenta",
+                descripcion = "Datos de usuario y opciones de privacidad",
+                icono = Icons.Default.Person,
+                alPulsar = alIrACuenta
+            )
+
             OpcionMas(
                 titulo = "Recordatorios",
                 descripcion = "Alertas por fecha o kilometraje",

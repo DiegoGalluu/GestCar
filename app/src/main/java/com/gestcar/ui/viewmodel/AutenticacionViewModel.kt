@@ -17,6 +17,8 @@ data class EstadoAutenticacion(
     val estaAutenticado: Boolean = false,
     // id del usuario en supabase, se usa para filtrar sus datos
     val usuarioId: String = "",
+    // correo con el que se ha iniciado sesion, se muestra en la pantalla de cuenta
+    val correoUsuario: String = "",
     // si hay alguna operacion de auth en curso
     val estaCargando: Boolean = false,
     // mensaje de error si algo ha fallado
@@ -53,6 +55,7 @@ class AutenticacionViewModel : ViewModel() {
                     _estado.value = EstadoAutenticacion(
                         estaAutenticado = true,
                         usuarioId = sesion.user?.id ?: "",
+                        correoUsuario = sesion.user?.email ?: "",
                         estaComprobandoSesion = false
                     )
                 } else {
@@ -60,10 +63,11 @@ class AutenticacionViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _estado.value = _estado.value.copy(
-                    estaAutenticado = false,
-                    usuarioId = "",
-                    estaComprobandoSesion = false
-                )
+                estaAutenticado = false,
+                usuarioId = "",
+                correoUsuario = "",
+                estaComprobandoSesion = false
+            )
             }
         }
     }
@@ -230,12 +234,14 @@ class AutenticacionViewModel : ViewModel() {
             EstadoAutenticacion(
                 estaAutenticado = true,
                 usuarioId = usuario.id,
+                correoUsuario = usuario.email ?: "",
                 estaComprobandoSesion = false
             )
         } else {
             EstadoAutenticacion(
                 estaAutenticado = false,
                 usuarioId = "",
+                correoUsuario = "",
                 estaCargando = false,
                 mensajeError = errorSinSesion,
                 estaComprobandoSesion = false

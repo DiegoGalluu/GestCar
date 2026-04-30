@@ -33,6 +33,7 @@ import com.gestcar.ui.pantallas.PantallaDetalleRecordatorio
 import com.gestcar.ui.pantallas.PantallaDetalleVehiculo
 import com.gestcar.ui.pantallas.PantallaDetalleMantenimiento
 import com.gestcar.ui.pantallas.PantallaDetalleRepostaje
+import com.gestcar.ui.pantallas.PantallaCuenta
 import com.gestcar.ui.pantallas.PantallaFormularioGasto
 import com.gestcar.ui.pantallas.PantallaFormularioMantenimiento
 import com.gestcar.ui.pantallas.PantallaFormularioRecordatorio
@@ -305,7 +306,19 @@ fun GrafoNavegacion(
                     alIrAEstadisticas = {
                         controladorNav.navigate(Rutas.ESTADISTICAS)
                     },
+                    alIrACuenta = {
+                        controladorNav.navigate(Rutas.CUENTA)
+                    },
                     alCerrarSesion = alCerrarSesion
+                )
+            }
+
+            composable(Rutas.CUENTA) {
+                PantallaCuenta(
+                    correoUsuario = estadoAuth.correoUsuario,
+                    usuarioId = usuarioId,
+                    alVolver = { controladorNav.popBackStack() },
+                    alCuentaEliminada = alCerrarSesion
                 )
             }
 
