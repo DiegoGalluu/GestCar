@@ -190,7 +190,7 @@ private fun SelectorPeriodoRepostajes(
         PeriodoRepostajes.HOY to "Hoy",
         PeriodoRepostajes.SEMANA to "Semana",
         PeriodoRepostajes.MES to "Mes",
-        PeriodoRepostajes.ANIO to "AÃ±o",
+        PeriodoRepostajes.ANIO to "A\u00F1o",
         PeriodoRepostajes.TODO to "Todo",
         PeriodoRepostajes.PERSONALIZADO to "Personalizado"
     )
@@ -225,7 +225,7 @@ private fun ResumenConsumoRepostajes(
         )
         TarjetaDatoConsumo(
             titulo = "Coste medio",
-            valor = if (costeMedioCada100Km > 0) "${formatearDecimalRepostajes(costeMedioCada100Km)} â‚¬/100 km" else "Datos insuficientes",
+            valor = if (costeMedioCada100Km > 0) "${formatearDecimalRepostajes(costeMedioCada100Km)} \u20AC/100 km" else "Datos insuficientes",
             modifier = Modifier.weight(1f)
         )
     }
