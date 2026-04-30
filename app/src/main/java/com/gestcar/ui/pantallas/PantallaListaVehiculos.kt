@@ -20,6 +20,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -173,9 +174,15 @@ fun PantallaListaVehiculos(
                             )
                         }
 
-                        if (mostrarSecciones && otros.isNotEmpty()) {
+                        if (mostrarSecciones) {
                             item {
                                 TituloSeccionVehiculos(titulo = "Otros veh\u00EDculos")
+                            }
+                        }
+
+                        if (modoOrganizacion && otros.isEmpty()) {
+                            item {
+                                ZonaVaciaOtrosVehiculos()
                             }
                         }
 
@@ -206,6 +213,24 @@ fun PantallaListaVehiculos(
 }
 
 @Composable
+private fun ZonaVaciaOtrosVehiculos() {
+    OutlinedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(92.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Text(
+                text = "Suelta aqu\u00ED los veh\u00EDculos menos usados",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+    }
+}
+
+@Composable
 private fun TituloSeccionVehiculos(titulo: String) {
     Text(
         text = titulo,
@@ -227,6 +252,11 @@ private fun TarjetaVehiculoOrganizable(
     alMover: (Int) -> Unit
 ) {
     val indice = vehiculos.indexOfFirst { it.id == vehiculo.id }
+    val cantidadHabituales = vehiculos.count { it.habitual }
+    val puedeBajarAOtros = modoOrganizacion &&
+        vehiculo.habitual &&
+        cantidadHabituales > 1 &&
+        indice == cantidadHabituales - 1
     TarjetaVehiculo(
         vehiculo = vehiculo,
         alPulsar = alPulsar,
@@ -237,7 +267,7 @@ private fun TarjetaVehiculoOrganizable(
         } else {
             null
         },
-        alMoverAbajo = if (indice in 0 until vehiculos.lastIndex) {
+        alMoverAbajo = if (indice in 0 until vehiculos.lastIndex || puedeBajarAOtros) {
             { alMover(1) }
         } else {
             null
@@ -260,12 +290,23 @@ private fun moverVehiculoOrganizacion(
         return vehiculos
     }
 
+    val cantidadHabituales = lista.count { it.habitual }.coerceAtLeast(1)
+    val esUltimoHabitual = indice == cantidadHabituales - 1
+
+    if (direccion > 0 && esUltimoHabitual && cantidadHabituales > 1 && indice == lista.lastIndex) {
+        return lista.mapIndexed { nuevoIndice, vehiculo ->
+            vehiculo.copy(
+                habitual = nuevoIndice < cantidadHabituales - 1,
+                ordenLista = nuevoIndice
+            )
+        }
+    }
+
     val destino = (indice + direccion).coerceIn(0, lista.lastIndex)
     if (indice == destino) {
         return vehiculos
     }
 
-    val cantidadHabituales = lista.count { it.habitual }.coerceAtLeast(1)
     val vehiculoMovido = lista.removeAt(indice)
     lista.add(destino, vehiculoMovido)
 

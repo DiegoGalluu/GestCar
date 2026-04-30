@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,7 +20,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -32,8 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.gestcar.datos.entidades.Vehiculo
+import kotlin.math.roundToInt
 
 // tarjeta que muestra la info resumida de un vehiculo en la lista
 // muestra el icono segun el tipo, marca, modelo, matricula y kilometraje
@@ -49,10 +52,13 @@ fun TarjetaVehiculo(
 ) {
     val umbralArrastre = with(LocalDensity.current) { 44.dp.toPx() }
     var acumuladoArrastre by remember { mutableFloatStateOf(0f) }
+    var desplazamientoArrastre by remember { mutableFloatStateOf(0f) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .offset { IntOffset(0, desplazamientoArrastre.roundToInt()) }
+            .zIndex(if (desplazamientoArrastre != 0f) 1f else 0f)
             .then(
                 if (alPulsacionLarga != null) {
                     Modifier.combinedClickable(
@@ -115,50 +121,57 @@ fun TarjetaVehiculo(
                         .width(44.dp)
                         .pointerInput(vehiculo.id) {
                             detectVerticalDragGestures(
-                                onDragEnd = { acumuladoArrastre = 0f },
+                                onDragEnd = {
+                                    acumuladoArrastre = 0f
+                                    desplazamientoArrastre = 0f
+                                },
+                                onDragCancel = {
+                                    acumuladoArrastre = 0f
+                                    desplazamientoArrastre = 0f
+                                },
                                 onVerticalDrag = { _, dragAmount ->
                                     acumuladoArrastre += dragAmount
+                                    desplazamientoArrastre = (desplazamientoArrastre + dragAmount)
+                                        .coerceIn(-umbralArrastre, umbralArrastre)
                                     when {
                                         acumuladoArrastre <= -umbralArrastre -> {
                                             alMoverArriba?.invoke()
                                             acumuladoArrastre = 0f
+                                            desplazamientoArrastre = 0f
                                         }
 
                                         acumuladoArrastre >= umbralArrastre -> {
                                             alMoverAbajo?.invoke()
                                             acumuladoArrastre = 0f
+                                            desplazamientoArrastre = 0f
                                         }
                                     }
                                 }
                             )
                         }
                 ) {
-                    IconButton(
-                        onClick = { alMoverArriba?.invoke() },
-                        enabled = alMoverArriba != null,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowUp,
-                            contentDescription = "Mover arriba"
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowUp,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = if (alMoverArriba != null) 1f else 0.25f
+                        ),
+                        modifier = Modifier.size(24.dp)
+                    )
                     Icon(
                         imageVector = Icons.Default.DragHandle,
                         contentDescription = "Arrastrar",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
                     )
-                    IconButton(
-                        onClick = { alMoverAbajo?.invoke() },
-                        enabled = alMoverAbajo != null,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Mover abajo"
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = if (alMoverAbajo != null) 1f else 0.25f
+                        ),
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         }
