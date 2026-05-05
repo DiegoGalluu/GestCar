@@ -1,66 +1,91 @@
 # GestCar
 
-GestCar es una aplicación Android nativa para la gestión integral de vehículos particulares. Permite registrar vehículos, repostajes, mantenimientos, reparaciones, gastos periódicos, recordatorios y fotografías, manteniendo una copia local para funcionar sin conexión y sincronizando los datos con Supabase cuando hay red.
+GestCar es una aplicación Android nativa desarrollada en Kotlin con Jetpack Compose para gestionar vehículos particulares, sus repostajes, mantenimientos, reparaciones, gastos, recordatorios y fotografías.
 
-El proyecto está desarrollado en Kotlin con Jetpack Compose, Room, MVVM, WorkManager y Supabase. La idea principal de la app es que el usuario pueda consultar y registrar información importante de sus vehículos incluso en situaciones sin cobertura, evitando perder datos y sincronizándolos posteriormente con el backend remoto.
+El objetivo principal del proyecto es ofrecer una herramienta sencilla para registrar y consultar información importante del vehículo, manteniendo una copia local para que la aplicación siga funcionando sin conexión y sincronizando los datos con un backend remoto cuando vuelve a haber red.
 
-## Estado actual del proyecto
+Este repositorio contiene el código fuente del proyecto. Para probar la aplicación como usuario final, lo más recomendable es instalar un APK generado desde este proyecto. El repositorio por sí solo no es una app instalable directamente en un móvil.
 
-La app se encuentra en un estado funcional avanzado. Actualmente ya incluye:
+## Aviso De Seguridad
 
-- Autenticación con Supabase mediante correo electrónico y contraseña.
-- Registro de usuarios con confirmación de correo.
-- Recuperación y cambio de contraseña mediante deep links.
-- Persistencia de sesión para no obligar al usuario a iniciar sesión cada vez.
-- Splash inicial para evitar que se vea el login mientras se recupera una sesión guardada.
-- Navegación con barra inferior de cinco secciones principales.
-- CRUD completo de vehículos.
-- Organización manual de vehículos habituales y secundarios.
-- Selector de vehículo activo reutilizable en las secciones de datos.
-- Registro, edición, detalle y eliminación de repostajes.
-- Cálculo de consumo medio en L/100 km.
-- Cálculo de coste medio de combustible cada 100 km.
-- Filtros temporales para repostajes.
-- Registro, edición, detalle y eliminación de mantenimientos y reparaciones.
-- Separación de operaciones pendientes y realizadas en mantenimientos.
-- Registro, edición, detalle y eliminación de gastos periódicos.
+Este README está preparado para poder publicarse en GitHub sin exponer información sensible.
+
+Por ese motivo, no se incluyen:
+
+- URLs reales del backend.
+- Claves de API.
+- Tokens.
+- Contraseñas.
+- Configuración SMTP privada.
+- Scripts SQL completos.
+- Funciones internas sensibles de la base de datos.
+- Datos reales de usuarios.
+- Datos reales de vehículos.
+
+La configuración privada necesaria para conectar la app con servicios externos debe mantenerse fuera de la documentación pública y gestionarse con cuidado.
+
+## Estado Actual
+
+GestCar se encuentra en un estado funcional avanzado. Actualmente permite:
+
+- Registro de usuarios mediante correo electrónico.
+- Confirmación de cuenta por correo.
+- Inicio de sesión.
+- Persistencia de sesión.
+- Cierre de sesión.
+- Recuperación de contraseña.
+- Navegación principal con barra inferior.
+- Gestión completa de vehículos.
+- Organización de vehículos habituales y secundarios.
+- Fotografías de vehículos desde cámara o galería.
+- Copia local comprimida de imágenes.
+- Sincronización remota de imágenes.
+- Gestión de repostajes.
+- Cálculo de consumo medio.
+- Cálculo de coste medio de combustible.
+- Filtros temporales para consultar repostajes por periodo.
+- Gestión de mantenimientos y reparaciones.
+- Separación entre operaciones pendientes y realizadas.
+- Gestión de gastos.
 - Control de gastos pendientes y pagados.
-- Gestión de vencimientos en gastos, con diferenciación visual de vencidos, próximos y al día.
-- Registro, edición, detalle y eliminación de recordatorios.
-- Recordatorios por fecha, kilometraje o ambos.
-- Resumen dentro del detalle del vehículo con últimos repostajes, mantenimientos, gastos y recordatorios.
-- Métricas rápidas del vehículo: consumo, coste de combustible por 100 km, gasto registrado y gasto por kilómetro.
-- Fotos de vehículos desde cámara o galería.
-- Compresión de imágenes antes de guardarlas o subirlas.
-- Copia local privada de imágenes para que se vean sin conexión.
-- Storage privado en Supabase con signed URLs temporales.
-- Banner de conectividad para avisar cuando no hay conexión y cuando vuelve la conexión.
-- Sincronización offline-first entre Room y Supabase.
-- Sincronización puntual al recuperar conexión.
-- Sincronización periódica en segundo plano con WorkManager.
-- Pantalla de cuenta con correo del usuario y opción de eliminar cuenta.
-- Eliminación de cuenta mediante función segura en Supabase, sin incluir claves privilegiadas en la app.
-- Tema Material Design 3 con paleta personalizada.
+- Gestión visual de vencimientos.
+- Gestión de recordatorios.
+- Resumen de actividad dentro de la ficha del vehículo.
+- Banner de conectividad.
+- Funcionamiento offline-first.
+- Sincronización al recuperar conexión.
+- Sincronización periódica en segundo plano.
+- Pantalla de cuenta.
+- Eliminación de cuenta mediante operación protegida en backend.
+- Tema visual propio basado en Material Design 3.
 - Icono personalizado de la aplicación.
-- Comentarios explicativos en las zonas principales del código.
 
-## Objetivo de la aplicación
+## Idea General De La Aplicación
 
-GestCar está pensada para centralizar en una sola app toda la información importante asociada a un vehículo:
+GestCar nace para resolver un problema muy cotidiano: tener dispersa la información del vehículo.
 
-- Datos básicos del vehículo.
-- Historial de repostajes.
-- Historial de mantenimiento y reparaciones.
-- Gastos fijos o periódicos como seguro, ITV, impuestos, parking o peajes.
-- Recordatorios de tareas, revisiones o vencimientos.
-- Fotografías identificativas del vehículo.
-- Resumen de costes y consumo.
+Con la app se puede guardar:
 
-Un caso de uso importante es el funcionamiento sin conexión. Por ejemplo, si un usuario registra un repostaje en una zona sin cobertura, la app guarda ese dato en Room y lo sube a Supabase cuando vuelva a tener conexión, incluso si la app se sincroniza más tarde mediante el worker en segundo plano.
+- Qué vehículos tiene el usuario.
+- Kilometraje actual.
+- Matrícula.
+- Tipo de combustible.
+- Foto identificativa del vehículo.
+- Repostajes realizados.
+- Litros repostados.
+- Precio por litro.
+- Coste total del repostaje.
+- Mantenimientos realizados.
+- Reparaciones pendientes.
+- Reparaciones ya realizadas.
+- Gastos como seguros, ITV, impuestos, parking, peajes o lavados.
+- Recordatorios por fecha o kilometraje.
 
-## Tecnologías utilizadas
+La aplicación está pensada para usarse en situaciones reales. Por ejemplo, si el usuario registra un repostaje en una zona sin cobertura, el dato se guarda localmente y queda pendiente de sincronización. Cuando el dispositivo vuelve a tener conexión, la app intenta subirlo al backend.
 
-### Android
+## Tecnologías Utilizadas
+
+### Aplicación Android
 
 - Kotlin.
 - Jetpack Compose.
@@ -71,155 +96,22 @@ Un caso de uso importante es el funcionamiento sin conexión. Por ejemplo, si un
 - Room.
 - WorkManager.
 - FileProvider.
-- Coil para carga de imágenes.
-
-### Backend
-
-- Supabase Auth.
-- Supabase PostgREST.
-- Supabase Storage.
-- Row Level Security.
-- PostgreSQL.
-- Funciones SQL para operaciones seguras como eliminación de cuenta.
-
-### Herramientas de build
-
-- Gradle.
-- Android Gradle Plugin.
+- Coil.
 - Kotlin Serialization.
-- KSP para Room.
 
-## Requisitos técnicos
+### Persistencia Y Backend
 
-El proyecto está configurado con:
+- Room como base de datos local.
+- Backend remoto para autenticación, base de datos y almacenamiento de imágenes.
+- Row Level Security en el backend.
+- Storage privado para fotografías.
+- Servicio SMTP externo para correos transaccionales.
 
-- `minSdk`: 26.
-- `targetSdk`: 35.
-- `compileSdk`: 35.
-- Java 17.
-- Kotlin 2.0.21.
-- Android Gradle Plugin 8.7.3.
-- Room 2.6.1.
-- Navigation Compose 2.8.4.
-- Supabase Kotlin 3.0.2.
-- WorkManager 2.9.1.
-
-## Estructura del proyecto
-
-La estructura principal del código está en:
-
-```text
-app/src/main/java/com/gestcar/
-```
-
-Organización de paquetes:
-
-```text
-com.gestcar/
-  ActividadPrincipal.kt
-  GestCarAplicacion.kt
-
-  datos/
-    basedatos/
-      GestCarBaseDatos.kt
-
-    dao/
-      VehiculoDao.kt
-      RepostajeDao.kt
-      MantenimientoDao.kt
-      GastoPeriodicoDao.kt
-      RecordatorioDao.kt
-
-    entidades/
-      Vehiculo.kt
-      Repostaje.kt
-      Mantenimiento.kt
-      GastoPeriodico.kt
-      Recordatorio.kt
-
-    remoto/
-      ClienteSupabase.kt
-      VehiculoDto.kt
-      RepostajeDto.kt
-      MantenimientoDto.kt
-      GastoPeriodicoDto.kt
-      RecordatorioDto.kt
-
-    repositorio/
-      VehiculoRepositorio.kt
-      RepostajeRepositorio.kt
-      MantenimientoRepositorio.kt
-      GastoPeriodicoRepositorio.kt
-      RecordatorioRepositorio.kt
-
-  ui/
-    componentes/
-      BarraSuperiorCompacta.kt
-      CampoFecha.kt
-      FiltroPeriodo.kt
-      ImagenVehiculo.kt
-      SelectorVehiculoActivo.kt
-      TarjetaVehiculo.kt
-      TarjetaRepostaje.kt
-      TarjetaMantenimiento.kt
-      TarjetaGasto.kt
-      TarjetaRecordatorio.kt
-
-    navegacion/
-      Rutas.kt
-      GrafoNavegacion.kt
-
-    pantallas/
-      PantallaInicioSesion.kt
-      PantallaRegistro.kt
-      PantallaRestablecerContrasena.kt
-      PantallaSplash.kt
-      PantallaListaVehiculos.kt
-      PantallaFormularioVehiculo.kt
-      PantallaDetalleVehiculo.kt
-      PantallaListaRepostajes.kt
-      PantallaFormularioRepostaje.kt
-      PantallaDetalleRepostaje.kt
-      PantallaListaMantenimientos.kt
-      PantallaFormularioMantenimiento.kt
-      PantallaDetalleMantenimiento.kt
-      PantallaListaGastos.kt
-      PantallaFormularioGasto.kt
-      PantallaDetalleGasto.kt
-      PantallaListaRecordatorios.kt
-      PantallaFormularioRecordatorio.kt
-      PantallaDetalleRecordatorio.kt
-      PantallaMasOpciones.kt
-      PantallaCuenta.kt
-
-    tema/
-      Color.kt
-      Tema.kt
-
-    viewmodel/
-      AutenticacionViewModel.kt
-      CuentaViewModel.kt
-      VehiculoViewModel.kt
-      VehiculoActivoViewModel.kt
-      RepostajeViewModel.kt
-      MantenimientoViewModel.kt
-      GastoPeriodicoViewModel.kt
-      RecordatorioViewModel.kt
-      DetalleVehiculoResumenViewModel.kt
-
-  util/
-    EntradaNumerica.kt
-    GestorImagenesVehiculo.kt
-    NormalizadorMatriculas.kt
-    ObservadorConectividad.kt
-    PlanificadorSincronizacion.kt
-    RutasImagenVehiculo.kt
-    SincronizacionWorker.kt
-```
+No se documenta públicamente la configuración concreta del backend ni del SMTP por motivos de seguridad.
 
 ## Arquitectura
 
-La aplicación sigue una arquitectura MVVM con repositorios:
+La arquitectura sigue un patrón MVVM con repositorios.
 
 ```text
 Pantallas Compose
@@ -228,711 +120,610 @@ ViewModels
     |
 Repositorios
     |
-Room DAOs + Supabase
+Room + Backend remoto
 ```
 
 ### Pantallas Compose
 
 Las pantallas se encargan de:
 
-- Mostrar el estado recibido desde los ViewModels.
-- Capturar acciones del usuario.
+- Mostrar datos.
+- Capturar interacción del usuario.
+- Mostrar formularios.
+- Mostrar tarjetas.
+- Mostrar diálogos.
 - Navegar entre pantallas.
-- Mostrar formularios, tarjetas, diálogos y estados vacíos.
 
-No deberían contener lógica de persistencia ni consultas directas a Supabase.
+No deben acceder directamente a la base de datos ni al backend.
 
 ### ViewModels
 
 Los ViewModels se encargan de:
 
-- Mantener el estado de UI mediante `StateFlow`.
+- Mantener el estado de cada pantalla.
 - Validar formularios.
-- Lanzar operaciones en `viewModelScope`.
-- Pedir datos al repositorio.
-- Transformar datos para la pantalla.
-
-Ejemplos:
-
-- `VehiculoViewModel`: lista, formulario, detalle e imágenes de vehículos.
-- `RepostajeViewModel`: repostajes, filtros temporales, consumo y coste medio.
-- `VehiculoActivoViewModel`: selector global de vehículo activo para secciones de la bottom bar.
-- `DetalleVehiculoResumenViewModel`: resumen del detalle del vehículo combinando varias tablas.
-- `AutenticacionViewModel`: login, registro, recuperación de contraseña y sesión.
-- `CuentaViewModel`: eliminación segura de cuenta.
+- Lanzar operaciones en corrutinas.
+- Pedir datos a los repositorios.
+- Exponer datos mediante `StateFlow`.
 
 ### Repositorios
 
-Los repositorios son el puente entre Room y Supabase. La regla general del proyecto es:
+Los repositorios son la capa que conecta los datos locales con los remotos.
+
+La regla general es:
 
 1. Guardar primero en Room.
-2. Intentar sincronizar con Supabase.
-3. Si Supabase falla, mantener el dato local.
-4. Reintentar la sincronización más adelante.
+2. Actualizar la interfaz inmediatamente.
+3. Intentar sincronizar con el backend remoto.
+4. Si no hay conexión o la sincronización falla, conservar el dato local.
+5. Reintentar más adelante.
 
-Este patrón permite que la app sea offline-first.
+Este enfoque permite que la aplicación sea offline-first.
 
 ### Room
 
-Room es la base de datos local de la app. Se utiliza para:
+Room se utiliza como base de datos local. Permite que el usuario pueda abrir la app y consultar sus datos aunque no tenga internet.
 
-- Guardar vehículos.
-- Guardar repostajes.
-- Guardar mantenimientos.
-- Guardar gastos periódicos.
-- Guardar recordatorios.
-- Mantener datos disponibles sin conexión.
-- Repintar la UI mediante `Flow`.
+También permite que la interfaz se actualice de forma reactiva cuando cambian los datos locales.
 
-La base de datos actual está en versión 6.
+### WorkManager
 
-### Supabase
+WorkManager se utiliza para programar sincronizaciones en segundo plano.
 
-Supabase se utiliza para:
+Esto es importante porque el usuario puede crear datos sin conexión, cerrar la app y no volver a abrirla durante horas o días. La sincronización periódica ayuda a que esos datos se suban cuando el dispositivo recupere conexión.
 
-- Autenticación.
-- Base de datos remota.
-- Sincronización entre dispositivos.
-- Storage privado de fotos.
-- Seguridad mediante Row Level Security.
-
-## Modelo de datos
+## Modelo Funcional
 
 ### Vehículos
 
-Tabla local y remota principal. Cada vehículo pertenece a un usuario.
-
-Campos principales:
-
-- `id`
-- `usuario_id`
-- `marca`
-- `modelo`
-- `anio_fabricacion`
-- `mes_fabricacion`
-- `dia_fabricacion`
-- `tipo`
-- `matricula`
-- `kilometraje`
-- `tipo_combustible`
-- `imagen_uri`
-- `fecha_alta`
-- `notas`
-- `actualizado_en`
-
-En local existen además campos de organización:
-
-- `habitual`
-- `ordenLista`
-
-Estos campos permiten ordenar la pantalla principal y decidir qué vehículo se carga primero en los selectores.
-
-### Repostajes
-
-Cada repostaje pertenece a un vehículo.
-
-Campos principales:
-
-- `id`
-- `vehiculo_id`
-- `fecha`
-- `kilometros`
-- `litros`
-- `precio_por_litro`
-- `importe_total`
-- `lleno_completo`
-- `gasolinera`
-- `notas`
-- `actualizado_en`
-
-La app calcula:
-
-- Consumo medio en L/100 km.
-- Coste medio de combustible por 100 km.
-- Totales por periodo.
-
-El cálculo de consumo usa solo repostajes marcados como depósito lleno.
-
-### Mantenimientos y reparaciones
-
-Cada mantenimiento o reparación pertenece a un vehículo.
-
-Campos principales:
-
-- `id`
-- `vehiculo_id`
-- `tipo`
-- `categoria`
-- `fecha`
-- `kilometros`
-- `coste`
-- `taller`
-- `descripcion`
-- `realizado`
-- `fecha_realizado`
-- `actualizado_en`
-
-La pantalla permite tratar mantenimientos como una lista de operaciones pendientes o realizadas.
-
-### Gastos periódicos
-
-Cada gasto pertenece a un vehículo.
-
-Campos principales:
-
-- `id`
-- `vehiculo_id`
-- `concepto`
-- `importe`
-- `fecha`
-- `periodicidad`
-- `fecha_vencimiento`
-- `pagado`
-- `fecha_pago`
-- `notas`
-- `actualizado_en`
-
-La app diferencia visualmente entre:
-
-- Gastos vencidos.
-- Gastos próximos.
-- Gastos al día.
-- Gastos pagados.
-
-Los gastos únicos pueden quedar directamente como histórico si no requieren seguimiento futuro.
-
-### Recordatorios
-
-Cada recordatorio pertenece a un vehículo.
-
-Campos principales:
-
-- `id`
-- `vehiculo_id`
-- `concepto`
-- `fecha_limite`
-- `kilometraje_limite`
-- `completado`
-- `fecha_completado`
-- `notas`
-- `actualizado_en`
-
-La app puede mostrar recordatorios vencidos, próximos, pendientes o completados.
-
-## Sincronización offline-first
-
-La sincronización es una parte central de GestCar.
-
-### Guardado local primero
-
-Cuando el usuario guarda un vehículo, repostaje, gasto, mantenimiento o recordatorio:
-
-1. Se guarda primero en Room.
-2. La UI se actualiza inmediatamente.
-3. Se intenta subir a Supabase.
-4. Si falla la red o Supabase no responde, el dato queda local.
-5. La sincronización se reintenta más adelante.
-
-Esto evita que el usuario pierda datos por no tener conexión.
-
-### Sincronización al abrir secciones
-
-Al cargar pantallas como vehículos, repostajes, gastos o mantenimientos, la app intenta:
-
-1. Subir datos locales pendientes.
-2. Descargar datos remotos.
-3. Insertarlos en Room.
-4. Mostrar la versión local actualizada.
-
-### Sincronización al recuperar conexión
-
-La barra superior observa cambios de conectividad. Si vuelve la conexión, se encola una sincronización puntual.
-
-### Sincronización en segundo plano
-
-`GestCarAplicacion` programa una sincronización periódica con WorkManager.
-
-Actualmente se ejecuta cada 6 horas, siempre que haya conexión.
-
-Esto cubre el caso de uso en el que el usuario:
-
-1. Registra datos sin conexión.
-2. Cierra la app.
-3. Recupera conexión más tarde.
-4. No vuelve a abrir GestCar inmediatamente.
-
-WorkManager puede sincronizar esos datos aunque la app no esté en primer plano.
-
-## Gestión de imágenes
-
-Las fotos de vehículos tienen un tratamiento especial por privacidad y rendimiento.
-
-### Captura o selección
-
-El usuario puede:
-
-- Hacer una foto con la cámara.
-- Elegir una foto desde la galería.
-
-### Compresión
-
-Antes de guardar una imagen:
-
-- Se reduce su tamaño máximo.
-- Se comprime en JPEG.
-- Se guarda una copia privada dentro del almacenamiento interno de la app.
-
-Esto evita subir imágenes demasiado pesadas y permite mostrar fotos sin conexión.
-
-### Storage privado
-
-Las imágenes se suben a un bucket privado de Supabase llamado `vehiculos`.
-
-La ruta remota sigue este patrón:
-
-```text
-usuario_id/vehiculo_id.jpg
-```
-
-La app no usa un bucket público. Cuando necesita mostrar una imagen remota, genera una signed URL temporal y guarda una copia local.
-
-## Seguridad
-
-GestCar trata datos sensibles:
-
-- Matrículas.
-- Imágenes de vehículos.
-- Kilometraje.
-- Historial de gastos.
-- Historial de mantenimiento.
-- Datos personales asociados a una cuenta.
-
-Por ese motivo se han aplicado varias medidas.
-
-### Row Level Security
-
-Todas las tablas remotas tienen RLS activado. Cada usuario solo puede consultar, crear, editar o eliminar datos asociados a sus propios vehículos.
-
-Las tablas hijas validan propiedad mediante la tabla `vehiculos`.
-
-Por ejemplo, un repostaje solo es accesible si pertenece a un vehículo cuyo `usuario_id` coincide con `auth.uid()`.
-
-### Storage privado
-
-El bucket de fotos no es público. Las políticas de Storage limitan el acceso a la carpeta del usuario autenticado.
-
-### Sin service_role en la app
-
-La app no contiene claves privilegiadas de Supabase.
-
-Esto es importante porque cualquier APK puede ser inspeccionado. Incluir una clave `service_role` en una app móvil sería una vulnerabilidad grave.
-
-### Eliminación de cuenta
-
-La pantalla Cuenta permite eliminar la cuenta del usuario con doble confirmación.
-
-La eliminación real se hace mediante una función SQL segura en Supabase:
-
-```sql
-public.eliminar_cuenta_actual()
-```
-
-La función borra:
-
-- Objetos del bucket del usuario.
-- Vehículos del usuario.
-- Datos asociados por borrado en cascada.
-- Usuario de `auth.users`.
-
-La función solo puede ejecutarse por usuarios autenticados y usa `auth.uid()` para borrar únicamente la cuenta actual.
-
-## Autenticación
-
-La autenticación usa Supabase Auth.
-
-Funcionalidades implementadas:
-
-- Registro con correo y contraseña.
-- Confirmación de correo.
-- Inicio de sesión.
-- Persistencia de sesión.
-- Cierre de sesión.
-- Recuperación de contraseña.
-- Cambio de contraseña desde deep link.
-
-El deep link configurado es:
-
-```text
-gestcar://login-callback
-```
-
-En Supabase debe estar configurado en:
-
-- Authentication > URL Configuration > Site URL.
-- Authentication > URL Configuration > Redirect URLs.
-
-## Configuración de Supabase
-
-El cliente de Supabase está en:
-
-```text
-app/src/main/java/com/gestcar/datos/remoto/ClienteSupabase.kt
-```
-
-Actualmente contiene:
-
-```kotlin
-private const val SUPABASE_URL = "https://fghrbkgktlssvpbznfjk.supabase.co"
-private const val SUPABASE_KEY = "sb_publishable_fy1CfFqjPeO0-SlkQxijcg_1_63QOH5"
-```
-
-La clave usada es una publishable/anon key. No debe confundirse con una service role key.
-
-Si se clona el proyecto para otro entorno, hay que crear un proyecto de Supabase nuevo y reemplazar esos valores.
-
-## Scripts SQL incluidos
-
-El repositorio contiene scripts SQL de soporte:
-
-```text
-supabase_setup.sql
-supabase_setup_funcionalidades.sql
-supabase_actualizar_mantenimientos_estado.sql
-supabase_eliminar_cuenta.sql
-```
-
-Como el proyecto ha evolucionado, el estado esperado actual de Supabase incluye también:
-
-- `vehiculos` sin la columna antigua `anio`.
-- `vehiculos.anio_fabricacion` como columna obligatoria.
-- `mantenimientos.realizado`.
-- `mantenimientos.fecha_realizado`.
-- Función `public.eliminar_cuenta_actual()`.
-
-### Script final de puesta al día
-
-Si el proyecto de Supabase viene de una versión anterior, ejecutar este script una vez en SQL Editor:
-
-```sql
-begin;
-
-do $$
-begin
-    if exists (
-        select 1
-        from information_schema.columns
-        where table_schema = 'public'
-          and table_name = 'vehiculos'
-          and column_name = 'anio'
-    ) then
-        execute '
-            update public.vehiculos
-            set anio_fabricacion = coalesce(anio_fabricacion, anio)
-            where anio_fabricacion is null
-        ';
-    end if;
-end $$;
-
-update public.vehiculos
-set anio_fabricacion = extract(year from now())::integer
-where anio_fabricacion is null;
-
-alter table public.vehiculos
-alter column anio_fabricacion set not null;
-
-alter table public.vehiculos
-drop column if exists anio;
-
-alter table public.mantenimientos
-add column if not exists realizado boolean not null default true;
-
-alter table public.mantenimientos
-add column if not exists fecha_realizado bigint;
-
-create index if not exists idx_repostajes_vehiculo_id
-on public.repostajes(vehiculo_id);
-
-create index if not exists idx_mantenimientos_vehiculo_id
-on public.mantenimientos(vehiculo_id);
-
-create index if not exists idx_gastos_periodicos_vehiculo_id
-on public.gastos_periodicos(vehiculo_id);
-
-create index if not exists idx_recordatorios_vehiculo_id
-on public.recordatorios(vehiculo_id);
-
-create or replace function public.eliminar_cuenta_actual()
-returns void
-language plpgsql
-security definer
-set search_path = public, auth, storage
-as $$
-declare
-    usuario_actual uuid := auth.uid();
-begin
-    if usuario_actual is null then
-        raise exception 'no hay usuario autenticado';
-    end if;
-
-    delete from storage.objects
-    where bucket_id = 'vehiculos'
-      and (
-          owner::text = usuario_actual::text
-          or name like usuario_actual::text || '/%'
-      );
-
-    delete from public.vehiculos
-    where usuario_id = usuario_actual;
-
-    delete from auth.users
-    where id = usuario_actual;
-end;
-$$;
-
-revoke all on function public.eliminar_cuenta_actual() from public;
-grant execute on function public.eliminar_cuenta_actual() to authenticated;
-
-commit;
-```
-
-Después de ejecutar este script, se debe usar una APK generada con el código actual, porque las versiones antiguas de la app podían enviar la columna legacy `anio`.
-
-## Configuración de email transaccional
-
-Supabase Auth necesita enviar correos para:
-
-- Confirmación de registro.
-- Recuperación de contraseña.
-
-En este proyecto se configuró SMTP externo con Brevo para evitar límites bajos del correo integrado de Supabase.
-
-La configuración se realiza desde:
-
-```text
-Supabase Dashboard > Authentication > Email > SMTP Settings
-```
-
-Hay que configurar:
-
-- Sender email.
-- Sender name.
-- Host SMTP.
-- Puerto.
-- Usuario SMTP.
-- Contraseña SMTP.
-
-La app no necesita cambios de código si se cambia de proveedor SMTP. Es una configuración del proyecto de Supabase.
-
-## Navegación
-
-La app usa Navigation Compose.
-
-Pantallas principales con bottom bar:
-
-- Vehículos.
-- Gastos.
-- Repostajes.
-- Mantenimiento.
-- Más.
-
-Pantallas secundarias:
-
-- Formularios.
-- Detalles.
-- Recordatorios.
-- Estadísticas placeholder.
-- Cuenta.
-- Login.
-- Registro.
-- Restablecer contraseña.
-
-La navegación está centralizada en:
-
-```text
-ui/navegacion/Rutas.kt
-ui/navegacion/GrafoNavegacion.kt
-```
-
-Las transiciones entre pantallas usan un fade corto para que el cambio sea suave sin hacer lenta la app.
-
-## Pantallas principales
-
-### Vehículos
-
-Permite:
-
-- Crear vehículos.
-- Editar vehículos.
-- Eliminar vehículos.
-- Ver detalle del vehículo.
+La sección de vehículos permite:
+
+- Ver todos los vehículos del usuario.
+- Crear un vehículo.
+- Editar un vehículo.
+- Eliminar un vehículo.
+- Ver la ficha completa.
 - Añadir o cambiar foto.
-- Organizar vehículos habituales y secundarios.
+- Ordenar vehículos.
+- Separar vehículos habituales y secundarios.
 
-El primer vehículo habitual se usa como vehículo por defecto en selectores.
+El primer vehículo habitual se usa como referencia inicial en otras pantallas, como repostajes, gastos o mantenimientos.
 
 ### Repostajes
 
-Permite:
+La sección de repostajes permite:
 
-- Registrar repostajes.
-- Editar repostajes.
-- Eliminar repostajes.
-- Ver detalle del repostaje.
+- Registrar un repostaje.
+- Ver el historial de repostajes.
+- Consultar el detalle de un repostaje.
+- Editar un repostaje.
+- Eliminar un repostaje.
 - Filtrar por periodo.
 - Calcular consumo medio.
-- Calcular coste medio cada 100 km.
+- Calcular coste medio por cada 100 km.
 
-### Mantenimientos
+Campos habituales de un repostaje:
 
-Permite:
+- Vehículo.
+- Fecha.
+- Kilómetros.
+- Litros.
+- Precio por litro.
+- Importe total.
+- Si el depósito se llenó completo.
+- Gasolinera.
+- Notas.
 
-- Registrar mantenimientos.
-- Registrar reparaciones.
-- Marcar operaciones como pendientes o realizadas.
-- Editar operaciones.
-- Eliminar operaciones.
-- Ver detalle.
+El importe puede calcularse a partir de litros y precio por litro.
 
-No se fuerza una lista cerrada de componentes, porque cada vehículo puede tener averías muy distintas.
+### Mantenimientos Y Reparaciones
+
+La sección de mantenimiento permite registrar operaciones relacionadas con el estado mecánico del vehículo.
+
+La app diferencia:
+
+- Mantenimientos.
+- Reparaciones.
+- Operaciones pendientes.
+- Operaciones realizadas.
+
+No se usa una lista cerrada de componentes obligatorios, porque un vehículo puede tener averías muy variadas. El usuario puede introducir el componente o tipo de operación con libertad.
+
+Ejemplos:
+
+- Cambio de aceite.
+- Frenos.
+- Neumáticos.
+- Batería.
+- Correa de distribución.
+- Amortiguadores.
+- Caja de cambios.
+- Motor.
+- Reparación de carrocería.
+- Otro componente.
+
+Campos habituales:
+
+- Tipo o componente.
+- Categoría.
+- Estado.
+- Fecha.
+- Kilómetros.
+- Coste.
+- Taller.
+- Descripción.
+
+El coste puede ser cero, ya que algunas reparaciones pueden estar cubiertas por garantía, campañas de marca o seguros.
 
 ### Gastos
 
-Permite:
+La sección de gastos permite registrar costes no necesariamente ligados a una reparación.
 
-- Registrar gastos periódicos.
-- Registrar gastos únicos.
-- Controlar vencimientos.
-- Marcar gastos como pagados.
-- Crear nuevos avisos según periodicidad.
-- Consultar histórico de pagados.
+Ejemplos:
 
-Ejemplos de gastos:
-
-- ITV.
 - Seguro.
+- ITV.
 - Impuesto de circulación.
 - Parking.
 - Peajes.
 - Lavados.
+- Otros gastos.
+
+La app diferencia:
+
+- Gastos pendientes.
+- Gastos pagados.
+- Gastos vencidos.
+- Gastos próximos.
+- Gastos al día.
+- Gastos únicos.
+- Gastos periódicos.
+
+Cuando un gasto periódico se marca como pagado, la app puede ayudar a crear el siguiente aviso según la periodicidad.
 
 ### Recordatorios
 
-Permite:
+Los recordatorios permiten crear avisos manuales para tareas o controles del vehículo.
 
-- Crear recordatorios por fecha.
-- Crear recordatorios por kilometraje.
-- Crear recordatorios combinados.
-- Marcar como completado.
-- Editar.
-- Eliminar.
+Pueden basarse en:
 
-### Más
+- Fecha.
+- Kilometraje.
+- Fecha y kilometraje.
 
-Incluye:
+Ejemplos:
 
-- Cuenta.
-- Recordatorios.
-- Estadísticas.
-- Exportar datos.
-- Cerrar sesión.
+- Revisar presión de neumáticos.
+- Cambiar aceite a cierto kilometraje.
+- Revisar niveles.
+- Renovar documentación.
+- Comprobar una reparación pendiente.
 
-Algunas funciones como estadísticas completas y exportación final todavía pueden ampliarse en futuras iteraciones.
+### Ficha Del Vehículo
 
-## Validación y formato de datos
+La ficha del vehículo centraliza información relevante:
 
-### Matrículas
-
-La app incluye un normalizador de matrículas españolas.
-
-Reconoce:
-
-- Formato actual.
-- Formatos provinciales antiguos.
-- Históricas.
-- Ciclomotores.
-- Remolques.
-- Especiales.
-- Temporales civiles.
-
-Por criterio de privacidad y seguridad, no se normalizan formatos diplomáticos ni de Fuerzas del Estado.
-
-Si la matrícula no se reconoce, la app no bloquea al usuario automáticamente. Se puede pedir confirmación para introducirla igualmente.
-
-### Fechas
-
-Las fechas se almacenan como `Long`, usando timestamp en milisegundos.
-
-Esto se aplica a:
-
+- Foto.
+- Marca.
+- Modelo.
+- Matrícula.
+- Tipo.
+- Año de fabricación.
+- Kilometraje.
+- Combustible.
 - Fecha de alta.
-- Fecha de repostaje.
-- Fecha de mantenimiento.
-- Fecha de gasto.
-- Fecha de vencimiento.
-- Fecha de recordatorio.
-- Fecha de completado.
+- Métricas rápidas.
+- Últimos repostajes.
+- Últimos mantenimientos.
+- Gastos activos.
+- Recordatorios.
 
-### Importes y decimales
+La idea es que el usuario pueda abrir un vehículo y entender rápidamente su estado general.
 
-Los campos numéricos permiten introducir coma o punto decimal. Internamente se normalizan para evitar errores con teclados móviles.
+### Cuenta
 
-La UI muestra los importes formateados como euros.
+La pantalla de cuenta muestra información básica del usuario y permite solicitar la eliminación de cuenta.
 
-## Tema visual
+Por seguridad, no se muestran identificadores internos del backend al usuario final.
 
-La app usa Material Design 3 con paleta personalizada.
+## Funcionamiento Offline
 
-Colores principales:
+GestCar está diseñada para no depender totalmente de internet.
 
-- Azul oscuro: `#1F4E79`.
-- Azul claro: `#4A90D9`.
-- Verde: `#2E8B57`.
-- Ámbar: `#F9A825`.
-- Rojo error: `#B3261E`.
+Si no hay conexión:
 
-La barra superior es personalizada para ahorrar espacio vertical y mostrar el banner de conectividad de forma consistente.
+- El usuario puede seguir consultando datos guardados localmente.
+- Puede crear nuevos registros.
+- Puede editar registros existentes.
+- Los cambios se guardan en Room.
+- La app muestra un aviso de falta de conexión.
+- La sincronización queda pendiente.
 
-## Compilar y ejecutar
+Cuando vuelve la conexión:
 
-### Desde Android Studio
+- La app muestra un aviso de recuperación de conexión.
+- Se encola una sincronización puntual.
+- WorkManager puede sincronizar más adelante en segundo plano.
 
-1. Abrir Android Studio.
-2. Seleccionar `File > Open`.
-3. Elegir la carpeta del proyecto.
-4. Esperar a que Gradle sincronice.
-5. Ejecutar en emulador o dispositivo físico.
+## Gestión De Imágenes
 
-### Desde terminal
+Las fotos de los vehículos se tratan con especial cuidado.
 
-En Windows:
+La app:
+
+- Permite elegir imagen desde galería.
+- Permite hacer foto con cámara.
+- Comprime la imagen.
+- Guarda una copia local privada.
+- Sube la imagen al almacenamiento remoto cuando puede.
+- Usa rutas privadas.
+- Evita depender de una imagen remota para mostrar la foto sin conexión.
+
+Esto mejora rendimiento, privacidad y funcionamiento offline.
+
+## Seguridad Del Proyecto
+
+El proyecto está planteado teniendo en cuenta que trata información sensible.
+
+Puede incluir:
+
+- Matrículas.
+- Fotos de vehículos.
+- Kilometraje.
+- Historial de repostajes.
+- Gastos.
+- Reparaciones.
+- Datos vinculados a usuarios.
+
+Medidas aplicadas:
+
+- Autenticación obligatoria.
+- Datos separados por usuario.
+- Row Level Security en el backend.
+- Almacenamiento privado de imágenes.
+- No se incluyen claves privilegiadas en la app.
+- No se muestran identificadores internos al usuario final.
+- La eliminación de cuenta se realiza mediante una operación protegida en backend.
+- El README público no contiene SQL ni credenciales.
+
+## Configuración Privada No Incluida
+
+Para ejecutar GestCar contra un backend real es necesario configurar servicios externos.
+
+Esa configuración no se documenta con valores reales en este README.
+
+Cada entorno debe configurar de forma privada:
+
+- Proyecto backend.
+- Autenticación.
+- Base de datos.
+- Políticas de seguridad.
+- Almacenamiento privado.
+- Proveedor SMTP.
+- URLs de redirección.
+- Claves públicas permitidas.
+
+Las claves privilegiadas nunca deben incluirse en el código Android ni en documentación pública.
+
+## Instalación Para Probar La App Como Usuario
+
+Si el objetivo es probar la aplicación en un móvil, lo recomendable es instalar un APK generado por el desarrollador.
+
+### Opción Recomendada: Instalar APK
+
+Pasos para probar la app en un dispositivo Android:
+
+1. Recibir el archivo APK generado desde el proyecto.
+2. Copiar el APK al móvil.
+3. Abrir el APK desde el gestor de archivos, WhatsApp, Drive, correo o similar.
+4. Si Android lo solicita, permitir la instalación desde esa fuente.
+5. Instalar la aplicación.
+6. Abrir GestCar.
+7. Crear una cuenta o iniciar sesión con una cuenta existente.
+8. Confirmar el correo si el sistema lo solicita.
+9. Volver a abrir la app.
+10. Registrar un vehículo.
+11. Probar repostajes, gastos, mantenimientos y recordatorios.
+
+### Importante
+
+El enlace de GitHub contiene el código fuente. No es equivalente a un APK instalable.
+
+Para probar la app como usuario final, debe usarse un APK.
+
+Para revisar el código, puede usarse el repositorio.
+
+Son dos usos distintos.
+
+## Instalación Desde Android Studio
+
+Esta opción es para quien quiera compilar la app desde el código fuente.
+
+### Requisitos
+
+Se recomienda tener:
+
+- Android Studio actualizado.
+- JDK compatible con Android Studio.
+- SDK de Android instalado.
+- Conexión a internet para descargar dependencias.
+- Un emulador Android o un dispositivo físico con depuración USB.
+
+### Abrir El Proyecto
+
+1. Descargar o clonar el repositorio.
+2. Abrir Android Studio.
+3. Seleccionar `File > Open`.
+4. Elegir la carpeta raíz del proyecto.
+5. Esperar a que Android Studio sincronice Gradle.
+6. Revisar que el módulo seleccionado sea `app`.
+7. Ejecutar la app desde el botón Run.
+
+### Ejecutar En Emulador
+
+1. Crear o abrir un emulador Android.
+2. Esperar a que el emulador arranque por completo.
+3. Seleccionar el emulador como dispositivo de destino.
+4. Pulsar Run.
+5. Esperar a que Android Studio instale y abra la app.
+
+### Ejecutar En Dispositivo Físico
+
+1. Activar las opciones de desarrollador en el móvil.
+2. Activar depuración USB.
+3. Conectar el móvil al ordenador.
+4. Aceptar la huella RSA si Android lo pregunta.
+5. Seleccionar el dispositivo en Android Studio.
+6. Pulsar Run.
+
+### Problemas Frecuentes Al Compilar
+
+Si Android Studio no compila:
+
+- Comprobar que Gradle ha sincronizado correctamente.
+- Comprobar que el SDK requerido está instalado.
+- Comprobar que hay conexión a internet.
+- Limpiar y reconstruir el proyecto.
+- Revisar la pestaña Build para ver errores.
+- Asegurarse de abrir la carpeta raíz correcta.
+
+Si la app se instala pero no abre:
+
+- Revisar Logcat.
+- Comprobar que el APK instalado corresponde a la versión actual.
+- Desinstalar versiones antiguas.
+- Reinstalar.
+- Comprobar que el dispositivo tiene conexión si se va a registrar o iniciar sesión.
+
+## Generar APK Debug
+
+Desde Android Studio:
+
+1. Abrir el proyecto.
+2. Seleccionar `Build`.
+3. Seleccionar `Build Bundle(s) / APK(s)`.
+4. Seleccionar `Build APK(s)`.
+5. Esperar a que termine.
+6. Abrir la ubicación del APK generado.
+
+Desde terminal en Windows:
 
 ```powershell
 .\gradlew.bat assembleDebug
 ```
 
-El APK debug queda en:
+El APK debug se genera en:
 
 ```text
-app/build/outputs/apk/debug/app-debug.apk
+app/build/outputs/apk/debug/
 ```
 
-Para release sin firmar:
+El APK debug está firmado con la clave debug de Android y sirve para pruebas.
 
-```powershell
-.\gradlew.bat assembleRelease
-```
+## Uso Básico De La App
 
-El APK release sin firmar queda en:
+### 1. Abrir La Aplicación
+
+Al abrir GestCar aparece una pantalla inicial de carga. Si hay sesión guardada, la app accede directamente a la pantalla principal.
+
+Si no hay sesión guardada, se muestra la pantalla de inicio de sesión.
+
+### 2. Crear Cuenta
+
+1. Pulsar en la opción de registro.
+2. Introducir correo electrónico.
+3. Introducir contraseña.
+4. Confirmar contraseña.
+5. Pulsar registrarse.
+6. Revisar el correo.
+7. Confirmar la cuenta desde el enlace recibido.
+8. Volver a la app e iniciar sesión.
+
+### 3. Iniciar Sesión
+
+1. Introducir correo.
+2. Introducir contraseña.
+3. Pulsar iniciar sesión.
+4. Esperar a que cargue la pantalla de vehículos.
+
+### 4. Crear Un Vehículo
+
+1. Entrar en la pestaña Vehículos.
+2. Pulsar el botón `+`.
+3. Rellenar los campos obligatorios.
+4. Añadir información opcional si se desea.
+5. Guardar.
+
+Después de crear un vehículo, aparecerá en la lista principal.
+
+### 5. Añadir Foto A Un Vehículo
+
+1. Entrar en la ficha del vehículo.
+2. Pulsar el botón de foto.
+3. Elegir entre cámara o galería.
+4. Seleccionar o tomar la imagen.
+5. Esperar a que se procese.
+
+La app guarda una copia local comprimida para que la imagen se pueda ver incluso sin conexión.
+
+### 6. Registrar Un Repostaje
+
+1. Entrar en la pestaña Repostajes.
+2. Seleccionar el vehículo correspondiente.
+3. Pulsar `+`.
+4. Introducir fecha, kilómetros, litros y precio.
+5. Añadir gasolinera o notas si se desea.
+6. Guardar.
+
+El repostaje aparecerá en el historial y se usará para calcular consumo y coste medio.
+
+### 7. Registrar Un Mantenimiento O Reparación
+
+1. Entrar en la pestaña Mantenimiento.
+2. Seleccionar vehículo.
+3. Pulsar `+`.
+4. Indicar tipo o componente.
+5. Elegir si es mantenimiento o reparación.
+6. Marcar si está pendiente o realizada.
+7. Añadir fecha, coste, taller o descripción.
+8. Guardar.
+
+### 8. Registrar Un Gasto
+
+1. Entrar en la pestaña Gastos.
+2. Seleccionar vehículo.
+3. Pulsar `+`.
+4. Indicar concepto.
+5. Indicar importe.
+6. Indicar fecha.
+7. Elegir periodicidad si procede.
+8. Guardar.
+
+Los gastos periódicos pueden servir para controlar vencimientos.
+
+### 9. Marcar Un Gasto Como Pagado
+
+1. Entrar en el detalle del gasto.
+2. Pulsar la opción de marcar como pagado.
+3. Confirmar.
+4. Si el gasto es periódico, decidir si se quiere crear el siguiente aviso.
+
+### 10. Crear Un Recordatorio
+
+1. Entrar en Más.
+2. Abrir Recordatorios.
+3. Pulsar `+`.
+4. Elegir vehículo.
+5. Introducir concepto.
+6. Añadir fecha límite, kilometraje o ambos.
+7. Guardar.
+
+### 11. Cerrar Sesión
+
+1. Ir a Más.
+2. Pulsar cerrar sesión.
+3. Confirmar si procede.
+
+### 12. Eliminar Cuenta
+
+1. Ir a Más.
+2. Entrar en Cuenta.
+3. Pulsar eliminar cuenta.
+4. Leer la advertencia.
+5. Confirmar la primera ventana.
+6. Confirmar la segunda ventana.
+
+Esta acción está pensada para eliminar la cuenta y los datos asociados.
+
+## Recomendaciones Para Evaluación Académica
+
+Para revisar el proyecto, se recomienda:
+
+1. Leer este README.
+2. Abrir el proyecto en Android Studio.
+3. Revisar la estructura de paquetes.
+4. Empezar por `ActividadPrincipal`.
+5. Revisar el grafo de navegación.
+6. Revisar los ViewModels.
+7. Revisar los repositorios.
+8. Revisar las entidades Room.
+9. Revisar los DAOs.
+10. Revisar las pantallas principales.
+
+Para probar la app como usuario:
+
+1. Instalar un APK debug generado por el desarrollador.
+2. Crear una cuenta.
+3. Confirmar el correo.
+4. Crear un vehículo.
+5. Añadir una foto.
+6. Crear repostajes.
+7. Crear gastos.
+8. Crear mantenimientos.
+9. Crear recordatorios.
+10. Probar el modo sin conexión.
+
+## Estructura Principal Del Código
 
 ```text
-app/build/outputs/apk/release/app-release-unsigned.apk
+app/src/main/java/com/gestcar/
 ```
 
-Para instalar en un móvil normal, el APK debe estar firmado. El debug APK ya viene firmado con la clave debug de Android.
+Paquetes principales:
 
-## Qué archivos subir al entregar el proyecto
+```text
+datos/
+  basedatos/
+  dao/
+  entidades/
+  remoto/
+  repositorio/
 
-Para entregar el proyecto como código fuente, se debe subir:
+ui/
+  componentes/
+  navegacion/
+  pantallas/
+  tema/
+  viewmodel/
+
+util/
+```
+
+### datos
+
+Contiene la capa de datos:
+
+- Entidades de Room.
+- DAOs.
+- Base de datos local.
+- DTOs remotos.
+- Repositorios.
+- Cliente remoto.
+
+### ui
+
+Contiene la capa visual:
+
+- Pantallas Compose.
+- Componentes reutilizables.
+- Navegación.
+- Tema.
+- ViewModels.
+
+### util
+
+Contiene utilidades:
+
+- Normalización de entradas numéricas.
+- Gestión de imágenes.
+- Normalización de matrículas.
+- Observación de conectividad.
+- Planificación de sincronización.
+- Worker de sincronización.
+
+## Entrega Del Proyecto
+
+Para entregar el código fuente, incluir:
 
 - `app/`
 - `gradle/`
@@ -942,10 +733,8 @@ Para entregar el proyecto como código fuente, se debe subir:
 - `gradlew`
 - `gradlew.bat`
 - `README.md`
-- Scripts `.sql` necesarios.
-- Documentación propia si se desea, como PDF de análisis o diseño.
 
-No se deben subir:
+No incluir:
 
 - `.gradle/`
 - `.idea/`
@@ -953,40 +742,51 @@ No se deben subir:
 - `build/`
 - `app/build/`
 - `local.properties`
-- Bases de datos debug locales.
-- APKs generados si la entrega pide solo código fuente.
+- APKs si la entrega pide solo código fuente.
+- Capturas con datos reales.
+- Ficheros con claves.
+- Scripts SQL sensibles.
 
-## Estado pendiente o ampliable
+Si también se quiere entregar una versión instalable, se puede adjuntar el APK por separado.
 
-Aunque la app ya tiene una base funcional amplia, todavía hay partes que pueden ampliarse:
+## Limitaciones Actuales
 
-- Estadísticas completas con gráficos.
+Aunque GestCar ya tiene muchas funcionalidades, todavía hay partes ampliables:
+
+- Estadísticas completas con gráficos avanzados.
 - Exportación CSV definitiva.
-- Notificaciones del sistema para vencimientos y recordatorios.
-- Preferencias de cuenta más avanzadas.
-- Historial de sesiones o dispositivos.
-- Ajustes de sincronización visibles para el usuario.
+- Notificaciones del sistema.
+- Preferencias avanzadas de cuenta.
 - Tests automatizados.
-- Firma release final para distribución.
+- Firma release final.
+- Mejoras de accesibilidad.
+- Mejoras de internacionalización.
 
-## Notas importantes de seguridad
+## Buenas Prácticas De Seguridad
 
-- No introducir nunca `service_role` en el código Android.
-- No convertir el bucket de fotos en público.
-- Mantener RLS activado en todas las tablas.
-- Mantener las políticas de Storage limitadas por carpeta de usuario.
-- Mantener la eliminación de cuenta como función SQL segura, no como operación privilegiada desde la app.
-- Evitar mostrar identificadores internos de Supabase al usuario final.
+Para mantener el proyecto seguro:
 
-## Resumen técnico
+- No publicar claves privadas.
+- No publicar scripts SQL sensibles.
+- No publicar credenciales SMTP.
+- No incluir claves privilegiadas en el APK.
+- No mostrar identificadores internos al usuario final.
+- No convertir almacenamiento privado en público.
+- Mantener políticas de seguridad activas en backend.
+- Revisar cualquier dato antes de subirlo a GitHub.
 
-GestCar combina una base local Room con Supabase como backend remoto. La app está diseñada para que el dato local sea la primera garantía de persistencia, y Supabase actúe como sincronización remota entre dispositivos.
+## Resumen
 
-El diseño prioriza:
+GestCar es una app Android de gestión de vehículos diseñada con arquitectura MVVM, almacenamiento local, sincronización remota y enfoque offline-first.
 
-- Funcionamiento offline.
-- Seguridad de datos personales.
-- Separación clara entre UI, ViewModel, repositorio y datos.
-- Sincronización robusta.
-- Interfaz sencilla para usuarios no técnicos.
-- Código comentado para facilitar revisión académica.
+El proyecto prioriza:
+
+- Usabilidad.
+- Persistencia local.
+- Sincronización entre dispositivos.
+- Seguridad de datos.
+- Claridad arquitectónica.
+- Separación de responsabilidades.
+- Facilidad de revisión académica.
+
+La documentación pública evita exponer detalles sensibles, pero mantiene suficiente información para entender el alcance, la arquitectura, el uso y el proceso de instalación de la aplicación.
