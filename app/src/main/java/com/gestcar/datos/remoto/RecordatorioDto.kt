@@ -19,6 +19,15 @@ data class RecordatorioDto(
     @SerialName("kilometraje_limite")
     val kilometrajeLimite: Double? = null,
 
+    @SerialName("periodicidad_tiempo_cantidad")
+    val periodicidadTiempoCantidad: Int? = null,
+
+    @SerialName("periodicidad_tiempo_unidad")
+    val periodicidadTiempoUnidad: String? = null,
+
+    @SerialName("periodicidad_kilometros")
+    val periodicidadKilometros: Double? = null,
+
     val completado: Boolean = false,
 
     @SerialName("fecha_completado")
@@ -36,6 +45,9 @@ fun Recordatorio.aDto(): RecordatorioDto = RecordatorioDto(
     concepto = concepto,
     fechaLimite = fechaLimite,
     kilometrajeLimite = kilometrajeLimite,
+    periodicidadTiempoCantidad = periodicidadTiempoCantidad,
+    periodicidadTiempoUnidad = periodicidadTiempoUnidad,
+    periodicidadKilometros = periodicidadKilometros,
     completado = completado,
     fechaCompletado = fechaCompletado,
     notas = notas,
@@ -48,6 +60,9 @@ fun RecordatorioDto.aEntidad(): Recordatorio = Recordatorio(
     concepto = concepto,
     fechaLimite = fechaLimite,
     kilometrajeLimite = kilometrajeLimite,
+    periodicidadTiempoCantidad = periodicidadTiempoCantidad,
+    periodicidadTiempoUnidad = periodicidadTiempoUnidad,
+    periodicidadKilometros = periodicidadKilometros,
     completado = completado,
     fechaCompletado = fechaCompletado,
     notas = notas,

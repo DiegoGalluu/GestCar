@@ -41,6 +41,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.viewmodel.RecordatorioViewModel
+import com.gestcar.ui.viewmodel.UNIDAD_TIEMPO_ANIOS
+import com.gestcar.ui.viewmodel.UNIDAD_TIEMPO_DIAS
+import com.gestcar.ui.viewmodel.UNIDAD_TIEMPO_MESES
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,6 +122,11 @@ fun PantallaDetalleRecordatorio(
                 ) {
                     recordatorio.fechaLimite?.let { FilaDato("Fecha límite", formatearFecha(it)) }
                     recordatorio.kilometrajeLimite?.let { FilaDato("Kilometraje límite", "${String.format("%,.0f", it)} km") }
+                    textoPeriodicidadRecordatorio(
+                        cantidadTiempo = recordatorio.periodicidadTiempoCantidad,
+                        unidadTiempo = recordatorio.periodicidadTiempoUnidad,
+                        kilometros = recordatorio.periodicidadKilometros
+                    )?.let { FilaDato("Periodicidad", it) }
                     recordatorio.fechaCompletado?.let { FilaDato("Fecha completado", formatearFecha(it)) }
                     BloqueComentariosRecordatorio(recordatorio.notas?.takeIf { it.isNotBlank() } ?: "Sin comentarios")
                 }
@@ -181,4 +189,28 @@ private fun BloqueComentariosRecordatorio(comentarios: String) {
             style = MaterialTheme.typography.bodyMedium
         )
     }
+}
+
+private fun textoPeriodicidadRecordatorio(
+    cantidadTiempo: Int?,
+    unidadTiempo: String?,
+    kilometros: Double?
+): String? {
+    val partes = mutableListOf<String>()
+
+    if (cantidadTiempo != null && cantidadTiempo > 0 && unidadTiempo != null) {
+        val unidad = when (unidadTiempo) {
+            UNIDAD_TIEMPO_DIAS -> if (cantidadTiempo == 1) "dia" else "dias"
+            UNIDAD_TIEMPO_MESES -> if (cantidadTiempo == 1) "mes" else "meses"
+            UNIDAD_TIEMPO_ANIOS -> if (cantidadTiempo == 1) "anio" else "anios"
+            else -> null
+        }
+        unidad?.let { partes.add("Cada $cantidadTiempo $it") }
+    }
+
+    kilometros?.takeIf { it > 0 }?.let {
+        partes.add("Cada ${String.format("%,.0f", it)} km")
+    }
+
+    return partes.takeIf { it.isNotEmpty() }?.joinToString(" o ")
 }

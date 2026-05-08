@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.UUID
 
 data class EstadoListaRecordatorios(
@@ -108,6 +109,20 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
                 return@launch
             }
 
+            if (recordatorio.periodicidadTiempoCantidad != null && recordatorio.periodicidadTiempoCantidad <= 0) {
+                _estadoFormulario.value = estadoActual.copy(
+                    mensajeError = "La periodicidad por tiempo debe ser mayor que cero"
+                )
+                return@launch
+            }
+
+            if (recordatorio.periodicidadKilometros != null && recordatorio.periodicidadKilometros <= 0) {
+                _estadoFormulario.value = estadoActual.copy(
+                    mensajeError = "La periodicidad por kilometros debe ser mayor que cero"
+                )
+                return@launch
+            }
+
             _estadoFormulario.value = estadoActual.copy(estaCargando = true, mensajeError = null)
 
             val resultado = repositorio.guardar(recordatorio)
@@ -130,12 +145,16 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
 
     fun marcarComoCompletado(recordatorio: Recordatorio) {
         viewModelScope.launch {
-            repositorio.guardar(
-                recordatorio.copy(
-                    completado = true,
-                    fechaCompletado = System.currentTimeMillis()
-                )
+            val fechaActual = System.currentTimeMillis()
+            val recordatorioCompletado = recordatorio.copy(
+                completado = true,
+                fechaCompletado = fechaActual
             )
+
+            repositorio.guardar(recordatorioCompletado)
+            crearSiguienteRecordatorioSiProcede(recordatorioCompletado)?.let { siguiente ->
+                repositorio.guardar(siguiente)
+            }
             PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
         }
     }
@@ -158,4 +177,48 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
             PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
         }
     }
+
+    private fun crearSiguienteRecordatorioSiProcede(recordatorio: Recordatorio): Recordatorio? {
+        val siguienteFecha = calcularSiguienteFecha(recordatorio)
+        val siguienteKilometraje = recordatorio.periodicidadKilometros
+            ?.takeIf { it > 0 }
+            ?.let { intervalo -> recordatorio.kilometrajeLimite?.plus(intervalo) }
+
+        if (siguienteFecha == null && siguienteKilometraje == null) {
+            return null
+        }
+
+        // dejamos el aviso completado como historico y creamos uno nuevo pendiente
+        // asi se conserva cuando se hizo cada operacion y cual es la proxima
+        return recordatorio.copy(
+            id = UUID.randomUUID().toString(),
+            fechaLimite = siguienteFecha,
+            kilometrajeLimite = siguienteKilometraje,
+            completado = false,
+            fechaCompletado = null,
+            actualizadoEn = System.currentTimeMillis()
+        )
+    }
+
+    private fun calcularSiguienteFecha(recordatorio: Recordatorio): Long? {
+        val cantidad = recordatorio.periodicidadTiempoCantidad?.takeIf { it > 0 } ?: return null
+        val unidad = recordatorio.periodicidadTiempoUnidad ?: return null
+        val fechaBase = recordatorio.fechaLimite ?: return null
+
+        val campoCalendario = when (unidad) {
+            UNIDAD_TIEMPO_DIAS -> Calendar.DAY_OF_YEAR
+            UNIDAD_TIEMPO_MESES -> Calendar.MONTH
+            UNIDAD_TIEMPO_ANIOS -> Calendar.YEAR
+            else -> return null
+        }
+
+        return Calendar.getInstance().apply {
+            timeInMillis = fechaBase
+            add(campoCalendario, cantidad)
+        }.timeInMillis
+    }
 }
+
+const val UNIDAD_TIEMPO_DIAS = "DIAS"
+const val UNIDAD_TIEMPO_MESES = "MESES"
+const val UNIDAD_TIEMPO_ANIOS = "ANIOS"

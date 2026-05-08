@@ -27,7 +27,7 @@ import com.gestcar.datos.entidades.Vehiculo
         GastoPeriodico::class,
         Recordatorio::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class GestCarBaseDatos : RoomDatabase() {
@@ -252,6 +252,31 @@ abstract class GestCarBaseDatos : RoomDatabase() {
             }
         }
 
+        // los recordatorios pasan a poder repetirse por tiempo kilometros o ambos
+        // son columnas opcionales para no alterar los avisos que ya tenia el usuario
+        private val MIGRACION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    ALTER TABLE recordatorios
+                    ADD COLUMN periodicidadTiempoCantidad INTEGER
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    ALTER TABLE recordatorios
+                    ADD COLUMN periodicidadTiempoUnidad TEXT
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    ALTER TABLE recordatorios
+                    ADD COLUMN periodicidadKilometros REAL
+                    """.trimIndent()
+                )
+            }
+        }
+
         @Volatile
         private var INSTANCIA: GestCarBaseDatos? = null
 
@@ -268,7 +293,8 @@ abstract class GestCarBaseDatos : RoomDatabase() {
                     MIGRACION_2_3,
                     MIGRACION_3_4,
                     MIGRACION_4_5,
-                    MIGRACION_5_6
+                    MIGRACION_5_6,
+                    MIGRACION_6_7
                 ).build()
                 INSTANCIA = instancia
                 instancia

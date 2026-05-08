@@ -33,6 +33,7 @@ import com.gestcar.ui.pantallas.PantallaDetalleRecordatorio
 import com.gestcar.ui.pantallas.PantallaDetalleVehiculo
 import com.gestcar.ui.pantallas.PantallaDetalleMantenimiento
 import com.gestcar.ui.pantallas.PantallaDetalleRepostaje
+import com.gestcar.ui.pantallas.PantallaEstadisticas
 import com.gestcar.ui.pantallas.PantallaCuenta
 import com.gestcar.ui.pantallas.PantallaFormularioGasto
 import com.gestcar.ui.pantallas.PantallaFormularioMantenimiento
@@ -46,7 +47,6 @@ import com.gestcar.ui.pantallas.PantallaListaRecordatorios
 import com.gestcar.ui.pantallas.PantallaListaVehiculos
 import com.gestcar.ui.pantallas.PantallaListaRepostajes
 import com.gestcar.ui.pantallas.PantallaMasOpciones
-import com.gestcar.ui.pantallas.PantallaPlaceholder
 import com.gestcar.ui.pantallas.PantallaRegistro
 import com.gestcar.ui.pantallas.PantallaRestablecerContrasena
 import com.gestcar.ui.viewmodel.AutenticacionViewModel
@@ -505,8 +505,8 @@ fun GrafoNavegacion(
 
             // pantallas placeholder para las secciones que aun no estan implementadas
             composable(Rutas.ESTADISTICAS) {
-                PantallaPlaceholder(
-                    nombreSeccion = "Estadísticas",
+                PantallaEstadisticas(
+                    usuarioId = usuarioId,
                     alVolver = { controladorNav.popBackStack() }
                 )
             }
