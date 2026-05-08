@@ -22,6 +22,7 @@ data class EstadoListaRecordatorios(
 
 data class EstadoFormularioRecordatorio(
     val recordatorio: Recordatorio = Recordatorio(),
+    val kilometrajeVehiculoActual: Double = 0.0,
     val estaCargando: Boolean = false,
     val guardadoExitoso: Boolean = false,
     val mensajeError: String? = null
@@ -30,9 +31,9 @@ data class EstadoFormularioRecordatorio(
 class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) {
 
     private val repositorio: RecordatorioRepositorio
+    private val baseDatos = GestCarBaseDatos.obtenerInstancia(aplicacion)
 
     init {
-        val baseDatos = GestCarBaseDatos.obtenerInstancia(aplicacion)
         repositorio = RecordatorioRepositorio(
             recordatorioDao = baseDatos.recordatorioDao(),
             vehiculoDao = baseDatos.vehiculoDao()
@@ -61,18 +62,27 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
     }
 
     fun resetearFormulario(vehiculoId: String) {
-        _estadoFormulario.value = EstadoFormularioRecordatorio(
-            recordatorio = Recordatorio(
-                id = UUID.randomUUID().toString(),
-                vehiculoId = vehiculoId
+        viewModelScope.launch {
+            val vehiculo = baseDatos.vehiculoDao().obtenerPorId(vehiculoId)
+            _estadoFormulario.value = EstadoFormularioRecordatorio(
+                recordatorio = Recordatorio(
+                    id = UUID.randomUUID().toString(),
+                    vehiculoId = vehiculoId,
+                    fechaLimite = System.currentTimeMillis()
+                ),
+                kilometrajeVehiculoActual = vehiculo?.kilometraje ?: 0.0
             )
-        )
+        }
     }
 
     fun cargarParaEditar(recordatorioId: String) {
         viewModelScope.launch {
             val recordatorio = repositorio.obtenerPorId(recordatorioId) ?: return@launch
-            _estadoFormulario.value = EstadoFormularioRecordatorio(recordatorio = recordatorio)
+            val vehiculo = baseDatos.vehiculoDao().obtenerPorId(recordatorio.vehiculoId)
+            _estadoFormulario.value = EstadoFormularioRecordatorio(
+                recordatorio = recordatorio,
+                kilometrajeVehiculoActual = vehiculo?.kilometraje ?: 0.0
+            )
         }
     }
 
@@ -86,7 +96,10 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
     fun guardarRecordatorio() {
         viewModelScope.launch {
             val estadoActual = _estadoFormulario.value
-            val recordatorio = estadoActual.recordatorio
+            val recordatorio = prepararRecordatorioParaGuardar(
+                recordatorio = estadoActual.recordatorio,
+                kilometrajeActual = estadoActual.kilometrajeVehiculoActual
+            )
 
             if (recordatorio.vehiculoId.isBlank() || recordatorio.concepto.isBlank()) {
                 _estadoFormulario.value = estadoActual.copy(
@@ -97,14 +110,14 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
 
             if (recordatorio.fechaLimite == null && recordatorio.kilometrajeLimite == null) {
                 _estadoFormulario.value = estadoActual.copy(
-                    mensajeError = "Indica una fecha limite o un kilometraje limite"
+                    mensajeError = "Indica una fecha límite o un kilometraje límite"
                 )
                 return@launch
             }
 
             if (recordatorio.kilometrajeLimite != null && recordatorio.kilometrajeLimite <= 0) {
                 _estadoFormulario.value = estadoActual.copy(
-                    mensajeError = "El kilometraje limite debe ser mayor que cero"
+                    mensajeError = "El kilometraje límite debe ser mayor que cero"
                 )
                 return@launch
             }
@@ -118,7 +131,7 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
 
             if (recordatorio.periodicidadKilometros != null && recordatorio.periodicidadKilometros <= 0) {
                 _estadoFormulario.value = estadoActual.copy(
-                    mensajeError = "La periodicidad por kilometros debe ser mayor que cero"
+                    mensajeError = "La periodicidad por kilómetros debe ser mayor que cero"
                 )
                 return@launch
             }
@@ -141,6 +154,20 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
                 )
             }
         }
+    }
+
+    private fun prepararRecordatorioParaGuardar(
+        recordatorio: Recordatorio,
+        kilometrajeActual: Double
+    ): Recordatorio {
+        val intervaloKm = recordatorio.periodicidadKilometros?.takeIf { it > 0 }
+        val kilometrajeLimite = if (intervaloKm != null) {
+            kilometrajeActual + intervaloKm
+        } else {
+            recordatorio.kilometrajeLimite
+        }
+
+        return recordatorio.copy(kilometrajeLimite = kilometrajeLimite)
     }
 
     fun marcarComoCompletado(recordatorio: Recordatorio) {

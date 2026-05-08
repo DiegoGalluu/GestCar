@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -54,17 +56,27 @@ fun PantallaFormularioRecordatorio(
     val esNuevo = recordatorioId == "nuevo"
     val recordatorio = estado.recordatorio
     var intentoGuardar by remember { mutableStateOf(false) }
+    var mostrarDialogoKilometrajeSuperado by remember { mutableStateOf(false) }
     val conceptoVacio = recordatorio.concepto.isBlank()
-    val kilometrajeInvalido = recordatorio.kilometrajeLimite != null && recordatorio.kilometrajeLimite <= 0
+    val periodicidadKilometrajeActiva = recordatorio.periodicidadKilometros != null
+    val avisoKilometrajeActivo = recordatorio.kilometrajeLimite != null || periodicidadKilometrajeActiva
+    val valorCampoKilometraje = if (periodicidadKilometrajeActiva) {
+        recordatorio.periodicidadKilometros
+    } else {
+        recordatorio.kilometrajeLimite
+    }
+    val kilometrajeInvalido = avisoKilometrajeActivo && (valorCampoKilometraje == null || valorCampoKilometraje <= 0)
+    val kilometrajeYaSuperado = avisoKilometrajeActivo &&
+        !periodicidadKilometrajeActiva &&
+        valorCampoKilometraje != null &&
+        valorCampoKilometraje < estado.kilometrajeVehiculoActual
     val periodicidadTiempoInvalida = recordatorio.periodicidadTiempoCantidad != null && recordatorio.periodicidadTiempoCantidad <= 0
-    val periodicidadKmInvalida = recordatorio.periodicidadKilometros != null && recordatorio.periodicidadKilometros <= 0
-    val sinLimite = recordatorio.fechaLimite == null && recordatorio.kilometrajeLimite == null
+    val sinLimite = recordatorio.fechaLimite == null && !avisoKilometrajeActivo
     val faltaConcepto = intentoGuardar && conceptoVacio
     val faltanCamposObligatorios = conceptoVacio ||
         sinLimite ||
         kilometrajeInvalido ||
-        periodicidadTiempoInvalida ||
-        periodicidadKmInvalida
+        periodicidadTiempoInvalida
 
     LaunchedEffect(vehiculoId, recordatorioId) {
         if (esNuevo) {
@@ -122,7 +134,7 @@ fun PantallaFormularioRecordatorio(
 
             recordatorio.fechaLimite?.let { fecha ->
                 CampoFecha(
-                    etiqueta = "Fecha limite",
+                    etiqueta = "Fecha límite",
                     fecha = fecha,
                     alSeleccionarFecha = {
                         viewModel.actualizarFormulario(recordatorio.copy(fechaLimite = it))
@@ -132,33 +144,67 @@ fun PantallaFormularioRecordatorio(
             }
 
             SelectorLimiteKilometraje(
-                activado = recordatorio.kilometrajeLimite != null,
+                activado = avisoKilometrajeActivo,
                 alCambiar = { activado ->
                     viewModel.actualizarFormulario(
                         recordatorio.copy(
                             kilometrajeLimite = if (activado) {
-                                recordatorio.kilometrajeLimite ?: 0.0
+                                recordatorio.kilometrajeLimite ?: estado.kilometrajeVehiculoActual.takeIf { it > 0 } ?: 0.0
                             } else {
                                 null
-                            }
+                            },
+                            periodicidadKilometros = if (activado) recordatorio.periodicidadKilometros else null
                         )
                     )
                 }
             )
 
-            if (recordatorio.kilometrajeLimite != null) {
+            if (avisoKilometrajeActivo) {
                 OutlinedTextField(
-                    value = recordatorio.kilometrajeLimite.takeIf { it > 0 }?.toLong()?.toString().orEmpty(),
+                    value = valorCampoKilometraje.takeIf { it != null && it > 0 }?.toLong()?.toString().orEmpty(),
                     onValueChange = {
+                        val valor = it.replace(",", ".").toDoubleOrNull()
                         viewModel.actualizarFormulario(
-                            recordatorio.copy(kilometrajeLimite = it.toDoubleOrNull())
+                            if (periodicidadKilometrajeActiva) {
+                                recordatorio.copy(
+                                    periodicidadKilometros = valor,
+                                    kilometrajeLimite = valor?.takeIf { intervalo -> intervalo > 0 }?.let { intervalo ->
+                                        estado.kilometrajeVehiculoActual + intervalo
+                                    }
+                                )
+                            } else {
+                                recordatorio.copy(kilometrajeLimite = valor)
+                            }
                         )
                     },
-                    label = { Text("Kilometraje limite") },
+                    label = {
+                        Text(if (periodicidadKilometrajeActiva) "Intervalo en kilómetros" else "Kilometraje límite")
+                    },
                     isError = intentoGuardar && kilometrajeInvalido,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
+                )
+
+                FilaConSwitch(
+                    texto = "Repetir por kilometraje",
+                    activado = periodicidadKilometrajeActiva,
+                    alCambiar = { activado ->
+                        val valorActual = valorCampoKilometraje?.takeIf { it > 0 } ?: 10000.0
+                        viewModel.actualizarFormulario(
+                            if (activado) {
+                                recordatorio.copy(
+                                    periodicidadKilometros = valorActual,
+                                    kilometrajeLimite = estado.kilometrajeVehiculoActual + valorActual
+                                )
+                            } else {
+                                recordatorio.copy(
+                                    periodicidadKilometros = null,
+                                    kilometrajeLimite = recordatorio.kilometrajeLimite
+                                )
+                            }
+                        )
+                    }
                 )
             }
 
@@ -197,7 +243,7 @@ fun PantallaFormularioRecordatorio(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ChipUnidadTiempo(
-                        texto = "Dias",
+                        texto = "Días",
                         seleccionada = recordatorio.periodicidadTiempoUnidad == UNIDAD_TIEMPO_DIAS,
                         alPulsar = { viewModel.actualizarFormulario(recordatorio.copy(periodicidadTiempoUnidad = UNIDAD_TIEMPO_DIAS)) }
                     )
@@ -207,38 +253,11 @@ fun PantallaFormularioRecordatorio(
                         alPulsar = { viewModel.actualizarFormulario(recordatorio.copy(periodicidadTiempoUnidad = UNIDAD_TIEMPO_MESES)) }
                     )
                     ChipUnidadTiempo(
-                        texto = "Anios",
+                        texto = "Años",
                         seleccionada = recordatorio.periodicidadTiempoUnidad == UNIDAD_TIEMPO_ANIOS,
                         alPulsar = { viewModel.actualizarFormulario(recordatorio.copy(periodicidadTiempoUnidad = UNIDAD_TIEMPO_ANIOS)) }
                     )
                 }
-            }
-
-            SelectorPeriodicidadKilometraje(
-                activado = recordatorio.periodicidadKilometros != null,
-                alCambiar = { activado ->
-                    viewModel.actualizarFormulario(
-                        recordatorio.copy(
-                            periodicidadKilometros = if (activado) recordatorio.periodicidadKilometros ?: 10000.0 else null
-                        )
-                    )
-                }
-            )
-
-            if (recordatorio.periodicidadKilometros != null) {
-                OutlinedTextField(
-                    value = recordatorio.periodicidadKilometros.takeIf { it > 0 }?.toLong()?.toString().orEmpty(),
-                    onValueChange = {
-                        viewModel.actualizarFormulario(
-                            recordatorio.copy(periodicidadKilometros = it.toDoubleOrNull())
-                        )
-                    },
-                    label = { Text("Cada X km") },
-                    isError = intentoGuardar && periodicidadKmInvalida,
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
 
             OutlinedTextField(
@@ -257,7 +276,11 @@ fun PantallaFormularioRecordatorio(
                 onClick = {
                     intentoGuardar = true
                     if (!faltanCamposObligatorios) {
-                        viewModel.guardarRecordatorio()
+                        if (kilometrajeYaSuperado) {
+                            mostrarDialogoKilometrajeSuperado = true
+                        } else {
+                            viewModel.guardarRecordatorio()
+                        }
                     }
                 },
                 enabled = !estado.estaCargando,
@@ -278,8 +301,7 @@ fun PantallaFormularioRecordatorio(
                 conceptoVacio = conceptoVacio,
                 sinLimite = sinLimite,
                 kilometrajeInvalido = kilometrajeInvalido,
-                periodicidadTiempoInvalida = periodicidadTiempoInvalida,
-                periodicidadKmInvalida = periodicidadKmInvalida
+                periodicidadTiempoInvalida = periodicidadTiempoInvalida
             )
 
             estado.mensajeError?.let { error ->
@@ -288,6 +310,34 @@ fun PantallaFormularioRecordatorio(
                 }
             }
         }
+    }
+
+    if (mostrarDialogoKilometrajeSuperado) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoKilometrajeSuperado = false },
+            title = { Text("Kilometraje ya superado") },
+            text = {
+                Text(
+                    "El vehículo ya tiene más kilómetros que el límite indicado. " +
+                        "Si quieres un aviso recurrente, activa la opción de repetir por kilometraje."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        mostrarDialogoKilometrajeSuperado = false
+                        viewModel.guardarRecordatorio()
+                    }
+                ) {
+                    Text("Guardar igualmente")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoKilometrajeSuperado = false }) {
+                    Text("Revisar")
+                }
+            }
+        )
     }
 }
 
@@ -313,14 +363,6 @@ private fun SelectorPeriodicidadTiempo(
     alCambiar: (Boolean) -> Unit
 ) {
     FilaConSwitch("Repetir por tiempo", activado, alCambiar)
-}
-
-@Composable
-private fun SelectorPeriodicidadKilometraje(
-    activado: Boolean,
-    alCambiar: (Boolean) -> Unit
-) {
-    FilaConSwitch("Repetir por kilometraje", activado, alCambiar)
 }
 
 @Composable
@@ -361,8 +403,7 @@ private fun MensajesValidacionRecordatorio(
     conceptoVacio: Boolean,
     sinLimite: Boolean,
     kilometrajeInvalido: Boolean,
-    periodicidadTiempoInvalida: Boolean,
-    periodicidadKmInvalida: Boolean
+    periodicidadTiempoInvalida: Boolean
 ) {
     if (!mostrar) {
         return
@@ -370,9 +411,8 @@ private fun MensajesValidacionRecordatorio(
 
     when {
         conceptoVacio -> Snackbar { Text("Faltan campos obligatorios por rellenar") }
-        sinLimite -> Snackbar { Text("Indica una fecha limite o un kilometraje limite") }
-        kilometrajeInvalido -> Snackbar { Text("El kilometraje limite debe ser mayor que cero") }
+        sinLimite -> Snackbar { Text("Indica una fecha límite o un kilometraje límite") }
+        kilometrajeInvalido -> Snackbar { Text("El kilometraje debe ser mayor que cero") }
         periodicidadTiempoInvalida -> Snackbar { Text("La periodicidad por tiempo debe ser mayor que cero") }
-        periodicidadKmInvalida -> Snackbar { Text("La periodicidad por kilometraje debe ser mayor que cero") }
     }
 }

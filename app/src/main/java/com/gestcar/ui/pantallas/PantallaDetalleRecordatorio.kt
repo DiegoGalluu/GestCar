@@ -200,9 +200,9 @@ private fun textoPeriodicidadRecordatorio(
 
     if (cantidadTiempo != null && cantidadTiempo > 0 && unidadTiempo != null) {
         val unidad = when (unidadTiempo) {
-            UNIDAD_TIEMPO_DIAS -> if (cantidadTiempo == 1) "dia" else "dias"
+            UNIDAD_TIEMPO_DIAS -> if (cantidadTiempo == 1) "día" else "días"
             UNIDAD_TIEMPO_MESES -> if (cantidadTiempo == 1) "mes" else "meses"
-            UNIDAD_TIEMPO_ANIOS -> if (cantidadTiempo == 1) "anio" else "anios"
+            UNIDAD_TIEMPO_ANIOS -> if (cantidadTiempo == 1) "año" else "años"
             else -> null
         }
         unidad?.let { partes.add("Cada $cantidadTiempo $it") }
