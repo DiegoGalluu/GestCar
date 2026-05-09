@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.gestcar.datos.entidades.Mantenimiento
 import com.gestcar.ui.viewmodel.CATEGORIA_REPARACION
@@ -24,6 +25,7 @@ import com.gestcar.ui.viewmodel.CATEGORIA_REPARACION
 @Composable
 fun TarjetaMantenimiento(
     mantenimiento: Mantenimiento,
+    colorCategoria: Color = MaterialTheme.colorScheme.secondary,
     alPulsar: () -> Unit
 ) {
     val esReparacion = mantenimiento.categoria == CATEGORIA_REPARACION
@@ -44,7 +46,7 @@ fun TarjetaMantenimiento(
             Icon(
                 imageVector = if (esReparacion) Icons.Default.Warning else Icons.Default.Build,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = colorCategoria
             )
 
             Column(modifier = Modifier.weight(1f)) {
@@ -69,7 +71,7 @@ fun TarjetaMantenimiento(
             Text(
                 text = textoCosteMantenimiento(mantenimiento),
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.secondary
+                color = colorCategoria
             )
         }
     }

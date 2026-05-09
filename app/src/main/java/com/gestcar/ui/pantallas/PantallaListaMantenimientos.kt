@@ -16,9 +16,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
@@ -48,6 +52,7 @@ import com.gestcar.ui.viewmodel.FILTRO_TODOS_MANTENIMIENTOS
 import com.gestcar.ui.viewmodel.MantenimientoViewModel
 import com.gestcar.ui.viewmodel.PeriodoRepostajes
 import com.gestcar.ui.viewmodel.VehiculoActivoViewModel
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,6 +73,7 @@ fun PantallaListaMantenimientos(
     var periodoSeleccionado by remember { mutableStateOf(PeriodoRepostajes.TODO) }
     var fechaInicioPersonalizada by remember { mutableStateOf<Long?>(null) }
     var fechaFinPersonalizada by remember { mutableStateOf<Long?>(null) }
+    val colorCategoriaActual = colorFiltroMantenimiento(estadoMantenimientos.filtroCategoria)
 
     LaunchedEffect(usuarioId, vehiculoInicialId) {
         vehiculoActivoViewModel.cargarVehiculos(usuarioId, vehiculoInicialId)
@@ -108,6 +114,7 @@ fun PantallaListaMantenimientos(
             FiltrosMantenimiento(
                 filtroActual = estadoMantenimientos.filtroCategoria,
                 alCambiarFiltro = { mantenimientoViewModel.cambiarFiltroCategoria(it) },
+                colorActual = colorCategoriaActual,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
 
@@ -144,11 +151,21 @@ fun PantallaListaMantenimientos(
                         }
                     val pendientes = mantenimientosDelPeriodo.filter { !it.realizado }
                     val realizadas = mantenimientosDelPeriodo.filter { it.realizado }
+                    val costeTotalPeriodo = mantenimientosDelPeriodo.sumOf { it.coste }
 
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        item {
+                            ResumenMantenimientos(
+                                filtroActual = estadoMantenimientos.filtroCategoria,
+                                costeTotal = costeTotalPeriodo,
+                                numeroOperaciones = mantenimientosDelPeriodo.size,
+                                colorCategoria = colorCategoriaActual
+                            )
+                        }
+
                         if (mantenimientosDelPeriodo.isEmpty()) {
                             item {
                                 Text(
@@ -166,6 +183,7 @@ fun PantallaListaMantenimientos(
                         items(pendientes) { mantenimiento ->
                             TarjetaMantenimiento(
                                 mantenimiento = mantenimiento,
+                                colorCategoria = colorMantenimiento(mantenimiento.categoria),
                                 alPulsar = { alVerDetalleMantenimiento(mantenimiento.vehiculoId, mantenimiento.id) }
                             )
                         }
@@ -183,6 +201,7 @@ fun PantallaListaMantenimientos(
                                 items(realizadas) { mantenimiento ->
                                     TarjetaMantenimiento(
                                         mantenimiento = mantenimiento,
+                                        colorCategoria = colorMantenimiento(mantenimiento.categoria),
                                         alPulsar = { alVerDetalleMantenimiento(mantenimiento.vehiculoId, mantenimiento.id) }
                                     )
                                 }
@@ -257,6 +276,7 @@ private fun EncabezadoSeccionMantenimientos(
 private fun FiltrosMantenimiento(
     filtroActual: String,
     alCambiarFiltro: (String) -> Unit,
+    colorActual: Color,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -266,18 +286,74 @@ private fun FiltrosMantenimiento(
         FilterChip(
             selected = filtroActual == FILTRO_TODOS_MANTENIMIENTOS,
             onClick = { alCambiarFiltro(FILTRO_TODOS_MANTENIMIENTOS) },
-            label = { Text("Todos") }
+            label = { Text("Todos") },
+            colors = coloresChipMantenimiento(colorActual)
         )
         FilterChip(
             selected = filtroActual == CATEGORIA_MANTENIMIENTO,
             onClick = { alCambiarFiltro(CATEGORIA_MANTENIMIENTO) },
-            label = { Text("Mantenimiento") }
+            label = { Text("Mantenimiento") },
+            colors = coloresChipMantenimiento(colorMantenimiento(CATEGORIA_MANTENIMIENTO))
         )
         FilterChip(
             selected = filtroActual == CATEGORIA_REPARACION,
             onClick = { alCambiarFiltro(CATEGORIA_REPARACION) },
-            label = { Text("Reparación") }
+            label = { Text("Reparación") },
+            colors = coloresChipMantenimiento(colorMantenimiento(CATEGORIA_REPARACION))
         )
+    }
+}
+
+@Composable
+private fun ResumenMantenimientos(
+    filtroActual: String,
+    costeTotal: Double,
+    numeroOperaciones: Int,
+    colorCategoria: Color
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        TarjetaDatoMantenimiento(
+            titulo = tituloResumenCosteMantenimiento(filtroActual),
+            valor = "${formatearImporteMantenimiento(costeTotal)} €",
+            colorCategoria = colorCategoria,
+            modifier = Modifier.weight(1f)
+        )
+        TarjetaDatoMantenimiento(
+            titulo = "Operaciones",
+            valor = numeroOperaciones.toString(),
+            colorCategoria = colorCategoria,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun TarjetaDatoMantenimiento(
+    titulo: String,
+    valor: String,
+    colorCategoria: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = colorCategoria.copy(alpha = 0.16f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = titulo,
+                style = MaterialTheme.typography.titleSmall
+            )
+            Text(
+                text = valor,
+                style = MaterialTheme.typography.titleLarge,
+                color = colorCategoria
+            )
+        }
     }
 }
 
@@ -310,4 +386,43 @@ private fun EstadoVacioMantenimientos(
             )
         }
     }
+}
+
+@Composable
+private fun colorFiltroMantenimiento(filtroActual: String): Color {
+    return when (filtroActual) {
+        CATEGORIA_MANTENIMIENTO -> colorMantenimiento(CATEGORIA_MANTENIMIENTO)
+        CATEGORIA_REPARACION -> colorMantenimiento(CATEGORIA_REPARACION)
+        else -> MaterialTheme.colorScheme.primary
+    }
+}
+
+@Composable
+private fun colorMantenimiento(categoria: String): Color {
+    return when (categoria) {
+        CATEGORIA_MANTENIMIENTO -> Color(0xFF7B61FF)
+        CATEGORIA_REPARACION -> Color(0xFF008C95)
+        else -> MaterialTheme.colorScheme.primary
+    }
+}
+
+@Composable
+private fun coloresChipMantenimiento(color: Color) = FilterChipDefaults.filterChipColors(
+    selectedContainerColor = color.copy(alpha = 0.18f),
+    selectedLabelColor = color,
+    selectedLeadingIconColor = color,
+    containerColor = MaterialTheme.colorScheme.surface,
+    labelColor = MaterialTheme.colorScheme.onSurface
+)
+
+private fun tituloResumenCosteMantenimiento(filtroActual: String): String {
+    return when (filtroActual) {
+        CATEGORIA_MANTENIMIENTO -> "Total mantenimiento"
+        CATEGORIA_REPARACION -> "Total reparaciones"
+        else -> "Total operaciones"
+    }
+}
+
+private fun formatearImporteMantenimiento(valor: Double): String {
+    return String.format(Locale("es", "ES"), "%.2f", valor)
 }
