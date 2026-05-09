@@ -2,7 +2,6 @@ package com.gestcar.ui.componentes
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -23,7 +22,7 @@ import com.gestcar.datos.entidades.DocumentoVehiculo
 @Composable
 fun TarjetaDocumento(
     documento: DocumentoVehiculo,
-    cantidadCampos: Int,
+    @Suppress("UNUSED_PARAMETER") cantidadCampos: Int,
     alPulsar: () -> Unit
 ) {
     Card(
@@ -45,40 +44,13 @@ fun TarjetaDocumento(
                 tint = MaterialTheme.colorScheme.primary
             )
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = documento.titulo,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = textoResumenDocumento(documento, cantidadCampos),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+            Text(
+                text = documento.titulo,
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
-}
-
-private fun textoResumenDocumento(
-    documento: DocumentoVehiculo,
-    cantidadCampos: Int
-): String {
-    val partes = mutableListOf<String>()
-
-    if (cantidadCampos == 1) {
-        partes.add("1 campo")
-    } else {
-        partes.add("$cantidadCampos campos")
-    }
-
-    documento.notas?.takeIf { it.isNotBlank() }?.let {
-        partes.add(it)
-    }
-
-    return partes.joinToString(" · ")
 }
