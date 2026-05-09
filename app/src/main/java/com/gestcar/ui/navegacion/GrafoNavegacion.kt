@@ -321,8 +321,7 @@ fun GrafoNavegacion(
                     },
                     alIrACuenta = {
                         controladorNav.navigate(Rutas.CUENTA)
-                    },
-                    alCerrarSesion = alCerrarSesion
+                    }
                 )
             }
 
