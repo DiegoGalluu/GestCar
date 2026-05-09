@@ -126,7 +126,31 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
         val estadoActual = _estadoFormulario.value
         val camposRestantes = estadoActual.campos.filterNot { it.id == campoId }
         _estadoFormulario.value = estadoActual.copy(
-            campos = camposRestantes.ifEmpty { listOf(campoVacio(estadoActual.documento.id)) }
+            campos = camposRestantes
+                .ifEmpty { listOf(campoVacio(estadoActual.documento.id)) }
+                .mapIndexed { indice, campo -> campo.copy(orden = indice) }
+        )
+    }
+
+    fun moverCampo(campoId: String, direccion: Int) {
+        val estadoActual = _estadoFormulario.value
+        val campos = estadoActual.campos.toMutableList()
+        val indiceActual = campos.indexOfFirst { it.id == campoId }
+        if (indiceActual == -1) {
+            return
+        }
+
+        val indiceDestino = (indiceActual + direccion).coerceIn(0, campos.lastIndex)
+        if (indiceActual == indiceDestino) {
+            return
+        }
+
+        val campoMovido = campos.removeAt(indiceActual)
+        campos.add(indiceDestino, campoMovido)
+
+        _estadoFormulario.value = estadoActual.copy(
+            campos = campos.mapIndexed { indice, campo -> campo.copy(orden = indice) },
+            mensajeError = null
         )
     }
 
