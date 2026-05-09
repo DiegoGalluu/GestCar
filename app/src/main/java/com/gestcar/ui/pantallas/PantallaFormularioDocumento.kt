@@ -3,7 +3,9 @@ package com.gestcar.ui.pantallas
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,9 +44,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -55,6 +59,7 @@ import com.gestcar.datos.entidades.CampoDocumento
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.colorFondoTarjetaUsuario
 import com.gestcar.ui.viewmodel.DocumentacionViewModel
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
@@ -69,6 +74,7 @@ fun PantallaFormularioDocumento(
     val documento = estado.documento
     val esNuevo = documentoId == "nuevo"
     var intentoGuardar by remember { mutableStateOf(false) }
+    val scrollFormulario = rememberScrollState()
     val tituloVacio = documento.titulo.isBlank()
 
     LaunchedEffect(vehiculoId, documentoId) {
@@ -98,7 +104,7 @@ fun PantallaFormularioDocumento(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scrollFormulario),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedTextField(
@@ -139,6 +145,7 @@ fun PantallaFormularioDocumento(
                 TarjetaCampoDocumentoEditable(
                     campo = campo,
                     indice = indice,
+                    scrollFormulario = scrollFormulario,
                     puedeSubir = indice > 0,
                     puedeBajar = indice < estado.campos.lastIndex,
                     alMover = { direccion -> viewModel.moverCampo(campo.id, direccion) },
@@ -189,6 +196,7 @@ fun PantallaFormularioDocumento(
 private fun TarjetaCampoDocumentoEditable(
     campo: CampoDocumento,
     indice: Int,
+    scrollFormulario: ScrollState,
     puedeSubir: Boolean,
     puedeBajar: Boolean,
     alMover: (Int) -> Unit,
@@ -198,8 +206,11 @@ private fun TarjetaCampoDocumentoEditable(
 ) {
     val umbralArrastre = with(LocalDensity.current) { 72.dp.toPx() }
     val limiteArrastre = with(LocalDensity.current) { 112.dp.toPx() }
+    val pasoScrollAutomatico = with(LocalDensity.current) { 28.dp.toPx() }
+    val coroutineScope = rememberCoroutineScope()
     var acumuladoArrastre by remember(campo.id) { mutableFloatStateOf(0f) }
     var desplazamientoArrastre by remember(campo.id) { mutableFloatStateOf(0f) }
+    var estaArrastrando by remember(campo.id) { mutableStateOf(false) }
     val desplazamientoAnimado by animateFloatAsState(
         targetValue = desplazamientoArrastre,
         animationSpec = spring(
@@ -208,13 +219,27 @@ private fun TarjetaCampoDocumentoEditable(
         ),
         label = "animacionOrdenCampoDocumento"
     )
+    val escalaAnimada by animateFloatAsState(
+        targetValue = if (estaArrastrando) 1.03f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "escalaOrdenCampoDocumento"
+    )
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .offset { IntOffset(0, desplazamientoAnimado.roundToInt()) }
+            .graphicsLayer {
+                scaleX = escalaAnimada
+                scaleY = escalaAnimada
+            }
             .zIndex(if (desplazamientoAnimado != 0f) 1f else 0f),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (estaArrastrando) 8.dp else 1.dp
+        ),
         colors = CardDefaults.cardColors(
             containerColor = colorFondoTarjetaUsuario(indice)
         )
@@ -275,30 +300,55 @@ private fun TarjetaCampoDocumentoEditable(
                     .pointerInput(campo.id, puedeSubir, puedeBajar) {
                         detectVerticalDragGestures(
                             onDragEnd = {
+                                estaArrastrando = false
                                 acumuladoArrastre = 0f
                                 desplazamientoArrastre = 0f
                             },
                             onDragCancel = {
+                                estaArrastrando = false
                                 acumuladoArrastre = 0f
                                 desplazamientoArrastre = 0f
                             },
                             onVerticalDrag = { _, dragAmount ->
+                                estaArrastrando = true
                                 acumuladoArrastre += dragAmount
                                 desplazamientoArrastre = (desplazamientoArrastre + dragAmount)
                                     .coerceIn(-limiteArrastre, limiteArrastre)
 
-                                when {
-                                    acumuladoArrastre <= -umbralArrastre && puedeSubir -> {
-                                        alMover(-1)
-                                        acumuladoArrastre = 0f
-                                        desplazamientoArrastre = 0f
+                                if (
+                                    dragAmount < 0 &&
+                                    desplazamientoArrastre < -umbralArrastre / 2 &&
+                                    scrollFormulario.value > 0
+                                ) {
+                                    coroutineScope.launch {
+                                        scrollFormulario.scrollBy(-pasoScrollAutomatico)
                                     }
+                                } else if (
+                                    dragAmount > 0 &&
+                                    desplazamientoArrastre > umbralArrastre / 2 &&
+                                    scrollFormulario.value < scrollFormulario.maxValue
+                                ) {
+                                    coroutineScope.launch {
+                                        scrollFormulario.scrollBy(pasoScrollAutomatico)
+                                    }
+                                }
 
-                                    acumuladoArrastre >= umbralArrastre && puedeBajar -> {
-                                        alMover(1)
-                                        acumuladoArrastre = 0f
-                                        desplazamientoArrastre = 0f
+                                while (acumuladoArrastre <= -umbralArrastre) {
+                                    if (puedeSubir) {
+                                        alMover(-1)
                                     }
+                                    acumuladoArrastre += umbralArrastre
+                                    desplazamientoArrastre = (desplazamientoArrastre + umbralArrastre)
+                                        .coerceIn(-limiteArrastre, limiteArrastre)
+                                }
+
+                                while (acumuladoArrastre >= umbralArrastre) {
+                                    if (puedeBajar) {
+                                        alMover(1)
+                                    }
+                                    acumuladoArrastre -= umbralArrastre
+                                    desplazamientoArrastre = (desplazamientoArrastre - umbralArrastre)
+                                        .coerceIn(-limiteArrastre, limiteArrastre)
                                 }
                             }
                         )
