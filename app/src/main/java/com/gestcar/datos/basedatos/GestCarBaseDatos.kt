@@ -11,6 +11,10 @@ import com.gestcar.datos.dao.MantenimientoDao
 import com.gestcar.datos.dao.RecordatorioDao
 import com.gestcar.datos.dao.RepostajeDao
 import com.gestcar.datos.dao.VehiculoDao
+import com.gestcar.datos.dao.CampoDocumentoDao
+import com.gestcar.datos.dao.DocumentoVehiculoDao
+import com.gestcar.datos.entidades.CampoDocumento
+import com.gestcar.datos.entidades.DocumentoVehiculo
 import com.gestcar.datos.entidades.GastoPeriodico
 import com.gestcar.datos.entidades.Mantenimiento
 import com.gestcar.datos.entidades.Recordatorio
@@ -25,9 +29,11 @@ import com.gestcar.datos.entidades.Vehiculo
         Repostaje::class,
         Mantenimiento::class,
         GastoPeriodico::class,
-        Recordatorio::class
+        Recordatorio::class,
+        DocumentoVehiculo::class,
+        CampoDocumento::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class GestCarBaseDatos : RoomDatabase() {
@@ -39,6 +45,8 @@ abstract class GestCarBaseDatos : RoomDatabase() {
     abstract fun mantenimientoDao(): MantenimientoDao
     abstract fun gastoPeriodicoDao(): GastoPeriodicoDao
     abstract fun recordatorioDao(): RecordatorioDao
+    abstract fun documentoVehiculoDao(): DocumentoVehiculoDao
+    abstract fun campoDocumentoDao(): CampoDocumentoDao
 
     companion object {
         // migracion inicial importante
@@ -277,6 +285,41 @@ abstract class GestCarBaseDatos : RoomDatabase() {
             }
         }
 
+        // documentacion flexible del vehiculo
+        // separamos tarjeta y campos para que el usuario pueda inventar su propia estructura
+        private val MIGRACION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS documentos_vehiculo (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        vehiculoId TEXT NOT NULL,
+                        titulo TEXT NOT NULL,
+                        notas TEXT,
+                        actualizadoEn INTEGER NOT NULL,
+                        FOREIGN KEY(vehiculoId) REFERENCES vehiculos(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_documentos_vehiculo_vehiculoId ON documentos_vehiculo(vehiculoId)")
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS campos_documento (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        documentoId TEXT NOT NULL,
+                        nombre TEXT NOT NULL,
+                        valor TEXT NOT NULL,
+                        orden INTEGER NOT NULL,
+                        actualizadoEn INTEGER NOT NULL,
+                        FOREIGN KEY(documentoId) REFERENCES documentos_vehiculo(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_campos_documento_documentoId ON campos_documento(documentoId)")
+            }
+        }
+
         @Volatile
         private var INSTANCIA: GestCarBaseDatos? = null
 
@@ -294,7 +337,8 @@ abstract class GestCarBaseDatos : RoomDatabase() {
                     MIGRACION_3_4,
                     MIGRACION_4_5,
                     MIGRACION_5_6,
-                    MIGRACION_6_7
+                    MIGRACION_6_7,
+                    MIGRACION_7_8
                 ).build()
                 INSTANCIA = instancia
                 instancia

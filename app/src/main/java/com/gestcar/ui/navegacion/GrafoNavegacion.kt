@@ -29,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.gestcar.ui.pantallas.PantallaDetalleGasto
+import com.gestcar.ui.pantallas.PantallaDetalleDocumento
 import com.gestcar.ui.pantallas.PantallaDetalleRecordatorio
 import com.gestcar.ui.pantallas.PantallaDetalleVehiculo
 import com.gestcar.ui.pantallas.PantallaDetalleMantenimiento
@@ -36,12 +37,14 @@ import com.gestcar.ui.pantallas.PantallaDetalleRepostaje
 import com.gestcar.ui.pantallas.PantallaEstadisticas
 import com.gestcar.ui.pantallas.PantallaCuenta
 import com.gestcar.ui.pantallas.PantallaFormularioGasto
+import com.gestcar.ui.pantallas.PantallaFormularioDocumento
 import com.gestcar.ui.pantallas.PantallaFormularioMantenimiento
 import com.gestcar.ui.pantallas.PantallaFormularioRecordatorio
 import com.gestcar.ui.pantallas.PantallaFormularioVehiculo
 import com.gestcar.ui.pantallas.PantallaFormularioRepostaje
 import com.gestcar.ui.pantallas.PantallaInicioSesion
 import com.gestcar.ui.pantallas.PantallaListaGastos
+import com.gestcar.ui.pantallas.PantallaListaDocumentacion
 import com.gestcar.ui.pantallas.PantallaListaMantenimientos
 import com.gestcar.ui.pantallas.PantallaListaRecordatorios
 import com.gestcar.ui.pantallas.PantallaListaVehiculos
@@ -313,6 +316,9 @@ fun GrafoNavegacion(
                     alIrAEstadisticas = {
                         controladorNav.navigate(Rutas.ESTADISTICAS)
                     },
+                    alIrADocumentacion = {
+                        controladorNav.navigate(Rutas.DOCUMENTACION)
+                    },
                     alIrACuenta = {
                         controladorNav.navigate(Rutas.CUENTA)
                     },
@@ -342,6 +348,55 @@ fun GrafoNavegacion(
                     alVerDetalleRecordatorio = { vehiculoId, recordatorioId ->
                         controladorNav.navigate(Rutas.detalleRecordatorio(vehiculoId, recordatorioId))
                     },
+                    alVolver = { controladorNav.popBackStack() }
+                )
+            }
+
+            composable(Rutas.DOCUMENTACION) {
+                PantallaListaDocumentacion(
+                    usuarioId = usuarioId,
+                    alCrearDocumento = { vehiculoId ->
+                        controladorNav.navigate(Rutas.formularioDocumento(vehiculoId))
+                    },
+                    alVerDetalleDocumento = { vehiculoId, documentoId ->
+                        controladorNav.navigate(Rutas.detalleDocumento(vehiculoId, documentoId))
+                    },
+                    alVolver = { controladorNav.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Rutas.DETALLE_DOCUMENTO,
+                arguments = listOf(
+                    navArgument("vehiculoId") { type = NavType.StringType },
+                    navArgument("documentoId") { type = NavType.StringType }
+                )
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId") ?: ""
+                val documentoId = entrada.arguments?.getString("documentoId") ?: ""
+                PantallaDetalleDocumento(
+                    documentoId = documentoId,
+                    alEditar = { _, id ->
+                        controladorNav.navigate(Rutas.formularioDocumento(vehiculoId, id))
+                    },
+                    alVolver = { controladorNav.popBackStack() },
+                    alEliminar = { controladorNav.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Rutas.FORMULARIO_DOCUMENTO,
+                arguments = listOf(
+                    navArgument("vehiculoId") { type = NavType.StringType },
+                    navArgument("documentoId") { type = NavType.StringType }
+                )
+            ) { entrada ->
+                val vehiculoId = entrada.arguments?.getString("vehiculoId") ?: ""
+                val documentoId = entrada.arguments?.getString("documentoId") ?: "nuevo"
+                PantallaFormularioDocumento(
+                    vehiculoId = vehiculoId,
+                    documentoId = documentoId,
+                    alGuardar = { controladorNav.popBackStack() },
                     alVolver = { controladorNav.popBackStack() }
                 )
             }

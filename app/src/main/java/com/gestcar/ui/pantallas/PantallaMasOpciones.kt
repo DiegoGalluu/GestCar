@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -48,6 +49,7 @@ fun PantallaMasOpciones(
     usuarioId: String,
     alIrARecordatorios: () -> Unit,
     alIrAEstadisticas: () -> Unit,
+    alIrADocumentacion: () -> Unit,
     alIrACuenta: () -> Unit,
     alCerrarSesion: () -> Unit,
     vehiculoActivoViewModel: VehiculoActivoViewModel = viewModel(),
@@ -86,6 +88,13 @@ fun PantallaMasOpciones(
                 descripcion = "Alertas por fecha o kilometraje",
                 icono = Icons.Default.Notifications,
                 alPulsar = alIrARecordatorios
+            )
+
+            OpcionMas(
+                titulo = "Documentación",
+                descripcion = "Tarjetas libres con datos importantes del vehículo",
+                icono = Icons.Default.Description,
+                alPulsar = alIrADocumentacion
             )
 
             OpcionMas(
