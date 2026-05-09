@@ -1,6 +1,7 @@
 package com.gestcar
 
 import android.app.Application
+import com.gestcar.util.PlanificadorNotificaciones
 import com.gestcar.util.PlanificadorSincronizacion
 
 // clase de aplicacion principal, se usa para inicializar cosas globales
@@ -11,5 +12,6 @@ class GestCarAplicacion : Application() {
     override fun onCreate() {
         super.onCreate()
         PlanificadorSincronizacion.programarSincronizacionPeriodica(this)
+        PlanificadorNotificaciones.programarRevisionVencimientos(this)
     }
 }

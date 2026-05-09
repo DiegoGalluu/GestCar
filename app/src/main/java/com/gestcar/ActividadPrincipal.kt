@@ -1,10 +1,15 @@
 package com.gestcar
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -26,6 +31,7 @@ import com.gestcar.ui.pantallas.PantallaSplash
 import com.gestcar.ui.tema.GestCarTema
 import com.gestcar.ui.viewmodel.AutenticacionViewModel
 import com.gestcar.util.ObservadorConectividad
+import com.gestcar.util.PlanificadorNotificaciones
 import com.gestcar.util.PlanificadorSincronizacion
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.handleDeeplinks
@@ -38,9 +44,18 @@ class ActividadPrincipal : ComponentActivity() {
     // android entrega el enlace en onnewintent y ahi ya no estamos dentro del bloque compose
     private var authViewModelRef: AutenticacionViewModel? = null
 
+    private val permisoNotificacionesLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        if (concedido) {
+            PlanificadorNotificaciones.encolarRevisionPuntual(this)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        solicitarPermisoNotificacionesSiHaceFalta()
 
         setContent {
             GestCarTema {
@@ -122,6 +137,23 @@ class ActividadPrincipal : ComponentActivity() {
                 authViewModelRef?.activarModoRestablecerContrasena()
             }
             authViewModelRef?.comprobarSesion()
+        }
+    }
+
+    private fun solicitarPermisoNotificacionesSiHaceFalta() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return
+        }
+
+        val concedido = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (concedido) {
+            PlanificadorNotificaciones.encolarRevisionPuntual(this)
+        } else {
+            permisoNotificacionesLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 }
