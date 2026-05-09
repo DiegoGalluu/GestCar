@@ -23,13 +23,17 @@ import com.gestcar.datos.entidades.DocumentoVehiculo
 fun TarjetaDocumento(
     documento: DocumentoVehiculo,
     @Suppress("UNUSED_PARAMETER") cantidadCampos: Int,
+    indiceColor: Int = 0,
     alPulsar: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { alPulsar() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colorFondoTarjetaUsuario(indiceColor)
+        )
     ) {
         Row(
             modifier = Modifier

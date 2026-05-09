@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -182,10 +182,11 @@ fun PantallaListaVehiculos(
                             }
                         }
 
-                        items(habituales, key = { it.id }) { vehiculo ->
+                        itemsIndexed(habituales, key = { _, vehiculo -> vehiculo.id }) { indice, vehiculo ->
                             TarjetaVehiculoOrganizable(
                                 vehiculo = vehiculo,
                                 vehiculos = vehiculosVisibles,
+                                indiceColor = indice,
                                 modoOrganizacion = modoOrganizacion,
                                 alPulsar = { if (!modoOrganizacion) alPulsarVehiculo(vehiculo.id) },
                                 alPulsacionLarga = {
@@ -214,10 +215,11 @@ fun PantallaListaVehiculos(
                             }
                         }
 
-                        items(otros, key = { it.id }) { vehiculo ->
+                        itemsIndexed(otros, key = { _, vehiculo -> vehiculo.id }) { indice, vehiculo ->
                             TarjetaVehiculoOrganizable(
                                 vehiculo = vehiculo,
                                 vehiculos = vehiculosVisibles,
+                                indiceColor = indice,
                                 modoOrganizacion = modoOrganizacion,
                                 alPulsar = { if (!modoOrganizacion) alPulsarVehiculo(vehiculo.id) },
                                 alPulsacionLarga = {
@@ -276,6 +278,7 @@ private fun TituloSeccionVehiculos(titulo: String) {
 private fun TarjetaVehiculoOrganizable(
     vehiculo: Vehiculo,
     vehiculos: List<Vehiculo>,
+    indiceColor: Int,
     modoOrganizacion: Boolean,
     alPulsar: () -> Unit,
     alPulsacionLarga: () -> Unit,
@@ -292,6 +295,7 @@ private fun TarjetaVehiculoOrganizable(
     TarjetaVehiculo(
         vehiculo = vehiculo,
         alPulsar = alPulsar,
+        indiceColor = indiceColor,
         alPulsacionLarga = alPulsacionLarga,
         modoOrganizacion = modoOrganizacion,
         alMoverArriba = if (indice > 0) {

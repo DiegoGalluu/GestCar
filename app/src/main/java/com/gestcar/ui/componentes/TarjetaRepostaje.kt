@@ -22,13 +22,17 @@ import com.gestcar.datos.entidades.Repostaje
 @Composable
 fun TarjetaRepostaje(
     repostaje: Repostaje,
+    indiceColor: Int = 0,
     alPulsar: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { alPulsar() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colorFondoTarjetaUsuario(indiceColor)
+        )
     ) {
         Row(
             modifier = Modifier

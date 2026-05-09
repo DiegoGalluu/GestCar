@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
@@ -180,9 +180,10 @@ fun PantallaListaMantenimientos(
                             item { EncabezadoSeccionMantenimientos("Pendientes") }
                         }
 
-                        items(pendientes) { mantenimiento ->
+                        itemsIndexed(pendientes) { indice, mantenimiento ->
                             TarjetaMantenimiento(
                                 mantenimiento = mantenimiento,
+                                indiceColor = indice,
                                 colorCategoria = colorMantenimiento(mantenimiento.categoria),
                                 alPulsar = { alVerDetalleMantenimiento(mantenimiento.vehiculoId, mantenimiento.id) }
                             )
@@ -198,9 +199,10 @@ fun PantallaListaMantenimientos(
                             }
 
                             if (mostrarRealizadas) {
-                                items(realizadas) { mantenimiento ->
+                                itemsIndexed(realizadas) { indice, mantenimiento ->
                                     TarjetaMantenimiento(
                                         mantenimiento = mantenimiento,
+                                        indiceColor = indice,
                                         colorCategoria = colorMantenimiento(mantenimiento.categoria),
                                         alPulsar = { alVerDetalleMantenimiento(mantenimiento.vehiculoId, mantenimiento.id) }
                                     )

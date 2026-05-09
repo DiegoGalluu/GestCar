@@ -37,6 +37,7 @@ enum class EstadoVisualRecordatorio {
 fun TarjetaRecordatorio(
     recordatorio: Recordatorio,
     estadoVisual: EstadoVisualRecordatorio,
+    indiceColor: Int = 0,
     alPulsar: () -> Unit
 ) {
     val colorEstado = colorEstadoRecordatorio(estadoVisual)
@@ -45,7 +46,10 @@ fun TarjetaRecordatorio(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { alPulsar() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colorFondoTarjetaUsuario(indiceColor)
+        )
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

@@ -45,6 +45,7 @@ import kotlin.math.roundToInt
 fun TarjetaVehiculo(
     vehiculo: Vehiculo,
     alPulsar: () -> Unit,
+    indiceColor: Int = 0,
     alPulsacionLarga: (() -> Unit)? = null,
     modoOrganizacion: Boolean = false,
     alMoverArriba: (() -> Unit)? = null,
@@ -69,7 +70,10 @@ fun TarjetaVehiculo(
                     Modifier.clickable { alPulsar() }
                 }
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colorFondoTarjetaUsuario(indiceColor)
+        )
     ) {
         Row(
             modifier = Modifier

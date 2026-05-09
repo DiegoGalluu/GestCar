@@ -25,6 +25,7 @@ import com.gestcar.ui.viewmodel.CATEGORIA_REPARACION
 @Composable
 fun TarjetaMantenimiento(
     mantenimiento: Mantenimiento,
+    indiceColor: Int = 0,
     colorCategoria: Color = MaterialTheme.colorScheme.secondary,
     alPulsar: () -> Unit
 ) {
@@ -34,7 +35,10 @@ fun TarjetaMantenimiento(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { alPulsar() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colorFondoTarjetaUsuario(indiceColor)
+        )
     ) {
         Row(
             modifier = Modifier

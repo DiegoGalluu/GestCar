@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
@@ -172,9 +172,10 @@ fun PantallaListaGastos(
                                 TituloSeccionGastos("Pendientes")
                             }
 
-                            items(gastosPendientes) { gasto ->
+                            itemsIndexed(gastosPendientes) { indice, gasto ->
                                 TarjetaGasto(
                                     gasto = gasto,
+                                    indiceColor = indice,
                                     alPulsar = { alVerDetalleGasto(gasto.vehiculoId, gasto.id) }
                                 )
                             }
@@ -194,9 +195,10 @@ fun PantallaListaGastos(
                             }
 
                             if (mostrarPagados) {
-                                items(gastosPagados) { gasto ->
+                                itemsIndexed(gastosPagados) { indice, gasto ->
                                     TarjetaGasto(
                                         gasto = gasto,
+                                        indiceColor = indice,
                                         alPulsar = { alVerDetalleGasto(gasto.vehiculoId, gasto.id) }
                                     )
                                 }
