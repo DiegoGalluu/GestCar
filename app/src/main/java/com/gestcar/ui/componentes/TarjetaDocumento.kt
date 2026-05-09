@@ -46,7 +46,7 @@ fun TarjetaDocumento(
 
             Text(
                 text = documento.titulo,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
