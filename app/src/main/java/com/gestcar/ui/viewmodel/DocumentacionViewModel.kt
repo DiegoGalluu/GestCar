@@ -154,6 +154,28 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
         )
     }
 
+    fun moverCampoAIndice(campoId: String, indiceDestino: Int) {
+        val estadoActual = _estadoFormulario.value
+        val campos = estadoActual.campos.toMutableList()
+        val indiceActual = campos.indexOfFirst { it.id == campoId }
+        if (indiceActual == -1) {
+            return
+        }
+
+        val destinoSeguro = indiceDestino.coerceIn(0, campos.lastIndex)
+        if (indiceActual == destinoSeguro) {
+            return
+        }
+
+        val campoMovido = campos.removeAt(indiceActual)
+        campos.add(destinoSeguro, campoMovido)
+
+        _estadoFormulario.value = estadoActual.copy(
+            campos = campos.mapIndexed { indice, campo -> campo.copy(orden = indice) },
+            mensajeError = null
+        )
+    }
+
     fun guardarDocumento() {
         viewModelScope.launch {
             val estadoActual = _estadoFormulario.value
