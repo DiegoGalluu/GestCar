@@ -41,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -142,19 +143,22 @@ fun PantallaFormularioDocumento(
             }
 
             estado.campos.forEachIndexed { indice, campo ->
-                TarjetaCampoDocumentoEditable(
-                    campo = campo,
-                    indice = indice,
-                    scrollFormulario = scrollFormulario,
-                    puedeSubir = indice > 0,
-                    puedeBajar = indice < estado.campos.lastIndex,
-                    alMoverAIndice = { indiceDestino ->
-                        viewModel.moverCampoAIndice(campo.id, indiceDestino)
-                    },
-                    alEliminar = { viewModel.eliminarCampo(campo.id) },
-                    alCambiarNombre = { viewModel.actualizarCampo(campo.id, nombre = it) },
-                    alCambiarValor = { viewModel.actualizarCampo(campo.id, valor = it) }
-                )
+                key(campo.id) {
+                    TarjetaCampoDocumentoEditable(
+                        campo = campo,
+                        indice = indice,
+                        totalCampos = estado.campos.size,
+                        scrollFormulario = scrollFormulario,
+                        puedeSubir = indice > 0,
+                        puedeBajar = indice < estado.campos.lastIndex,
+                        alMoverAIndice = { indiceDestino ->
+                            viewModel.moverCampoAIndice(campo.id, indiceDestino)
+                        },
+                        alEliminar = { viewModel.eliminarCampo(campo.id) },
+                        alCambiarNombre = { viewModel.actualizarCampo(campo.id, nombre = it) },
+                        alCambiarValor = { viewModel.actualizarCampo(campo.id, valor = it) }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -198,6 +202,7 @@ fun PantallaFormularioDocumento(
 private fun TarjetaCampoDocumentoEditable(
     campo: CampoDocumento,
     indice: Int,
+    totalCampos: Int,
     scrollFormulario: ScrollState,
     puedeSubir: Boolean,
     puedeBajar: Boolean,
@@ -210,17 +215,18 @@ private fun TarjetaCampoDocumentoEditable(
     val umbralScrollAutomatico = with(LocalDensity.current) { 48.dp.toPx() }
     val pasoScrollAutomatico = with(LocalDensity.current) { 28.dp.toPx() }
     val coroutineScope = rememberCoroutineScope()
-    var desplazamientoTotalArrastre by remember(campo.id) { mutableFloatStateOf(0f) }
+    var desplazamientoArrastre by remember(campo.id) { mutableFloatStateOf(0f) }
     var estaArrastrando by remember(campo.id) { mutableStateOf(false) }
-    var indiceInicioArrastre by remember(campo.id) { mutableStateOf(indice) }
-    var scrollInicioArrastre by remember(campo.id) { mutableStateOf(scrollFormulario.value) }
-    val desplazamientoVisual = if (estaArrastrando) {
-        desplazamientoTotalArrastre + (scrollFormulario.value - scrollInicioArrastre)
-    } else {
-        0f
+    var indiceDuranteArrastre by remember(campo.id) { mutableStateOf(indice) }
+
+    LaunchedEffect(indice, estaArrastrando) {
+        if (!estaArrastrando) {
+            indiceDuranteArrastre = indice
+        }
     }
+
     val desplazamientoAnimado by animateFloatAsState(
-        targetValue = desplazamientoVisual,
+        targetValue = if (estaArrastrando) desplazamientoArrastre else 0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -241,7 +247,7 @@ private fun TarjetaCampoDocumentoEditable(
             .fillMaxWidth()
             .offset {
                 val desplazamientoMostrado = if (estaArrastrando) {
-                    desplazamientoVisual
+                    desplazamientoArrastre
                 } else {
                     desplazamientoAnimado
                 }
@@ -316,21 +322,16 @@ private fun TarjetaCampoDocumentoEditable(
                         detectDragGestures(
                             onDragStart = {
                                 estaArrastrando = true
-                                indiceInicioArrastre = indice
-                                scrollInicioArrastre = scrollFormulario.value
-                                desplazamientoTotalArrastre = 0f
+                                indiceDuranteArrastre = indice
+                                desplazamientoArrastre = 0f
                             },
                             onDragEnd = {
-                                val desplazamientoEfectivo = desplazamientoTotalArrastre +
-                                    (scrollFormulario.value - scrollInicioArrastre)
-                                val saltos = (desplazamientoEfectivo / altoCampoEstimado).roundToInt()
-                                alMoverAIndice(indiceInicioArrastre + saltos)
                                 estaArrastrando = false
-                                desplazamientoTotalArrastre = 0f
+                                desplazamientoArrastre = 0f
                             },
                             onDragCancel = {
                                 estaArrastrando = false
-                                desplazamientoTotalArrastre = 0f
+                                desplazamientoArrastre = 0f
                             },
                             onDrag = { cambio, dragAmount ->
                                 cambio.consume()
@@ -340,13 +341,29 @@ private fun TarjetaCampoDocumentoEditable(
                                 }
 
                                 estaArrastrando = true
-                                desplazamientoTotalArrastre += movimientoVertical
-                                val desplazamientoActual = desplazamientoTotalArrastre +
-                                    (scrollFormulario.value - scrollInicioArrastre)
+                                desplazamientoArrastre += movimientoVertical
+
+                                while (
+                                    desplazamientoArrastre <= -altoCampoEstimado / 2 &&
+                                    indiceDuranteArrastre > 0
+                                ) {
+                                    indiceDuranteArrastre -= 1
+                                    alMoverAIndice(indiceDuranteArrastre)
+                                    desplazamientoArrastre += altoCampoEstimado
+                                }
+
+                                while (
+                                    desplazamientoArrastre >= altoCampoEstimado / 2 &&
+                                    indiceDuranteArrastre < totalCampos - 1
+                                ) {
+                                    indiceDuranteArrastre += 1
+                                    alMoverAIndice(indiceDuranteArrastre)
+                                    desplazamientoArrastre -= altoCampoEstimado
+                                }
 
                                 if (
                                     movimientoVertical < 0 &&
-                                    desplazamientoActual < -umbralScrollAutomatico &&
+                                    desplazamientoArrastre < -umbralScrollAutomatico &&
                                     scrollFormulario.value > 0
                                 ) {
                                     coroutineScope.launch {
@@ -354,7 +371,7 @@ private fun TarjetaCampoDocumentoEditable(
                                     }
                                 } else if (
                                     movimientoVertical > 0 &&
-                                    desplazamientoActual > umbralScrollAutomatico &&
+                                    desplazamientoArrastre > umbralScrollAutomatico &&
                                     scrollFormulario.value < scrollFormulario.maxValue
                                 ) {
                                     coroutineScope.launch {
