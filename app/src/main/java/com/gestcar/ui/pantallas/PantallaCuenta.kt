@@ -3,18 +3,20 @@ package com.gestcar.ui.pantallas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -43,6 +45,8 @@ fun PantallaCuenta(
     correoUsuario: String,
     usuarioId: String,
     alVolver: () -> Unit,
+    alCerrarSesion: () -> Unit,
+    alCambiarContrasena: () -> Unit,
     alCuentaEliminada: () -> Unit,
     viewModel: CuentaViewModel = viewModel()
 ) {
@@ -81,6 +85,25 @@ fun PantallaCuenta(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { alCerrarSesion() },
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                ListItem(
+                    headlineContent = { Text("Cerrar sesión") },
+                    supportingContent = { Text("Salir de esta cuenta en este dispositivo") },
+                    leadingContent = {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+            }
+
+            Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
@@ -101,22 +124,42 @@ fun PantallaCuenta(
 
                     HorizontalDivider()
 
-                    Text(
-                        text = if (estado.estaEliminando) {
-                            "Eliminando cuenta..."
-                        } else {
-                            "Eliminar cuenta"
-                        },
-                        color = Color(0xFFB3261E),
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(enabled = !estado.estaEliminando) {
-                                mostrarPrimerAviso = true
-                            }
-                            .padding(horizontal = 16.dp, vertical = 18.dp)
+                    ListItem(
+                        modifier = Modifier.clickable { alCambiarContrasena() },
+                        headlineContent = { Text("Cambiar contraseña") },
+                        supportingContent = { Text("Recibirás un correo para crear una nueva contraseña") },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     )
                 }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Text(
+                    text = if (estado.estaEliminando) {
+                        "Eliminando cuenta..."
+                    } else {
+                        "Eliminar cuenta"
+                    },
+                    color = Color(0xFFB3261E),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = !estado.estaEliminando) {
+                            mostrarPrimerAviso = true
+                        }
+                        .padding(horizontal = 16.dp, vertical = 18.dp)
+                )
             }
         }
     }

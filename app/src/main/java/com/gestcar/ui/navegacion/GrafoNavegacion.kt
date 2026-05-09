@@ -325,6 +325,10 @@ fun GrafoNavegacion(
                     correoUsuario = estadoAuth.correoUsuario,
                     usuarioId = usuarioId,
                     alVolver = { controladorNav.popBackStack() },
+                    alCerrarSesion = alCerrarSesion,
+                    alCambiarContrasena = {
+                        authViewModel.solicitarRestablecimientoContrasena(estadoAuth.correoUsuario)
+                    },
                     alCuentaEliminada = alCerrarSesion
                 )
             }
