@@ -306,6 +306,7 @@ fun GrafoNavegacion(
 
             composable(Rutas.MAS_OPCIONES) {
                 PantallaMasOpciones(
+                    usuarioId = usuarioId,
                     alIrARecordatorios = {
                         controladorNav.navigate(Rutas.RECORDATORIOS)
                     },
