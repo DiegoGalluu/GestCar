@@ -58,6 +58,7 @@ class SincronizacionWorker(
             val documentacionRepositorio = DocumentacionRepositorio(
                 documentoDao = baseDatos.documentoVehiculoDao(),
                 campoDao = baseDatos.campoDocumentoDao(),
+                adjuntoDao = baseDatos.adjuntoDocumentoDao(),
                 vehiculoDao = baseDatos.vehiculoDao()
             )
 

@@ -1,8 +1,10 @@
 package com.gestcar.datos.repositorio
 
+import com.gestcar.datos.dao.AdjuntoDocumentoDao
 import com.gestcar.datos.dao.CampoDocumentoDao
 import com.gestcar.datos.dao.DocumentoVehiculoDao
 import com.gestcar.datos.dao.VehiculoDao
+import com.gestcar.datos.entidades.AdjuntoDocumento
 import com.gestcar.datos.entidades.CampoDocumento
 import com.gestcar.datos.entidades.DocumentoVehiculo
 import com.gestcar.datos.remoto.CampoDocumentoDto
@@ -18,6 +20,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 class DocumentacionRepositorio(
     private val documentoDao: DocumentoVehiculoDao,
     private val campoDao: CampoDocumentoDao,
+    private val adjuntoDao: AdjuntoDocumentoDao,
     private val vehiculoDao: VehiculoDao
 ) {
     private val tablaDocumentosRemota = "documentos_vehiculo"
@@ -32,12 +35,38 @@ class DocumentacionRepositorio(
         return campoDao.obtenerPorDocumento(documentoId)
     }
 
+    fun obtenerAdjuntos(documentoId: String): Flow<List<AdjuntoDocumento>> {
+        return adjuntoDao.obtenerPorDocumento(documentoId)
+    }
+
     suspend fun obtenerDocumentoPorId(documentoId: String): DocumentoVehiculo? {
         return documentoDao.obtenerPorId(documentoId)
     }
 
     suspend fun obtenerCamposLista(documentoId: String): List<CampoDocumento> {
         return campoDao.obtenerPorDocumentoLista(documentoId)
+    }
+
+    suspend fun obtenerAdjuntosLista(documentoId: String): List<AdjuntoDocumento> {
+        return adjuntoDao.obtenerPorDocumentoLista(documentoId)
+    }
+
+    suspend fun guardarAdjunto(adjunto: AdjuntoDocumento): Result<Unit> {
+        return try {
+            adjuntoDao.insertar(adjunto)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun eliminarAdjunto(adjunto: AdjuntoDocumento): Result<Unit> {
+        return try {
+            adjuntoDao.eliminar(adjunto)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun guardar(

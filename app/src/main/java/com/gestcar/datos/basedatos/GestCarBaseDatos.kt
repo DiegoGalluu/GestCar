@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.gestcar.datos.dao.AdjuntoDocumentoDao
 import com.gestcar.datos.dao.GastoPeriodicoDao
 import com.gestcar.datos.dao.MantenimientoDao
 import com.gestcar.datos.dao.RecordatorioDao
@@ -13,6 +14,7 @@ import com.gestcar.datos.dao.RepostajeDao
 import com.gestcar.datos.dao.VehiculoDao
 import com.gestcar.datos.dao.CampoDocumentoDao
 import com.gestcar.datos.dao.DocumentoVehiculoDao
+import com.gestcar.datos.entidades.AdjuntoDocumento
 import com.gestcar.datos.entidades.CampoDocumento
 import com.gestcar.datos.entidades.DocumentoVehiculo
 import com.gestcar.datos.entidades.GastoPeriodico
@@ -31,9 +33,10 @@ import com.gestcar.datos.entidades.Vehiculo
         GastoPeriodico::class,
         Recordatorio::class,
         DocumentoVehiculo::class,
-        CampoDocumento::class
+        CampoDocumento::class,
+        AdjuntoDocumento::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class GestCarBaseDatos : RoomDatabase() {
@@ -47,6 +50,7 @@ abstract class GestCarBaseDatos : RoomDatabase() {
     abstract fun recordatorioDao(): RecordatorioDao
     abstract fun documentoVehiculoDao(): DocumentoVehiculoDao
     abstract fun campoDocumentoDao(): CampoDocumentoDao
+    abstract fun adjuntoDocumentoDao(): AdjuntoDocumentoDao
 
     companion object {
         // migracion inicial importante
@@ -320,6 +324,29 @@ abstract class GestCarBaseDatos : RoomDatabase() {
             }
         }
 
+        // adjuntos locales para documentacion sensible
+        // se guardan en almacenamiento privado y solo room conserva sus metadatos
+        private val MIGRACION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS adjuntos_documento (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        documentoId TEXT NOT NULL,
+                        nombreArchivo TEXT NOT NULL,
+                        mimeType TEXT NOT NULL,
+                        uriLocal TEXT NOT NULL,
+                        tamanoBytes INTEGER NOT NULL,
+                        fechaAlta INTEGER NOT NULL,
+                        orden INTEGER NOT NULL,
+                        FOREIGN KEY(documentoId) REFERENCES documentos_vehiculo(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_adjuntos_documento_documentoId ON adjuntos_documento(documentoId)")
+            }
+        }
+
         @Volatile
         private var INSTANCIA: GestCarBaseDatos? = null
 
@@ -338,7 +365,8 @@ abstract class GestCarBaseDatos : RoomDatabase() {
                     MIGRACION_4_5,
                     MIGRACION_5_6,
                     MIGRACION_6_7,
-                    MIGRACION_7_8
+                    MIGRACION_7_8,
+                    MIGRACION_8_9
                 ).build()
                 INSTANCIA = instancia
                 instancia

@@ -59,6 +59,7 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
         documentacionRepositorio = DocumentacionRepositorio(
             documentoDao = baseDatos.documentoVehiculoDao(),
             campoDao = baseDatos.campoDocumentoDao(),
+            adjuntoDao = baseDatos.adjuntoDocumentoDao(),
             vehiculoDao = baseDatos.vehiculoDao()
         )
     }

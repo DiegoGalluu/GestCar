@@ -1,12 +1,15 @@
 package com.gestcar.ui.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.gestcar.datos.basedatos.GestCarBaseDatos
+import com.gestcar.datos.entidades.AdjuntoDocumento
 import com.gestcar.datos.entidades.CampoDocumento
 import com.gestcar.datos.entidades.DocumentoVehiculo
 import com.gestcar.datos.repositorio.DocumentacionRepositorio
+import com.gestcar.util.GestorArchivosDocumento
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +26,7 @@ data class EstadoListaDocumentacion(
 data class EstadoFormularioDocumentacion(
     val documento: DocumentoVehiculo = DocumentoVehiculo(),
     val campos: List<CampoDocumento> = emptyList(),
+    val adjuntos: List<AdjuntoDocumento> = emptyList(),
     val estaCargando: Boolean = false,
     val guardadoExitoso: Boolean = false,
     val mensajeError: String? = null
@@ -34,6 +38,7 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
     private val repositorio = DocumentacionRepositorio(
         documentoDao = baseDatos.documentoVehiculoDao(),
         campoDao = baseDatos.campoDocumentoDao(),
+        adjuntoDao = baseDatos.adjuntoDocumentoDao(),
         vehiculoDao = baseDatos.vehiculoDao()
     )
 
@@ -89,18 +94,22 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
         viewModelScope.launch {
             val documentoInicial = repositorio.obtenerDocumentoPorId(documentoId) ?: return@launch
             val camposIniciales = repositorio.obtenerCamposLista(documentoId)
+            val adjuntosIniciales = repositorio.obtenerAdjuntosLista(documentoId)
             _estadoFormulario.value = EstadoFormularioDocumentacion(
                 documento = documentoInicial,
-                campos = camposIniciales.ifEmpty { listOf(campoVacio(documentoId)) }
+                campos = camposIniciales.ifEmpty { listOf(campoVacio(documentoId)) },
+                adjuntos = adjuntosIniciales
             )
 
             repositorio.sincronizar(documentoInicial.vehiculoId)
 
             val documentoActualizado = repositorio.obtenerDocumentoPorId(documentoId) ?: return@launch
             val camposActualizados = repositorio.obtenerCamposLista(documentoId)
+            val adjuntosActualizados = repositorio.obtenerAdjuntosLista(documentoId)
             _estadoFormulario.value = EstadoFormularioDocumentacion(
                 documento = documentoActualizado,
-                campos = camposActualizados.ifEmpty { listOf(campoVacio(documentoId)) }
+                campos = camposActualizados.ifEmpty { listOf(campoVacio(documentoId)) },
+                adjuntos = adjuntosActualizados
             )
         }
     }
@@ -239,6 +248,55 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
     fun eliminarDocumento(documento: DocumentoVehiculo) {
         viewModelScope.launch {
             repositorio.eliminar(documento)
+        }
+    }
+
+    fun anadirAdjunto(origenUri: Uri) {
+        viewModelScope.launch {
+            val estadoActual = _estadoFormulario.value
+            val documentoId = estadoActual.documento.id
+            if (documentoId.isBlank()) {
+                _estadoFormulario.value = estadoActual.copy(
+                    mensajeError = "Guarda la documentaciÃ³n antes de aÃ±adir archivos"
+                )
+                return@launch
+            }
+
+            val resultado = runCatching {
+                GestorArchivosDocumento.guardarAdjunto(
+                    contexto = getApplication(),
+                    documentoId = documentoId,
+                    origenUri = origenUri,
+                    orden = estadoActual.adjuntos.size
+                )
+            }.mapCatching { adjunto ->
+                repositorio.guardarAdjunto(adjunto).getOrThrow()
+                adjunto
+            }
+
+            resultado
+                .onSuccess {
+                    _estadoFormulario.value = estadoActual.copy(
+                        adjuntos = repositorio.obtenerAdjuntosLista(documentoId),
+                        mensajeError = null
+                    )
+                }
+                .onFailure {
+                    _estadoFormulario.value = estadoActual.copy(
+                        mensajeError = "No se ha podido aÃ±adir el archivo"
+                    )
+                }
+        }
+    }
+
+    fun eliminarAdjunto(adjunto: AdjuntoDocumento) {
+        viewModelScope.launch {
+            GestorArchivosDocumento.eliminarArchivo(adjunto)
+            repositorio.eliminarAdjunto(adjunto)
+            _estadoFormulario.value = _estadoFormulario.value.copy(
+                adjuntos = repositorio.obtenerAdjuntosLista(adjunto.documentoId),
+                mensajeError = null
+            )
         }
     }
 
