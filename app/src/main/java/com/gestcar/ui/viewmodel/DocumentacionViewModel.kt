@@ -33,7 +33,8 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
     private val baseDatos = GestCarBaseDatos.obtenerInstancia(aplicacion)
     private val repositorio = DocumentacionRepositorio(
         documentoDao = baseDatos.documentoVehiculoDao(),
-        campoDao = baseDatos.campoDocumentoDao()
+        campoDao = baseDatos.campoDocumentoDao(),
+        vehiculoDao = baseDatos.vehiculoDao()
     )
 
     private val _estadoLista = MutableStateFlow(EstadoListaDocumentacion())
@@ -45,6 +46,7 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
     fun cargarDocumentos(vehiculoId: String) {
         viewModelScope.launch {
             _estadoLista.value = _estadoLista.value.copy(estaCargando = true, mensajeError = null)
+            repositorio.sincronizar(vehiculoId)
             repositorio.obtenerDocumentos(vehiculoId).collect { documentos ->
                 val cantidades = documentos.associate { documento ->
                     documento.id to repositorio.obtenerCamposLista(documento.id)

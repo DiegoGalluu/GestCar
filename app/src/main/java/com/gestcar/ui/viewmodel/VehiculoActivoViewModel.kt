@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.gestcar.datos.basedatos.GestCarBaseDatos
 import com.gestcar.datos.entidades.Vehiculo
+import com.gestcar.datos.repositorio.DocumentacionRepositorio
 import com.gestcar.datos.repositorio.GastoPeriodicoRepositorio
 import com.gestcar.datos.repositorio.MantenimientoRepositorio
 import com.gestcar.datos.repositorio.RecordatorioRepositorio
@@ -33,6 +34,7 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
     private val mantenimientoRepositorio: MantenimientoRepositorio
     private val gastoRepositorio: GastoPeriodicoRepositorio
     private val recordatorioRepositorio: RecordatorioRepositorio
+    private val documentacionRepositorio: DocumentacionRepositorio
     private var trabajoCarga: Job? = null
 
     init {
@@ -52,6 +54,11 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
         )
         recordatorioRepositorio = RecordatorioRepositorio(
             recordatorioDao = baseDatos.recordatorioDao(),
+            vehiculoDao = baseDatos.vehiculoDao()
+        )
+        documentacionRepositorio = DocumentacionRepositorio(
+            documentoDao = baseDatos.documentoVehiculoDao(),
+            campoDao = baseDatos.campoDocumentoDao(),
             vehiculoDao = baseDatos.vehiculoDao()
         )
     }
@@ -79,6 +86,7 @@ class VehiculoActivoViewModel(aplicacion: Application) : AndroidViewModel(aplica
                 mantenimientoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
                 gastoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
                 recordatorioRepositorio.sincronizarPendientesDelUsuario(usuarioId)
+                documentacionRepositorio.sincronizarPendientesDelUsuario(usuarioId)
             }
 
             repositorio.obtenerVehiculos(usuarioId).collect { vehiculos ->

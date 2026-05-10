@@ -14,6 +14,9 @@ interface DocumentoVehiculoDao {
     @Query("SELECT * FROM documentos_vehiculo WHERE vehiculoId = :vehiculoId ORDER BY titulo COLLATE NOCASE ASC")
     fun obtenerPorVehiculo(vehiculoId: String): Flow<List<DocumentoVehiculo>>
 
+    @Query("SELECT * FROM documentos_vehiculo WHERE vehiculoId = :vehiculoId ORDER BY titulo COLLATE NOCASE ASC")
+    suspend fun obtenerPorVehiculoLista(vehiculoId: String): List<DocumentoVehiculo>
+
     @Query("SELECT * FROM documentos_vehiculo WHERE id = :id")
     suspend fun obtenerPorId(id: String): DocumentoVehiculo?
 

@@ -5,6 +5,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.gestcar.datos.basedatos.GestCarBaseDatos
 import com.gestcar.datos.remoto.ClienteSupabase
+import com.gestcar.datos.repositorio.DocumentacionRepositorio
 import com.gestcar.datos.repositorio.GastoPeriodicoRepositorio
 import com.gestcar.datos.repositorio.MantenimientoRepositorio
 import com.gestcar.datos.repositorio.RecordatorioRepositorio
@@ -54,19 +55,26 @@ class SincronizacionWorker(
                 recordatorioDao = baseDatos.recordatorioDao(),
                 vehiculoDao = baseDatos.vehiculoDao()
             )
+            val documentacionRepositorio = DocumentacionRepositorio(
+                documentoDao = baseDatos.documentoVehiculoDao(),
+                campoDao = baseDatos.campoDocumentoDao(),
+                vehiculoDao = baseDatos.vehiculoDao()
+            )
 
             val resultadoVehiculos = vehiculoRepositorio.sincronizar(usuarioId)
             val resultadoRepostajes = repostajeRepositorio.sincronizarPendientesDelUsuario(usuarioId)
             val resultadoMantenimientos = mantenimientoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
             val resultadoGastos = gastoRepositorio.sincronizarPendientesDelUsuario(usuarioId)
             val resultadoRecordatorios = recordatorioRepositorio.sincronizarPendientesDelUsuario(usuarioId)
+            val resultadoDocumentacion = documentacionRepositorio.sincronizarPendientesDelUsuario(usuarioId)
 
             if (
                 resultadoVehiculos.isFailure ||
                 resultadoRepostajes.isFailure ||
                 resultadoMantenimientos.isFailure ||
                 resultadoGastos.isFailure ||
-                resultadoRecordatorios.isFailure
+                resultadoRecordatorios.isFailure ||
+                resultadoDocumentacion.isFailure
             ) {
                 // retry permite que android lo intente de nuevo con backoff
                 // esto es ideal para errores temporales de red o supabase pausado
