@@ -34,6 +34,7 @@ object Rutas {
     const val FORMULARIO_RECORDATORIO = "formulario_recordatorio/{vehiculoId}/{recordatorioId}"
     const val DETALLE_RECORDATORIO = "detalle_recordatorio/{vehiculoId}/{recordatorioId}"
     const val ESTADISTICAS = "estadisticas"
+    const val GASOLINERAS = "gasolineras"
     const val CUENTA = "cuenta"
     const val DOCUMENTACION = "documentacion"
     const val FORMULARIO_DOCUMENTO = "formulario_documento/{vehiculoId}/{documentoId}"

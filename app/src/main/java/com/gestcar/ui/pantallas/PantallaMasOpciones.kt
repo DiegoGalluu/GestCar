@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
@@ -47,6 +48,7 @@ fun PantallaMasOpciones(
     alIrARecordatorios: () -> Unit,
     alIrAEstadisticas: () -> Unit,
     alIrADocumentacion: () -> Unit,
+    alIrAGasolineras: () -> Unit,
     alIrACuenta: () -> Unit,
     vehiculoActivoViewModel: VehiculoActivoViewModel = viewModel(),
     exportacionViewModel: ExportacionViewModel = viewModel()
@@ -88,6 +90,12 @@ fun PantallaMasOpciones(
                 titulo = "Documentación",
                 icono = Icons.Default.Description,
                 alPulsar = alIrADocumentacion
+            )
+
+            OpcionMas(
+                titulo = "Gasolineras",
+                icono = Icons.Default.LocalGasStation,
+                alPulsar = alIrAGasolineras
             )
 
             OpcionMas(

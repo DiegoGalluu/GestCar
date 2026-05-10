@@ -41,6 +41,7 @@ import com.gestcar.ui.pantallas.PantallaFormularioMantenimiento
 import com.gestcar.ui.pantallas.PantallaFormularioRecordatorio
 import com.gestcar.ui.pantallas.PantallaFormularioVehiculo
 import com.gestcar.ui.pantallas.PantallaFormularioRepostaje
+import com.gestcar.ui.pantallas.PantallaGasolineras
 import com.gestcar.ui.pantallas.PantallaInicioSesion
 import com.gestcar.ui.pantallas.PantallaListaGastos
 import com.gestcar.ui.pantallas.PantallaListaDocumentacion
@@ -318,6 +319,9 @@ fun GrafoNavegacion(
                     alIrADocumentacion = {
                         controladorNav.navigate(Rutas.DOCUMENTACION)
                     },
+                    alIrAGasolineras = {
+                        controladorNav.navigate(Rutas.GASOLINERAS)
+                    },
                     alIrACuenta = {
                         controladorNav.navigate(Rutas.CUENTA)
                     }
@@ -334,6 +338,12 @@ fun GrafoNavegacion(
                         authViewModel.solicitarRestablecimientoContrasena(estadoAuth.correoUsuario)
                     },
                     alCuentaEliminada = alCerrarSesion
+                )
+            }
+
+            composable(Rutas.GASOLINERAS) {
+                PantallaGasolineras(
+                    alVolver = { controladorNav.popBackStack() }
                 )
             }
 
