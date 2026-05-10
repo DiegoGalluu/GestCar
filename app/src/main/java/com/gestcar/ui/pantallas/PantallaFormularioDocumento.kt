@@ -3,10 +3,11 @@ package com.gestcar.ui.pantallas
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -43,14 +45,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -60,7 +64,7 @@ import com.gestcar.datos.entidades.CampoDocumento
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.colorFondoTarjetaUsuario
 import com.gestcar.ui.viewmodel.DocumentacionViewModel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 @Composable
@@ -74,9 +78,81 @@ fun PantallaFormularioDocumento(
     val estado by viewModel.estadoFormulario.collectAsState()
     val documento = estado.documento
     val esNuevo = documentoId == "nuevo"
-    var intentoGuardar by remember { mutableStateOf(false) }
     val scrollFormulario = rememberScrollState()
     val tituloVacio = documento.titulo.isBlank()
+    val medidasCampos = remember { mutableStateMapOf<String, MedidaCampoFormulario>() }
+    val margenScrollAutomatico = with(LocalDensity.current) { 72.dp.toPx() }
+    val pasoScrollAutomatico = with(LocalDensity.current) { 10.dp.toPx() }
+    val intervaloScrollAutomaticoMs = 16L
+    var intentoGuardar by remember { mutableStateOf(false) }
+    var topContenedor by remember { mutableFloatStateOf(0f) }
+    var altoContenedor by remember { mutableFloatStateOf(0f) }
+    var campoArrastradoId by remember { mutableStateOf<String?>(null) }
+    var topInicialArrastre by remember { mutableFloatStateOf(0f) }
+    var altoCampoArrastrado by remember { mutableFloatStateOf(0f) }
+    var desplazamientoArrastre by remember { mutableFloatStateOf(0f) }
+    var indiceDestinoArrastre by remember { mutableStateOf<Int?>(null) }
+    var direccionScrollAutomatico by remember { mutableStateOf(0) }
+
+    fun actualizarDestinoArrastre() {
+        val campoActivoId = campoArrastradoId ?: return
+        val centroTarjeta = topInicialArrastre + desplazamientoArrastre + altoCampoArrastrado / 2f
+        val camposSinActivo = estado.campos.filterNot { it.id == campoActivoId }
+        var destino = camposSinActivo.size
+
+        for ((indiceCampo, campo) in camposSinActivo.withIndex()) {
+            val medida = medidasCampos[campo.id] ?: continue
+            val centroCampo = medida.top + medida.alto / 2f
+            if (centroTarjeta < centroCampo) {
+                destino = indiceCampo
+                break
+            }
+        }
+
+        indiceDestinoArrastre = destino
+    }
+
+    fun actualizarDireccionScrollAutomatico() {
+        if (campoArrastradoId == null || altoContenedor == 0f) {
+            direccionScrollAutomatico = 0
+            return
+        }
+
+        val topTarjeta = topInicialArrastre + desplazamientoArrastre
+        val bottomTarjeta = topTarjeta + altoCampoArrastrado
+        direccionScrollAutomatico = when {
+            topTarjeta < margenScrollAutomatico && scrollFormulario.value > 0 -> -1
+            bottomTarjeta > altoContenedor - margenScrollAutomatico &&
+                scrollFormulario.value < scrollFormulario.maxValue -> 1
+            else -> 0
+        }
+    }
+
+    fun iniciarArrastreCampo(campo: CampoDocumento, indice: Int) {
+        val medida = medidasCampos[campo.id] ?: return
+        campoArrastradoId = campo.id
+        topInicialArrastre = medida.top
+        altoCampoArrastrado = medida.alto
+        desplazamientoArrastre = 0f
+        indiceDestinoArrastre = indice
+        direccionScrollAutomatico = 0
+    }
+
+    fun cancelarArrastreCampo() {
+        campoArrastradoId = null
+        desplazamientoArrastre = 0f
+        indiceDestinoArrastre = null
+        direccionScrollAutomatico = 0
+    }
+
+    fun terminarArrastreCampo() {
+        val campoActivoId = campoArrastradoId
+        val destino = indiceDestinoArrastre
+        if (campoActivoId != null && destino != null) {
+            viewModel.moverCampoAIndice(campoActivoId, destino)
+        }
+        cancelarArrastreCampo()
+    }
 
     LaunchedEffect(vehiculoId, documentoId) {
         if (esNuevo) {
@@ -92,6 +168,22 @@ fun PantallaFormularioDocumento(
         }
     }
 
+    LaunchedEffect(campoArrastradoId, direccionScrollAutomatico) {
+        while (campoArrastradoId != null && direccionScrollAutomatico != 0) {
+            val desplazamientoReal = scrollFormulario.scrollBy(
+                pasoScrollAutomatico * direccionScrollAutomatico
+            )
+            if (desplazamientoReal == 0f) {
+                direccionScrollAutomatico = 0
+                break
+            }
+
+            actualizarDestinoArrastre()
+            actualizarDireccionScrollAutomatico()
+            delay(intervaloScrollAutomaticoMs)
+        }
+    }
+
     Scaffold(
         topBar = {
             BarraSuperiorCompacta(
@@ -100,141 +192,212 @@ fun PantallaFormularioDocumento(
             )
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(scrollFormulario),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .onGloballyPositioned { coordenadas ->
+                    val bounds = coordenadas.boundsInRoot()
+                    topContenedor = bounds.top
+                    altoContenedor = bounds.height
+                }
         ) {
-            OutlinedTextField(
-                value = documento.titulo,
-                onValueChange = { viewModel.actualizarDocumento(documento.copy(titulo = it)) },
-                label = { Text("Título *") },
-                isError = intentoGuardar && tituloVacio,
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = documento.notas ?: "",
-                onValueChange = {
-                    viewModel.actualizarDocumento(documento.copy(notas = it.ifBlank { null }))
-                },
-                label = { Text("Notas") },
-                minLines = 3,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(scrollFormulario),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = "Campos personalizados",
-                    style = MaterialTheme.typography.titleMedium
+                OutlinedTextField(
+                    value = documento.titulo,
+                    onValueChange = { viewModel.actualizarDocumento(documento.copy(titulo = it)) },
+                    label = { Text("Título *") },
+                    isError = intentoGuardar && tituloVacio,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                TextButton(onClick = { viewModel.anadirCampo() }) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Text("Añadir")
-                }
-            }
 
-            estado.campos.forEachIndexed { indice, campo ->
-                key(campo.id) {
-                    TarjetaCampoDocumentoEditable(
-                        campo = campo,
-                        indice = indice,
-                        totalCampos = estado.campos.size,
-                        scrollFormulario = scrollFormulario,
-                        puedeSubir = indice > 0,
-                        puedeBajar = indice < estado.campos.lastIndex,
-                        alMoverAIndice = { indiceDestino ->
-                            viewModel.moverCampoAIndice(campo.id, indiceDestino)
-                        },
-                        alEliminar = { viewModel.eliminarCampo(campo.id) },
-                        alCambiarNombre = { viewModel.actualizarCampo(campo.id, nombre = it) },
-                        alCambiarValor = { viewModel.actualizarCampo(campo.id, valor = it) }
+                OutlinedTextField(
+                    value = documento.notas ?: "",
+                    onValueChange = {
+                        viewModel.actualizarDocumento(documento.copy(notas = it.ifBlank { null }))
+                    },
+                    label = { Text("Notas") },
+                    minLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Campos personalizados",
+                        style = MaterialTheme.typography.titleMedium
                     )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = {
-                    intentoGuardar = true
-                    if (!tituloVacio) {
-                        viewModel.guardarDocumento()
+                    TextButton(onClick = { viewModel.anadirCampo() }) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Text("Añadir")
                     }
-                },
-                enabled = !estado.estaCargando,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (estado.estaCargando) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
+                }
+
+                val campoActivoId = campoArrastradoId
+                val destinoActual = indiceDestinoArrastre
+                var indiceSinActivo = 0
+
+                estado.campos.forEachIndexed { indice, campo ->
+                    if (campo.id != campoActivoId && destinoActual == indiceSinActivo) {
+                        IndicadorDestinoCampo(altoCampoArrastrado)
+                    }
+
+                    key(campo.id) {
+                        TarjetaCampoDocumentoEditable(
+                            campo = campo,
+                            indice = indice,
+                            puedeSubir = indice > 0,
+                            puedeBajar = indice < estado.campos.lastIndex,
+                            estaSiendoArrastrada = campo.id == campoActivoId,
+                            modifier = Modifier.onGloballyPositioned { coordenadas ->
+                                val bounds = coordenadas.boundsInRoot()
+                                medidasCampos[campo.id] = MedidaCampoFormulario(
+                                    top = bounds.top - topContenedor,
+                                    alto = bounds.height
+                                )
+                            },
+                            alIniciarArrastre = { iniciarArrastreCampo(campo, indice) },
+                            alArrastrar = { movimientoVertical ->
+                                desplazamientoArrastre += movimientoVertical
+                                actualizarDestinoArrastre()
+                                actualizarDireccionScrollAutomatico()
+                            },
+                            alTerminarArrastre = { terminarArrastreCampo() },
+                            alCancelarArrastre = { cancelarArrastreCampo() },
+                            alEliminar = { viewModel.eliminarCampo(campo.id) },
+                            alCambiarNombre = { viewModel.actualizarCampo(campo.id, nombre = it) },
+                            alCambiarValor = { viewModel.actualizarCampo(campo.id, valor = it) }
+                        )
+                    }
+
+                    if (campo.id != campoActivoId) {
+                        indiceSinActivo++
+                    }
+                }
+
+                if (campoActivoId != null && destinoActual == indiceSinActivo) {
+                    IndicadorDestinoCampo(altoCampoArrastrado)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        intentoGuardar = true
+                        if (!tituloVacio) {
+                            viewModel.guardarDocumento()
+                        }
+                    },
+                    enabled = !estado.estaCargando,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (estado.estaCargando) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text("Guardar documentación")
+                    }
+                }
+
+                if (intentoGuardar && tituloVacio) {
+                    Snackbar {
+                        Text("Faltan campos obligatorios por rellenar")
+                    }
+                }
+
+                estado.mensajeError?.let { error ->
+                    Snackbar {
+                        Text(error)
+                    }
+                }
+            }
+
+            campoArrastradoId?.let { idActivo ->
+                val campoActivo = estado.campos.firstOrNull { it.id == idActivo }
+                val indiceActivo = estado.campos.indexOfFirst { it.id == idActivo }
+                if (campoActivo != null && indiceActivo != -1) {
+                    TarjetaCampoDocumentoEditable(
+                        campo = campoActivo,
+                        indice = indiceActivo,
+                        puedeSubir = indiceActivo > 0,
+                        puedeBajar = indiceActivo < estado.campos.lastIndex,
+                        estaSiendoArrastrada = true,
+                        arrastreHabilitado = false,
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .offset {
+                                IntOffset(
+                                    x = 0,
+                                    y = (topInicialArrastre + desplazamientoArrastre).roundToInt()
+                                )
+                            }
+                            .zIndex(4f),
+                        alIniciarArrastre = {},
+                        alArrastrar = {},
+                        alTerminarArrastre = {},
+                        alCancelarArrastre = {},
+                        alEliminar = {},
+                        alCambiarNombre = {},
+                        alCambiarValor = {}
                     )
-                } else {
-                    Text("Guardar documentación")
-                }
-            }
-
-            if (intentoGuardar && tituloVacio) {
-                Snackbar {
-                    Text("Faltan campos obligatorios por rellenar")
-                }
-            }
-
-            estado.mensajeError?.let { error ->
-                Snackbar {
-                    Text(error)
                 }
             }
         }
     }
 }
 
+private data class MedidaCampoFormulario(
+    val top: Float,
+    val alto: Float
+)
+
+@Composable
+private fun IndicadorDestinoCampo(altoCampoArrastrado: Float) {
+    val altoIndicador = with(LocalDensity.current) {
+        altoCampoArrastrado.coerceAtLeast(72.dp.toPx()).toDp()
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(altoIndicador)
+            .background(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                shape = RoundedCornerShape(12.dp)
+            )
+    )
+}
+
 @Composable
 private fun TarjetaCampoDocumentoEditable(
     campo: CampoDocumento,
     indice: Int,
-    totalCampos: Int,
-    scrollFormulario: ScrollState,
     puedeSubir: Boolean,
     puedeBajar: Boolean,
-    alMoverAIndice: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    estaSiendoArrastrada: Boolean = false,
+    arrastreHabilitado: Boolean = true,
+    alIniciarArrastre: () -> Unit,
+    alArrastrar: (Float) -> Unit,
+    alTerminarArrastre: () -> Unit,
+    alCancelarArrastre: () -> Unit,
     alEliminar: () -> Unit,
     alCambiarNombre: (String) -> Unit,
     alCambiarValor: (String) -> Unit
 ) {
-    val altoCampoEstimado = with(LocalDensity.current) { 132.dp.toPx() }
-    val umbralScrollAutomatico = with(LocalDensity.current) { 48.dp.toPx() }
-    val pasoScrollAutomatico = with(LocalDensity.current) { 28.dp.toPx() }
-    val coroutineScope = rememberCoroutineScope()
-    var desplazamientoArrastre by remember(campo.id) { mutableFloatStateOf(0f) }
-    var estaArrastrando by remember(campo.id) { mutableStateOf(false) }
-    var indiceDuranteArrastre by remember(campo.id) { mutableStateOf(indice) }
-
-    LaunchedEffect(indice, estaArrastrando) {
-        if (!estaArrastrando) {
-            indiceDuranteArrastre = indice
-        }
-    }
-
-    val desplazamientoAnimado by animateFloatAsState(
-        targetValue = if (estaArrastrando) desplazamientoArrastre else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "animacionOrdenCampoDocumento"
-    )
     val escalaAnimada by animateFloatAsState(
-        targetValue = if (estaArrastrando) 1.03f else 1f,
+        targetValue = if (estaSiendoArrastrada) 1.03f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessMediumLow
@@ -243,23 +406,16 @@ private fun TarjetaCampoDocumentoEditable(
     )
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .offset {
-                val desplazamientoMostrado = if (estaArrastrando) {
-                    desplazamientoArrastre
-                } else {
-                    desplazamientoAnimado
-                }
-                IntOffset(0, desplazamientoMostrado.roundToInt())
-            }
             .graphicsLayer {
+                alpha = if (estaSiendoArrastrada && arrastreHabilitado) 0.16f else 1f
                 scaleX = escalaAnimada
                 scaleY = escalaAnimada
             }
-            .zIndex(if (estaArrastrando || desplazamientoAnimado != 0f) 1f else 0f),
+            .zIndex(if (estaSiendoArrastrada) 2f else 0f),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (estaArrastrando) 8.dp else 1.dp
+            defaultElevation = if (estaSiendoArrastrada) 10.dp else 1.dp
         ),
         colors = CardDefaults.cardColors(
             containerColor = colorFondoTarjetaUsuario(indice)
@@ -314,73 +470,27 @@ private fun TarjetaCampoDocumentoEditable(
                 )
             }
 
+            val modificadorArrastre = if (arrastreHabilitado) {
+                Modifier.pointerInput(campo.id) {
+                    detectDragGestures(
+                        onDragStart = { alIniciarArrastre() },
+                        onDragEnd = { alTerminarArrastre() },
+                        onDragCancel = { alCancelarArrastre() },
+                        onDrag = { cambio, dragAmount ->
+                            cambio.consume()
+                            alArrastrar(dragAmount.y)
+                        }
+                    )
+                }
+            } else {
+                Modifier
+            }
+
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .width(36.dp)
-                    .pointerInput(campo.id) {
-                        detectDragGestures(
-                            onDragStart = {
-                                estaArrastrando = true
-                                indiceDuranteArrastre = indice
-                                desplazamientoArrastre = 0f
-                            },
-                            onDragEnd = {
-                                estaArrastrando = false
-                                desplazamientoArrastre = 0f
-                            },
-                            onDragCancel = {
-                                estaArrastrando = false
-                                desplazamientoArrastre = 0f
-                            },
-                            onDrag = { cambio, dragAmount ->
-                                cambio.consume()
-                                val movimientoVertical = dragAmount.y
-                                if (movimientoVertical == 0f) {
-                                    return@detectDragGestures
-                                }
-
-                                estaArrastrando = true
-                                desplazamientoArrastre += movimientoVertical
-
-                                while (
-                                    desplazamientoArrastre <= -altoCampoEstimado / 2 &&
-                                    indiceDuranteArrastre > 0
-                                ) {
-                                    indiceDuranteArrastre -= 1
-                                    alMoverAIndice(indiceDuranteArrastre)
-                                    desplazamientoArrastre += altoCampoEstimado
-                                }
-
-                                while (
-                                    desplazamientoArrastre >= altoCampoEstimado / 2 &&
-                                    indiceDuranteArrastre < totalCampos - 1
-                                ) {
-                                    indiceDuranteArrastre += 1
-                                    alMoverAIndice(indiceDuranteArrastre)
-                                    desplazamientoArrastre -= altoCampoEstimado
-                                }
-
-                                if (
-                                    movimientoVertical < 0 &&
-                                    desplazamientoArrastre < -umbralScrollAutomatico &&
-                                    scrollFormulario.value > 0
-                                ) {
-                                    coroutineScope.launch {
-                                        scrollFormulario.scrollBy(-pasoScrollAutomatico)
-                                    }
-                                } else if (
-                                    movimientoVertical > 0 &&
-                                    desplazamientoArrastre > umbralScrollAutomatico &&
-                                    scrollFormulario.value < scrollFormulario.maxValue
-                                ) {
-                                    coroutineScope.launch {
-                                        scrollFormulario.scrollBy(pasoScrollAutomatico)
-                                    }
-                                }
-                            }
-                        )
-                    }
+                    .then(modificadorArrastre)
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowUp,
