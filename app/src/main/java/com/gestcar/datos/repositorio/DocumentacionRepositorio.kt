@@ -7,6 +7,7 @@ import com.gestcar.datos.dao.VehiculoDao
 import com.gestcar.datos.entidades.AdjuntoDocumento
 import com.gestcar.datos.entidades.CampoDocumento
 import com.gestcar.datos.entidades.DocumentoVehiculo
+import com.gestcar.datos.remoto.AdjuntoDocumentoDto
 import com.gestcar.datos.remoto.CampoDocumentoDto
 import com.gestcar.datos.remoto.ClienteSupabase
 import com.gestcar.datos.remoto.DocumentoVehiculoDto
@@ -14,8 +15,11 @@ import com.gestcar.datos.remoto.aDto
 import com.gestcar.datos.remoto.aEntidad
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withTimeoutOrNull
+import java.io.File
+import kotlin.time.Duration.Companion.hours
 
 class DocumentacionRepositorio(
     private val documentoDao: DocumentoVehiculoDao,
@@ -25,6 +29,7 @@ class DocumentacionRepositorio(
 ) {
     private val tablaDocumentosRemota = "documentos_vehiculo"
     private val tablaCamposRemota = "campos_documento"
+    private val tablaAdjuntosRemota = "adjuntos_documento"
     private val tablaVehiculosRemota = "vehiculos"
 
     fun obtenerDocumentos(vehiculoId: String): Flow<List<DocumentoVehiculo>> {
@@ -54,6 +59,12 @@ class DocumentacionRepositorio(
     suspend fun guardarAdjunto(adjunto: AdjuntoDocumento): Result<Unit> {
         return try {
             adjuntoDao.insertar(adjunto)
+            runCatching {
+                withTimeoutOrNull(TIEMPO_MAXIMO_SYNC_RAPIDA_MS) {
+                    val adjuntoSincronizado = sincronizarAdjunto(adjunto)
+                    adjuntoDao.insertar(adjuntoSincronizado)
+                }
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -63,6 +74,11 @@ class DocumentacionRepositorio(
     suspend fun eliminarAdjunto(adjunto: AdjuntoDocumento): Result<Unit> {
         return try {
             adjuntoDao.eliminar(adjunto)
+            runCatching {
+                withTimeoutOrNull(TIEMPO_MAXIMO_SYNC_RAPIDA_MS) {
+                    eliminarAdjuntoRemoto(adjunto)
+                }
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -169,6 +185,9 @@ class DocumentacionRepositorio(
 
                 documentoDao.insertar(documento)
                 descargarCamposDocumento(documento.id)
+                runCatching {
+                    descargarAdjuntosDocumento(documento.id)
+                }
             }
 
             if (errores.isEmpty()) {
@@ -231,6 +250,10 @@ class DocumentacionRepositorio(
                 ClienteSupabase.cliente.postgrest[tablaCamposRemota]
                     .delete { filter { eq("id", campoRemoto.id) } }
             }
+
+        runCatching {
+            sincronizarAdjuntosDocumento(documento.id)
+        }
     }
 
     private suspend fun obtenerDocumentosRemotos(vehiculoId: String): List<DocumentoVehiculoDto> {
@@ -245,6 +268,12 @@ class DocumentacionRepositorio(
             .decodeList<CampoDocumentoDto>()
     }
 
+    private suspend fun obtenerAdjuntosRemotos(documentoId: String): List<AdjuntoDocumentoDto> {
+        return ClienteSupabase.cliente.postgrest[tablaAdjuntosRemota]
+            .select { filter { eq("documento_id", documentoId) } }
+            .decodeList<AdjuntoDocumentoDto>()
+    }
+
     private suspend fun descargarCamposDocumento(documentoId: String) {
         val camposRemotos = obtenerCamposRemotos(documentoId)
             .map { it.aEntidad() }
@@ -252,6 +281,102 @@ class DocumentacionRepositorio(
 
         campoDao.eliminarPorDocumento(documentoId)
         campoDao.insertarTodos(camposRemotos)
+    }
+
+    private suspend fun descargarAdjuntosDocumento(documentoId: String) {
+        obtenerAdjuntosRemotos(documentoId)
+            .map { dto ->
+                val adjuntoLocal = adjuntoDao.obtenerPorId(dto.id)
+                dto.aEntidad(uriLocal = adjuntoLocal?.uriLocal.orEmpty())
+            }
+            .sortedBy { it.orden }
+            .forEach { adjunto ->
+                val adjuntoLocal = adjuntoDao.obtenerPorId(adjunto.id)
+                if (adjuntoLocal == null || adjunto.actualizadoEn >= adjuntoLocal.actualizadoEn) {
+                    adjuntoDao.insertar(adjunto)
+                }
+            }
+    }
+
+    private suspend fun sincronizarAdjuntosDocumento(documentoId: String) {
+        val adjuntosLocales = adjuntoDao.obtenerPorDocumentoLista(documentoId)
+        adjuntosLocales.forEach { adjunto ->
+            runCatching {
+                val adjuntoSincronizado = sincronizarAdjunto(adjunto)
+                adjuntoDao.insertar(adjuntoSincronizado)
+            }
+        }
+
+        descargarAdjuntosDocumento(documentoId)
+    }
+
+    private suspend fun sincronizarAdjunto(adjunto: AdjuntoDocumento): AdjuntoDocumento {
+        val rutaStorage = adjunto.rutaStorage ?: construirRutaStorage(adjunto)
+        val adjuntoConRuta = adjunto.copy(
+            rutaStorage = rutaStorage,
+            actualizadoEn = if (adjunto.actualizadoEn == 0L) System.currentTimeMillis() else adjunto.actualizadoEn
+        )
+
+        subirArchivoAdjuntoSiExiste(adjuntoConRuta)
+
+        ClienteSupabase.cliente.postgrest[tablaAdjuntosRemota]
+            .upsert(
+                value = adjuntoConRuta.aDto(),
+                request = {
+                    select(Columns.list("id"))
+                }
+            )
+
+        return adjuntoConRuta
+    }
+
+    private suspend fun subirArchivoAdjuntoSiExiste(adjunto: AdjuntoDocumento) {
+        val rutaLocal = android.net.Uri.parse(adjunto.uriLocal).path ?: return
+        val archivo = File(rutaLocal)
+        if (!archivo.exists()) {
+            return
+        }
+
+        val rutaStorage = adjunto.rutaStorage ?: return
+        ClienteSupabase.cliente.storage
+            .from(ClienteSupabase.BUCKET_DOCUMENTOS_VEHICULO)
+            .upload(rutaStorage, archivo.readBytes()) {
+                upsert = true
+            }
+    }
+
+    private suspend fun eliminarAdjuntoRemoto(adjunto: AdjuntoDocumento) {
+        val rutaStorage = adjunto.rutaStorage
+        if (!rutaStorage.isNullOrBlank()) {
+            ClienteSupabase.cliente.storage
+                .from(ClienteSupabase.BUCKET_DOCUMENTOS_VEHICULO)
+                .delete(listOf(rutaStorage))
+        }
+
+        ClienteSupabase.cliente.postgrest[tablaAdjuntosRemota]
+            .delete { filter { eq("id", adjunto.id) } }
+    }
+
+    suspend fun obtenerUrlFirmadaAdjunto(adjunto: AdjuntoDocumento): String? {
+        val rutaStorage = adjunto.rutaStorage ?: return null
+        return runCatching {
+            ClienteSupabase.cliente.storage
+                .from(ClienteSupabase.BUCKET_DOCUMENTOS_VEHICULO)
+                .createSignedUrl(rutaStorage, 6.hours)
+        }.getOrNull()
+    }
+
+    private fun construirRutaStorage(adjunto: AdjuntoDocumento): String {
+        val extension = adjunto.nombreArchivo.substringAfterLast('.', missingDelimiterValue = "")
+            .ifBlank {
+                when {
+                    adjunto.mimeType == "application/pdf" -> "pdf"
+                    adjunto.mimeType.startsWith("image/") -> "jpg"
+                    else -> "bin"
+                }
+            }
+
+        return "${adjunto.documentoId}/${adjunto.id}.$extension"
     }
 
     private suspend fun sincronizarVehiculoPadreSiHaceFalta(vehiculoId: String) {

@@ -14,6 +14,10 @@ object ClienteSupabase {
     // no se usa un bucket publico porque las matriculas y fotos pueden ser datos sensibles
     const val BUCKET_FOTOS_VEHICULOS = "vehiculos"
 
+    // bucket privado para adjuntos de documentacion
+    // aqui pueden vivir pdfs o fotos con datos sensibles del usuario
+    const val BUCKET_DOCUMENTOS_VEHICULO = "documentos"
+
     // enlace profundo que permite volver a la app tras confirmar correo o resetear contrasena
     // debe coincidir con la configuracion de supabase auth y con el intent filter de android
     const val AUTH_DEEP_LINK = "gestcar://login-callback"

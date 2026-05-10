@@ -1,5 +1,7 @@
 package com.gestcar.ui.pantallas
 
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,8 +21,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
@@ -73,6 +75,8 @@ fun PantallaDetalleDocumento(
     var mostrarDialogoEliminar by remember { mutableStateOf(false) }
     var mostrarModalAdjunto by remember { mutableStateOf(false) }
     var uriTemporalCamara by remember { mutableStateOf<Uri?>(null) }
+    var adjuntoPendienteEliminar by remember { mutableStateOf<AdjuntoDocumento?>(null) }
+    var adjuntoImagenPreview by remember { mutableStateOf<AdjuntoDocumento?>(null) }
 
     val selectorImagen = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -194,9 +198,21 @@ fun PantallaDetalleDocumento(
             }
 
             estado.adjuntos.forEach { adjunto ->
+                val urlFirmada = estado.urlsFirmadasAdjuntos[adjunto.id]
+                LaunchedEffect(adjunto.id, adjunto.rutaStorage) {
+                    viewModel.cargarUrlFirmadaAdjunto(adjunto)
+                }
                 TarjetaAdjuntoDocumento(
                     adjunto = adjunto,
-                    alEliminar = { viewModel.eliminarAdjunto(adjunto) }
+                    modeloVisual = adjunto.uriLocal.ifBlank { urlFirmada },
+                    alAbrir = {
+                        if (adjunto.mimeType.startsWith("image/")) {
+                            adjuntoImagenPreview = adjunto
+                        } else {
+                            abrirAdjunto(contexto, viewModel, adjunto, urlFirmada)
+                        }
+                    },
+                    alEliminar = { adjuntoPendienteEliminar = adjunto }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -247,6 +263,53 @@ fun PantallaDetalleDocumento(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { mostrarModalAdjunto = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    adjuntoImagenPreview?.let { adjunto ->
+        val modeloVisual = adjunto.uriLocal.ifBlank { estado.urlsFirmadasAdjuntos[adjunto.id].orEmpty() }
+        AlertDialog(
+            onDismissRequest = { adjuntoImagenPreview = null },
+            title = { Text(adjunto.nombreArchivo) },
+            text = {
+                AsyncImage(
+                    model = modeloVisual,
+                    contentDescription = adjunto.nombreArchivo,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(420.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { adjuntoImagenPreview = null }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    adjuntoPendienteEliminar?.let { adjunto ->
+        AlertDialog(
+            onDismissRequest = { adjuntoPendienteEliminar = null },
+            title = { Text("Eliminar archivo") },
+            text = { Text("¿Seguro que quieres eliminar este archivo de la documentación?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.eliminarAdjunto(adjunto)
+                        adjuntoPendienteEliminar = null
+                    }
+                ) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { adjuntoPendienteEliminar = null }) {
                     Text("Cancelar")
                 }
             }
@@ -307,11 +370,15 @@ private fun EnlaceAnadirArchivo(alPulsar: () -> Unit) {
 @Composable
 private fun TarjetaAdjuntoDocumento(
     adjunto: AdjuntoDocumento,
+    modeloVisual: String?,
+    alAbrir: () -> Unit,
     alEliminar: () -> Unit
 ) {
     val esImagen = adjunto.mimeType.startsWith("image/")
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = alAbrir),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
@@ -321,7 +388,7 @@ private fun TarjetaAdjuntoDocumento(
         if (esImagen) {
             Box {
                 AsyncImage(
-                    model = adjunto.uriLocal,
+                    model = modeloVisual,
                     contentDescription = adjunto.nombreArchivo,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -445,6 +512,28 @@ private fun FilaCampoDocumento(
             text = valor.ifBlank { "Sin información" },
             style = MaterialTheme.typography.bodyLarge
         )
+    }
+}
+
+private fun abrirAdjunto(
+    contexto: Context,
+    viewModel: DocumentacionViewModel,
+    adjunto: AdjuntoDocumento,
+    urlFirmada: String?
+) {
+    val uri = if (adjunto.uriLocal.isNotBlank()) {
+        viewModel.obtenerUriLocalCompartible(adjunto)
+    } else {
+        urlFirmada?.let(Uri::parse)
+    } ?: return
+
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, adjunto.mimeType)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+
+    runCatching {
+        contexto.startActivity(Intent.createChooser(intent, "Abrir archivo"))
     }
 }
 

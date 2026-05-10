@@ -5,8 +5,8 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-// archivo local asociado a una tarjeta de documentacion
-// de momento no se sincroniza con supabase hasta cerrar bien el modelo de seguridad
+// archivo asociado a una tarjeta de documentacion
+// guardamos copia local y ruta remota por separado para no depender siempre de internet
 @Entity(
     tableName = "adjuntos_documento",
     foreignKeys = [
@@ -26,7 +26,9 @@ data class AdjuntoDocumento(
     val nombreArchivo: String = "",
     val mimeType: String = "",
     val uriLocal: String = "",
+    val rutaStorage: String? = null,
     val tamanoBytes: Long = 0L,
     val fechaAlta: Long = System.currentTimeMillis(),
-    val orden: Int = 0
+    val orden: Int = 0,
+    val actualizadoEn: Long = System.currentTimeMillis()
 )

@@ -36,7 +36,7 @@ import com.gestcar.datos.entidades.Vehiculo
         CampoDocumento::class,
         AdjuntoDocumento::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class GestCarBaseDatos : RoomDatabase() {
@@ -336,14 +336,42 @@ abstract class GestCarBaseDatos : RoomDatabase() {
                         nombreArchivo TEXT NOT NULL,
                         mimeType TEXT NOT NULL,
                         uriLocal TEXT NOT NULL,
+                        rutaStorage TEXT,
                         tamanoBytes INTEGER NOT NULL,
                         fechaAlta INTEGER NOT NULL,
                         orden INTEGER NOT NULL,
+                        actualizadoEn INTEGER NOT NULL DEFAULT 0,
                         FOREIGN KEY(documentoId) REFERENCES documentos_vehiculo(id) ON UPDATE NO ACTION ON DELETE CASCADE
                     )
                     """.trimIndent()
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_adjuntos_documento_documentoId ON adjuntos_documento(documentoId)")
+            }
+        }
+
+        // los adjuntos pasan a sincronizarse con storage privado
+        // mantenemos la uri local para que los archivos ya guardados no desaparezcan
+        private val MIGRACION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    ALTER TABLE adjuntos_documento
+                    ADD COLUMN rutaStorage TEXT
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    ALTER TABLE adjuntos_documento
+                    ADD COLUMN actualizadoEn INTEGER NOT NULL DEFAULT 0
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    UPDATE adjuntos_documento
+                    SET actualizadoEn = fechaAlta
+                    WHERE actualizadoEn = 0
+                    """.trimIndent()
+                )
             }
         }
 
@@ -366,7 +394,8 @@ abstract class GestCarBaseDatos : RoomDatabase() {
                     MIGRACION_5_6,
                     MIGRACION_6_7,
                     MIGRACION_7_8,
-                    MIGRACION_8_9
+                    MIGRACION_8_9,
+                    MIGRACION_9_10
                 ).build()
                 INSTANCIA = instancia
                 instancia

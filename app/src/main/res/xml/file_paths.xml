@@ -6,4 +6,7 @@
     <cache-path
         name="exportaciones_cache"
         path="exportaciones/" />
+    <files-path
+        name="documentos_adjuntos"
+        path="documentos_adjuntos/" />
 </paths>

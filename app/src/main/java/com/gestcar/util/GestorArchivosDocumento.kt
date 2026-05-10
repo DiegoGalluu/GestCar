@@ -14,6 +14,8 @@ import kotlin.math.max
 
 private const val MAX_LADO_DOCUMENTO_IMAGEN = 1800
 private const val CALIDAD_DOCUMENTO_IMAGEN = 82
+private const val MAX_IMAGEN_ORIGINAL_BYTES = 20L * 1024L * 1024L
+private const val MAX_PDF_BYTES = 10L * 1024L * 1024L
 
 object GestorArchivosDocumento {
 
@@ -35,6 +37,7 @@ object GestorArchivosDocumento {
     ): AdjuntoDocumento {
         val id = UUID.randomUUID().toString()
         val mimeType = contexto.contentResolver.getType(origenUri) ?: "application/octet-stream"
+        validarArchivoPermitido(contexto, origenUri, mimeType)
         val nombreOriginal = obtenerNombreArchivo(contexto, origenUri, mimeType)
         val esImagen = mimeType.startsWith("image/")
         val mimeFinal = if (esImagen) "image/jpeg" else mimeType
@@ -62,15 +65,66 @@ object GestorArchivosDocumento {
             uriLocal = Uri.fromFile(archivoDestino).toString(),
             tamanoBytes = archivoDestino.length(),
             fechaAlta = System.currentTimeMillis(),
-            orden = orden
+            orden = orden,
+            actualizadoEn = System.currentTimeMillis()
         )
     }
 
     fun eliminarArchivo(adjunto: AdjuntoDocumento) {
         runCatching {
+            if (adjunto.uriLocal.isBlank()) {
+                return
+            }
             val ruta = Uri.parse(adjunto.uriLocal).path ?: return
             File(ruta).delete()
         }
+    }
+
+    fun obtenerUriCompartible(contexto: Context, adjunto: AdjuntoDocumento): Uri? {
+        val ruta = Uri.parse(adjunto.uriLocal).path ?: return null
+        val archivo = File(ruta)
+        if (!archivo.exists()) {
+            return null
+        }
+
+        return FileProvider.getUriForFile(
+            contexto,
+            "${contexto.packageName}.fileprovider",
+            archivo
+        )
+    }
+
+    private fun validarArchivoPermitido(
+        contexto: Context,
+        uri: Uri,
+        mimeType: String
+    ) {
+        val esImagen = mimeType.startsWith("image/")
+        val esPdf = mimeType == "application/pdf"
+        if (!esImagen && !esPdf) {
+            error("Solo se permiten imágenes y archivos PDF")
+        }
+
+        val tamano = obtenerTamanoArchivo(contexto, uri)
+        if (tamano > 0 && esImagen && tamano > MAX_IMAGEN_ORIGINAL_BYTES) {
+            error("La imagen es demasiado grande")
+        }
+        if (tamano > 0 && esPdf && tamano > MAX_PDF_BYTES) {
+            error("El PDF supera el límite de 10 MB")
+        }
+    }
+
+    private fun obtenerTamanoArchivo(contexto: Context, uri: Uri): Long {
+        return contexto.contentResolver
+            .query(uri, null, null, null, null)
+            ?.use { cursor ->
+                val indiceTamano = cursor.getColumnIndex(OpenableColumns.SIZE)
+                if (indiceTamano >= 0 && cursor.moveToFirst()) {
+                    cursor.getLong(indiceTamano)
+                } else {
+                    0L
+                }
+            } ?: 0L
     }
 
     private fun obtenerNombreArchivo(

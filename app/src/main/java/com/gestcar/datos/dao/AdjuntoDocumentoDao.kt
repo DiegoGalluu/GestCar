@@ -17,6 +17,9 @@ interface AdjuntoDocumentoDao {
     @Query("SELECT * FROM adjuntos_documento WHERE documentoId = :documentoId ORDER BY orden ASC, fechaAlta ASC")
     suspend fun obtenerPorDocumentoLista(documentoId: String): List<AdjuntoDocumento>
 
+    @Query("SELECT * FROM adjuntos_documento WHERE id = :id")
+    suspend fun obtenerPorId(id: String): AdjuntoDocumento?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertar(adjunto: AdjuntoDocumento)
 

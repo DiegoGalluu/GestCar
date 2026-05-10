@@ -27,6 +27,7 @@ data class EstadoFormularioDocumentacion(
     val documento: DocumentoVehiculo = DocumentoVehiculo(),
     val campos: List<CampoDocumento> = emptyList(),
     val adjuntos: List<AdjuntoDocumento> = emptyList(),
+    val urlsFirmadasAdjuntos: Map<String, String> = emptyMap(),
     val estaCargando: Boolean = false,
     val guardadoExitoso: Boolean = false,
     val mensajeError: String? = null
@@ -100,6 +101,7 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
                 campos = camposIniciales.ifEmpty { listOf(campoVacio(documentoId)) },
                 adjuntos = adjuntosIniciales
             )
+            cargarUrlsFirmadas(adjuntosIniciales)
 
             repositorio.sincronizar(documentoInicial.vehiculoId)
 
@@ -111,6 +113,7 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
                 campos = camposActualizados.ifEmpty { listOf(campoVacio(documentoId)) },
                 adjuntos = adjuntosActualizados
             )
+            cargarUrlsFirmadas(adjuntosActualizados)
         }
     }
 
@@ -257,7 +260,7 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
             val documentoId = estadoActual.documento.id
             if (documentoId.isBlank()) {
                 _estadoFormulario.value = estadoActual.copy(
-                    mensajeError = "Guarda la documentaciÃ³n antes de aÃ±adir archivos"
+                    mensajeError = "Guarda la documentación antes de añadir archivos"
                 )
                 return@launch
             }
@@ -276,14 +279,16 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
 
             resultado
                 .onSuccess {
+                    val adjuntosActualizados = repositorio.obtenerAdjuntosLista(documentoId)
                     _estadoFormulario.value = estadoActual.copy(
-                        adjuntos = repositorio.obtenerAdjuntosLista(documentoId),
+                        adjuntos = adjuntosActualizados,
                         mensajeError = null
                     )
+                    cargarUrlsFirmadas(adjuntosActualizados)
                 }
                 .onFailure {
                     _estadoFormulario.value = estadoActual.copy(
-                        mensajeError = "No se ha podido aÃ±adir el archivo"
+                        mensajeError = it.message ?: "No se ha podido añadir el archivo"
                     )
                 }
         }
@@ -295,8 +300,37 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
             repositorio.eliminarAdjunto(adjunto)
             _estadoFormulario.value = _estadoFormulario.value.copy(
                 adjuntos = repositorio.obtenerAdjuntosLista(adjunto.documentoId),
+                urlsFirmadasAdjuntos = _estadoFormulario.value.urlsFirmadasAdjuntos - adjunto.id,
                 mensajeError = null
             )
+        }
+    }
+
+    fun obtenerUriLocalCompartible(adjunto: AdjuntoDocumento): Uri? {
+        return GestorArchivosDocumento.obtenerUriCompartible(getApplication(), adjunto)
+    }
+
+    fun cargarUrlFirmadaAdjunto(adjunto: AdjuntoDocumento) {
+        cargarUrlsFirmadas(listOf(adjunto))
+    }
+
+    private fun cargarUrlsFirmadas(adjuntos: List<AdjuntoDocumento>) {
+        val pendientes = adjuntos.filter { adjunto ->
+            !adjunto.rutaStorage.isNullOrBlank() &&
+                _estadoFormulario.value.urlsFirmadasAdjuntos[adjunto.id].isNullOrBlank()
+        }
+        if (pendientes.isEmpty()) {
+            return
+        }
+
+        viewModelScope.launch {
+            pendientes.forEach { adjunto ->
+                val url = repositorio.obtenerUrlFirmadaAdjunto(adjunto) ?: return@forEach
+                val estadoActual = _estadoFormulario.value
+                _estadoFormulario.value = estadoActual.copy(
+                    urlsFirmadasAdjuntos = estadoActual.urlsFirmadasAdjuntos + (adjunto.id to url)
+                )
+            }
         }
     }
 
