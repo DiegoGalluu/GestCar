@@ -14,7 +14,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -66,7 +65,7 @@ val elementosNavegacion = listOf(
     ElementoNavegacion(Rutas.LISTA_VEHICULOS, "Vehículos", Icons.Default.DirectionsCar),
     ElementoNavegacion(Rutas.GASTOS, "Gastos", Icons.Default.Payments),
     ElementoNavegacion(Rutas.REPOSTAJES, "Repostajes", Icons.Default.LocalGasStation),
-    ElementoNavegacion(Rutas.MANTENIMIENTO, "Mantenim.", Icons.Default.Build),
+    ElementoNavegacion(Rutas.MANTENIMIENTO, "Mantenimiento", Icons.Default.Build),
     ElementoNavegacion(Rutas.MAS_OPCIONES, "Más", Icons.Default.MoreHoriz)
 )
 
@@ -583,7 +582,8 @@ fun BarraNavegacionInferior(
         elementosNavegacion.forEach { elemento ->
             NavigationBarItem(
                 icon = { Icon(elemento.icono, contentDescription = elemento.titulo) },
-                label = { Text(elemento.titulo) },
+                label = null,
+                alwaysShowLabel = false,
                 selected = rutaActual == elemento.ruta || rutaPrincipalDeBarra(rutaActual) == elemento.ruta,
                 onClick = {
                     controladorNav.navegarASeccionPrincipal(elemento.ruta)
