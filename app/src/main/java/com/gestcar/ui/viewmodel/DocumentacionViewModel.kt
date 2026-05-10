@@ -46,7 +46,9 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
     fun cargarDocumentos(vehiculoId: String) {
         viewModelScope.launch {
             _estadoLista.value = _estadoLista.value.copy(estaCargando = true, mensajeError = null)
-            repositorio.sincronizar(vehiculoId)
+            launch {
+                repositorio.sincronizar(vehiculoId)
+            }
             repositorio.obtenerDocumentos(vehiculoId).collect { documentos ->
                 val cantidades = documentos.associate { documento ->
                     documento.id to repositorio.obtenerCamposLista(documento.id)
@@ -84,7 +86,23 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
     }
 
     fun cargarDetalle(documentoId: String) {
-        cargarParaEditar(documentoId)
+        viewModelScope.launch {
+            val documentoInicial = repositorio.obtenerDocumentoPorId(documentoId) ?: return@launch
+            val camposIniciales = repositorio.obtenerCamposLista(documentoId)
+            _estadoFormulario.value = EstadoFormularioDocumentacion(
+                documento = documentoInicial,
+                campos = camposIniciales.ifEmpty { listOf(campoVacio(documentoId)) }
+            )
+
+            repositorio.sincronizar(documentoInicial.vehiculoId)
+
+            val documentoActualizado = repositorio.obtenerDocumentoPorId(documentoId) ?: return@launch
+            val camposActualizados = repositorio.obtenerCamposLista(documentoId)
+            _estadoFormulario.value = EstadoFormularioDocumentacion(
+                documento = documentoActualizado,
+                campos = camposActualizados.ifEmpty { listOf(campoVacio(documentoId)) }
+            )
+        }
     }
 
     fun actualizarDocumento(documento: DocumentoVehiculo) {
