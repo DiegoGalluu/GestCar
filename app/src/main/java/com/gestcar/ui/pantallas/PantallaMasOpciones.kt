@@ -74,35 +74,30 @@ fun PantallaMasOpciones(
         ) {
             OpcionMas(
                 titulo = "Cuenta",
-                descripcion = "Datos de usuario y opciones de privacidad",
                 icono = Icons.Default.Person,
                 alPulsar = alIrACuenta
             )
 
             OpcionMas(
                 titulo = "Recordatorios",
-                descripcion = "Alertas por fecha o kilometraje",
                 icono = Icons.Default.Notifications,
                 alPulsar = alIrARecordatorios
             )
 
             OpcionMas(
                 titulo = "Documentación",
-                descripcion = "Documentación importante del vehículo",
                 icono = Icons.Default.Description,
                 alPulsar = alIrADocumentacion
             )
 
             OpcionMas(
                 titulo = "Estadísticas",
-                descripcion = "Consumos, costes y gráficos",
                 icono = Icons.Default.BarChart,
                 alPulsar = alIrAEstadisticas
             )
 
             OpcionMas(
                 titulo = "Exportar datos",
-                descripcion = "CSV, PDF, Excel o resumen compartible",
                 icono = Icons.Default.FileDownload,
                 alPulsar = { mostrarDialogoExportacion = true }
             )
@@ -136,7 +131,6 @@ fun PantallaMasOpciones(
 @Composable
 private fun OpcionMas(
     titulo: String,
-    descripcion: String,
     icono: ImageVector,
     alPulsar: () -> Unit
 ) {
@@ -149,7 +143,6 @@ private fun OpcionMas(
     ) {
         ListItem(
             headlineContent = { Text(titulo) },
-            supportingContent = { Text(descripcion) },
             leadingContent = {
                 Icon(
                     imageVector = icono,
