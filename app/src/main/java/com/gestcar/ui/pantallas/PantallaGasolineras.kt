@@ -36,21 +36,28 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -78,6 +85,7 @@ import com.gestcar.datos.remoto.Gasolinera
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.viewmodel.EstadoGasolineras
 import com.gestcar.ui.viewmodel.GasolineraViewModel
+import com.gestcar.ui.viewmodel.OrdenGasolineras
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -101,6 +109,7 @@ fun PantallaGasolineras(
     var gasolineraSeleccionada by remember { mutableStateOf<Gasolinera?>(null) }
     var mensajeUbicacion by remember { mutableStateOf<String?>(null) }
     var permisoUbicacionSolicitado by remember { mutableStateOf(false) }
+    var mostrarFiltros by remember { mutableStateOf(false) }
     val radios = remember { listOf(5, 10, 30, 50, 100, 200) }
     val indiceRadio = radios.indexOf(estado.radioKm).takeIf { it >= 0 } ?: 0
     val colorBarraSistema = MaterialTheme.colorScheme.primary.toArgb()
@@ -167,6 +176,18 @@ fun PantallaGasolineras(
         }
     }
 
+    if (mostrarFiltros) {
+        DialogoFiltrosGasolineras(
+            combustibles = estado.combustiblesDisponibles,
+            combustibleSeleccionado = estado.combustibleSeleccionado,
+            ordenGasolineras = estado.ordenGasolineras,
+            alSeleccionarCombustible = viewModel::cambiarFiltroCombustible,
+            alSeleccionarOrden = viewModel::cambiarOrdenGasolineras,
+            alLimpiar = viewModel::limpiarFiltrosAvanzados,
+            alCerrar = { mostrarFiltros = false }
+        )
+    }
+
     Scaffold(
         topBar = {
             Box(modifier = Modifier.background(MaterialTheme.colorScheme.primary)) {
@@ -212,10 +233,25 @@ fun PantallaGasolineras(
                 gasolineraSeleccionada?.let { gasolinera ->
                     TarjetaGasolineraSeleccionada(
                         gasolinera = gasolinera,
+                        combustibleSeleccionado = estado.combustibleSeleccionado,
                         alIr = { contexto.abrirRutaEnMaps(gasolinera) },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(16.dp)
+                    )
+                }
+
+                FloatingActionButton(
+                    onClick = { mostrarFiltros = true },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = "Filtrar gasolineras",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -280,6 +316,8 @@ fun PantallaGasolineras(
                 radios = radios,
                 totalGasolineras = estado.totalGasolinerasFiltradas,
                 marcadoresMostrados = estado.gasolinerasFiltradas.size,
+                combustibleSeleccionado = estado.combustibleSeleccionado,
+                ordenGasolineras = estado.ordenGasolineras,
                 alCambiarIndice = { indice -> viewModel.cambiarRadio(radios[indice]) }
             )
 
@@ -299,12 +337,123 @@ fun PantallaGasolineras(
 }
 
 @Composable
+private fun DialogoFiltrosGasolineras(
+    combustibles: List<String>,
+    combustibleSeleccionado: String?,
+    ordenGasolineras: OrdenGasolineras,
+    alSeleccionarCombustible: (String?) -> Unit,
+    alSeleccionarOrden: (OrdenGasolineras) -> Unit,
+    alLimpiar: () -> Unit,
+    alCerrar: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = alCerrar,
+        title = { Text("Filtrar gasolineras") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Combustible",
+                    style = MaterialTheme.typography.titleSmall
+                )
+
+                FilaFiltroGasolinera(
+                    texto = "Todos",
+                    seleccionado = combustibleSeleccionado == null,
+                    habilitado = true,
+                    alPulsar = { alSeleccionarCombustible(null) }
+                )
+
+                combustibles.forEach { combustible ->
+                    FilaFiltroGasolinera(
+                        texto = combustible,
+                        seleccionado = combustibleSeleccionado == combustible,
+                        habilitado = true,
+                        alPulsar = { alSeleccionarCombustible(combustible) }
+                    )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                Text(
+                    text = "Orden",
+                    style = MaterialTheme.typography.titleSmall
+                )
+
+                FilaFiltroGasolinera(
+                    texto = "Más cercanas",
+                    seleccionado = ordenGasolineras == OrdenGasolineras.DISTANCIA,
+                    habilitado = true,
+                    alPulsar = { alSeleccionarOrden(OrdenGasolineras.DISTANCIA) }
+                )
+
+                FilaFiltroGasolinera(
+                    texto = "Precio más bajo",
+                    seleccionado = ordenGasolineras == OrdenGasolineras.PRECIO,
+                    habilitado = combustibleSeleccionado != null,
+                    alPulsar = { alSeleccionarOrden(OrdenGasolineras.PRECIO) }
+                )
+
+                if (combustibleSeleccionado == null) {
+                    Text(
+                        text = "El orden por precio se activa al elegir un combustible.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = alCerrar) {
+                Text("Cerrar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = alLimpiar) {
+                Text("Limpiar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun FilaFiltroGasolinera(
+    texto: String,
+    seleccionado: Boolean,
+    habilitado: Boolean,
+    alPulsar: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = seleccionado,
+            onClick = if (habilitado) alPulsar else null,
+            enabled = habilitado
+        )
+        Text(
+            text = texto,
+            color = if (habilitado) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+        )
+    }
+}
+
+@Composable
 private fun PanelRadioGasolineras(
     radioKm: Int,
     indiceRadio: Int,
     radios: List<Int>,
     totalGasolineras: Int,
     marcadoresMostrados: Int,
+    combustibleSeleccionado: String?,
+    ordenGasolineras: OrdenGasolineras,
     alCambiarIndice: (Int) -> Unit
 ) {
     Card(
@@ -331,10 +480,28 @@ private fun PanelRadioGasolineras(
             )
 
             Text(
-                text = textoContadorGasolineras(totalGasolineras, marcadoresMostrados),
+                text = textoContadorGasolineras(
+                    totalGasolineras = totalGasolineras,
+                    marcadoresMostrados = marcadoresMostrados,
+                    combustibleSeleccionado = combustibleSeleccionado,
+                    ordenGasolineras = ordenGasolineras
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            combustibleSeleccionado?.let { combustible ->
+                val ordenTexto = if (ordenGasolineras == OrdenGasolineras.PRECIO) {
+                    "precio más bajo"
+                } else {
+                    "más cercanas"
+                }
+                Text(
+                    text = "Filtro: $combustible · $ordenTexto",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
@@ -416,9 +583,20 @@ private fun SelectorRadioGasolineras(
 @Composable
 private fun TarjetaGasolineraSeleccionada(
     gasolinera: Gasolinera,
+    combustibleSeleccionado: String?,
     alIr: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val preciosVisibles = remember(gasolinera, combustibleSeleccionado) {
+        if (combustibleSeleccionado == null) {
+            gasolinera.precios
+        } else {
+            gasolinera.precios.sortedBy { precio ->
+                if (precio.nombre == combustibleSeleccionado) 0 else 1
+            }
+        }
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -450,12 +628,20 @@ private fun TarjetaGasolineraSeleccionada(
                 }
             }
 
-            gasolinera.precios.take(4).forEach { precio ->
+            preciosVisibles.take(4).forEach { precio ->
+                val esCombustibleSeleccionado = precio.nombre == combustibleSeleccionado
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(precio.nombre)
+                    Text(
+                        text = precio.nombre,
+                        color = if (esCombustibleSeleccionado) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
                     Text(
                         text = String.format(Locale("es", "ES"), "%.2f €", precio.precio),
                         color = MaterialTheme.colorScheme.primary
@@ -463,9 +649,9 @@ private fun TarjetaGasolineraSeleccionada(
                 }
             }
 
-            if (gasolinera.precios.size > 4) {
+            if (preciosVisibles.size > 4) {
                 Text(
-                    text = "+ ${gasolinera.precios.size - 4} combustibles más",
+                    text = "+ ${preciosVisibles.size - 4} combustibles más",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -676,9 +862,21 @@ private fun zoomParaRadio(radioKm: Int): Double =
         else -> 7.0
     }
 
-private fun textoContadorGasolineras(totalGasolineras: Int, marcadoresMostrados: Int): String =
+private fun textoContadorGasolineras(
+    totalGasolineras: Int,
+    marcadoresMostrados: Int,
+    combustibleSeleccionado: String?,
+    ordenGasolineras: OrdenGasolineras
+): String =
     when {
+        totalGasolineras == 0 && combustibleSeleccionado != null ->
+            "No hay gasolineras con $combustibleSeleccionado en este rango"
+
         totalGasolineras == 0 -> "No hay gasolineras en este rango"
+
+        totalGasolineras > marcadoresMostrados && ordenGasolineras == OrdenGasolineras.PRECIO ->
+            "$totalGasolineras gasolineras encontradas, mostrando las $marcadoresMostrados más baratas"
+
         totalGasolineras > marcadoresMostrados ->
             "$totalGasolineras gasolineras encontradas, mostrando las $marcadoresMostrados más cercanas"
 
