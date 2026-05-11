@@ -11,7 +11,9 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Point
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
@@ -229,7 +231,8 @@ fun PantallaGasolineras(
                             mapa = mapa,
                             estado = estado,
                             gasolineraSeleccionadaId = gasolineraSeleccionada?.id,
-                            alSeleccionarGasolinera = { gasolineraSeleccionada = it }
+                            alSeleccionarGasolinera = { gasolineraSeleccionada = it },
+                            centrarMapa = true
                         )
                     }
                 )
@@ -764,12 +767,15 @@ private fun actualizarMapaNativo(
     mapa: MapView,
     estado: EstadoGasolineras,
     gasolineraSeleccionadaId: String?,
-    alSeleccionarGasolinera: (Gasolinera) -> Unit
+    alSeleccionarGasolinera: (Gasolinera) -> Unit,
+    centrarMapa: Boolean
 ) {
     val centro = GeoPoint(estado.centroLatitud, estado.centroLongitud)
 
-    mapa.controller.setZoom(zoomParaRadio(estado.radioKm))
-    mapa.controller.setCenter(centro)
+    if (centrarMapa) {
+        mapa.controller.setZoom(zoomParaRadio(estado.radioKm))
+        mapa.controller.setCenter(centro)
+    }
     mapa.overlays.clear()
     mapa.overlays.add(crearCirculoBusqueda(centro, estado.radioKm))
     mapa.overlays.add(crearMarcadorCentro(mapa, centro, estado.nombreCentro))
@@ -800,15 +806,29 @@ private fun actualizarMapaNativo(
     val gasolineraSeleccionada = estado.gasolinerasFiltradas
         .firstOrNull { gasolinera -> gasolinera.id == gasolineraSeleccionadaId }
 
-    gasolinerasNormales.forEach { gasolinera ->
-        mapa.overlays.add(
-            crearMarcadorGasolinera(
-                mapa = mapa,
-                gasolinera = gasolinera,
-                icono = iconoGasolinera,
-                alSeleccionarGasolinera = alSeleccionarGasolinera
+    // las gasolineras normales se agrupan por cercania visual, asi evitamos una nube ilegible de iconos
+    agruparGasolinerasPorPantalla(mapa, gasolinerasNormales).forEach { grupo ->
+        if (grupo.gasolineras.size == 1) {
+            val gasolinera = grupo.gasolineras.first()
+            mapa.overlays.add(
+                crearMarcadorGasolinera(
+                    mapa = mapa,
+                    gasolinera = gasolinera,
+                    icono = iconoGasolinera,
+                    alSeleccionarGasolinera = alSeleccionarGasolinera
+                )
             )
-        )
+        } else {
+            mapa.overlays.add(
+                crearMarcadorGrupoGasolineras(
+                    mapa = mapa,
+                    grupo = grupo,
+                    estado = estado,
+                    gasolineraSeleccionadaId = gasolineraSeleccionadaId,
+                    alSeleccionarGasolinera = alSeleccionarGasolinera
+                )
+            )
+        }
     }
     gasolineraMasBarata?.let { gasolinera ->
         mapa.overlays.add(
@@ -836,6 +856,76 @@ private fun actualizarMapaNativo(
     }
 
     mapa.invalidate()
+}
+
+private data class GrupoGasolineras(
+    val gasolineras: List<Gasolinera>,
+    val centro: GeoPoint
+)
+
+private data class GrupoTemporalGasolineras(
+    val gasolineras: MutableList<Gasolinera>,
+    var sumaLatitudes: Double,
+    var sumaLongitudes: Double,
+    var puntoCentro: Point
+)
+
+private fun agruparGasolinerasPorPantalla(
+    mapa: MapView,
+    gasolineras: List<Gasolinera>
+): List<GrupoGasolineras> {
+    if (gasolineras.isEmpty()) return emptyList()
+
+    val escala = mapa.context.resources.displayMetrics.density
+    val radioAgrupacionPx = (70f * escala).roundToInt()
+    val radioAgrupacionCuadrado = radioAgrupacionPx * radioAgrupacionPx
+    val grupos = mutableListOf<GrupoTemporalGasolineras>()
+
+    gasolineras.forEach { gasolinera ->
+        val puntoGasolinera = mapa.projection.toPixels(
+            GeoPoint(gasolinera.latitud, gasolinera.longitud),
+            null
+        )
+        val grupoCercano = grupos.firstOrNull { grupo ->
+            val diferenciaX = puntoGasolinera.x - grupo.puntoCentro.x
+            val diferenciaY = puntoGasolinera.y - grupo.puntoCentro.y
+            diferenciaX * diferenciaX + diferenciaY * diferenciaY <= radioAgrupacionCuadrado
+        }
+
+        if (grupoCercano == null) {
+            grupos.add(
+                GrupoTemporalGasolineras(
+                    gasolineras = mutableListOf(gasolinera),
+                    sumaLatitudes = gasolinera.latitud,
+                    sumaLongitudes = gasolinera.longitud,
+                    puntoCentro = puntoGasolinera
+                )
+            )
+        } else {
+            grupoCercano.gasolineras.add(gasolinera)
+            grupoCercano.sumaLatitudes += gasolinera.latitud
+            grupoCercano.sumaLongitudes += gasolinera.longitud
+            val total = grupoCercano.gasolineras.size
+            grupoCercano.puntoCentro = mapa.projection.toPixels(
+                GeoPoint(
+                    grupoCercano.sumaLatitudes / total,
+                    grupoCercano.sumaLongitudes / total
+                ),
+                null
+            )
+        }
+    }
+
+    return grupos.map { grupo ->
+        val total = grupo.gasolineras.size
+        GrupoGasolineras(
+            gasolineras = grupo.gasolineras.toList(),
+            centro = GeoPoint(
+                grupo.sumaLatitudes / total,
+                grupo.sumaLongitudes / total
+            )
+        )
+    }
 }
 
 private fun crearCirculoBusqueda(centro: GeoPoint, radioKm: Int): Polygon =
@@ -876,6 +966,74 @@ private fun crearMarcadorGasolinera(
             true
         }
     }
+
+private fun crearMarcadorGrupoGasolineras(
+    mapa: MapView,
+    grupo: GrupoGasolineras,
+    estado: EstadoGasolineras,
+    gasolineraSeleccionadaId: String?,
+    alSeleccionarGasolinera: (Gasolinera) -> Unit
+): Marker =
+    Marker(mapa).apply {
+        position = grupo.centro
+        title = "${grupo.gasolineras.size} gasolineras"
+        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+        icon = crearIconoGrupoGasolineras(mapa.context, grupo.gasolineras.size)
+        setOnMarkerClickListener { _, _ ->
+            val nuevoZoom = (mapa.zoomLevelDouble + 2.0).coerceAtMost(mapa.maxZoomLevel)
+            mapa.controller.setZoom(nuevoZoom)
+            mapa.controller.animateTo(grupo.centro)
+            mapa.postDelayed(
+                {
+                    actualizarMapaNativo(
+                        mapa = mapa,
+                        estado = estado,
+                        gasolineraSeleccionadaId = gasolineraSeleccionadaId,
+                        alSeleccionarGasolinera = alSeleccionarGasolinera,
+                        centrarMapa = false
+                    )
+                },
+                350L
+            )
+            true
+        }
+    }
+
+private fun crearIconoGrupoGasolineras(contexto: Context, cantidad: Int): Drawable {
+    val escala = contexto.resources.displayMetrics.density
+    val tamano = (52f * escala).roundToInt()
+    val mapaBits = Bitmap.createBitmap(tamano, tamano, Bitmap.Config.ARGB_8888)
+    val lienzo = Canvas(mapaBits)
+    val pintura = Paint(Paint.ANTI_ALIAS_FLAG)
+    val centro = tamano / 2f
+    val radio = tamano * 0.42f
+
+    pintura.color = android.graphics.Color.argb(75, 0, 0, 0)
+    lienzo.drawCircle(centro + 1.5f * escala, centro + 1.5f * escala, radio, pintura)
+
+    pintura.color = android.graphics.Color.WHITE
+    pintura.style = Paint.Style.FILL
+    lienzo.drawCircle(centro, centro, radio + 3f * escala, pintura)
+
+    pintura.color = android.graphics.Color.rgb(31, 78, 121)
+    lienzo.drawCircle(centro, centro, radio, pintura)
+
+    pintura.color = android.graphics.Color.rgb(74, 144, 217)
+    pintura.style = Paint.Style.STROKE
+    pintura.strokeWidth = 2.2f * escala
+    lienzo.drawCircle(centro, centro, radio - 2f * escala, pintura)
+
+    pintura.style = Paint.Style.FILL
+    pintura.color = android.graphics.Color.WHITE
+    pintura.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    pintura.textAlign = Paint.Align.CENTER
+    pintura.textSize = if (cantidad < 100) 17f * escala else 14f * escala
+    val texto = if (cantidad > 99) "99+" else cantidad.toString()
+    val centroTextoY = centro - (pintura.descent() + pintura.ascent()) / 2f
+    lienzo.drawText(texto, centro, centroTextoY, pintura)
+
+    return BitmapDrawable(contexto.resources, mapaBits)
+}
 
 private fun crearIconoGasolinera(
     contexto: Context,
