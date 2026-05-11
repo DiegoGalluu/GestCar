@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -57,6 +58,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -226,6 +228,7 @@ fun PantallaGasolineras(
                         actualizarMapaNativo(
                             mapa = mapa,
                             estado = estado,
+                            gasolineraSeleccionadaId = gasolineraSeleccionada?.id,
                             alSeleccionarGasolinera = { gasolineraSeleccionada = it }
                         )
                     }
@@ -244,6 +247,7 @@ fun PantallaGasolineras(
                         gasolinera = gasolinera,
                         combustibleSeleccionado = estado.combustibleSeleccionado,
                         alIr = { contexto.abrirRutaEnMaps(gasolinera) },
+                        alCerrar = { gasolineraSeleccionada = null },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(16.dp)
@@ -651,6 +655,7 @@ private fun TarjetaGasolineraSeleccionada(
     gasolinera: Gasolinera,
     combustibleSeleccionado: String?,
     alIr: () -> Unit,
+    alCerrar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val preciosVisibles = remember(gasolinera, combustibleSeleccionado) {
@@ -690,6 +695,16 @@ private fun TarjetaGasolineraSeleccionada(
                         text = "${gasolinera.direccion}, ${gasolinera.municipio}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(
+                    onClick = alCerrar,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Cerrar detalle",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -748,6 +763,7 @@ private fun crearMapViewNativo(contexto: Context): MapView {
 private fun actualizarMapaNativo(
     mapa: MapView,
     estado: EstadoGasolineras,
+    gasolineraSeleccionadaId: String?,
     alSeleccionarGasolinera: (Gasolinera) -> Unit
 ) {
     val centro = GeoPoint(estado.centroLatitud, estado.centroLongitud)
@@ -759,6 +775,12 @@ private fun actualizarMapaNativo(
     mapa.overlays.add(crearMarcadorCentro(mapa, centro, estado.nombreCentro))
     val iconoGasolinera = crearIconoGasolinera(mapa.context)
     val iconoGasolineraBarata = crearIconoGasolinera(mapa.context, destacada = true)
+    val iconoGasolineraSeleccionada = crearIconoGasolinera(mapa.context, seleccionada = true)
+    val iconoGasolineraBarataSeleccionada = crearIconoGasolinera(
+        contexto = mapa.context,
+        destacada = true,
+        seleccionada = true
+    )
     val idGasolineraMasBarata = estado.combustibleSeleccionado
         ?.takeIf { estado.ordenGasolineras == OrdenGasolineras.PRECIO }
         ?.let { combustible ->
@@ -767,15 +789,46 @@ private fun actualizarMapaNativo(
             }?.id
         }
 
-    estado.gasolinerasFiltradas.forEach { gasolinera ->
+    val gasolinerasNormales = estado.gasolinerasFiltradas
+        .filterNot { gasolinera ->
+            gasolinera.id == idGasolineraMasBarata || gasolinera.id == gasolineraSeleccionadaId
+        }
+    val gasolineraMasBarata = estado.gasolinerasFiltradas
+        .firstOrNull { gasolinera ->
+            gasolinera.id == idGasolineraMasBarata && gasolinera.id != gasolineraSeleccionadaId
+        }
+    val gasolineraSeleccionada = estado.gasolinerasFiltradas
+        .firstOrNull { gasolinera -> gasolinera.id == gasolineraSeleccionadaId }
+
+    gasolinerasNormales.forEach { gasolinera ->
+        mapa.overlays.add(
+            crearMarcadorGasolinera(
+                mapa = mapa,
+                gasolinera = gasolinera,
+                icono = iconoGasolinera,
+                alSeleccionarGasolinera = alSeleccionarGasolinera
+            )
+        )
+    }
+    gasolineraMasBarata?.let { gasolinera ->
+        mapa.overlays.add(
+            crearMarcadorGasolinera(
+                mapa = mapa,
+                gasolinera = gasolinera,
+                icono = iconoGasolineraBarata,
+                alSeleccionarGasolinera = alSeleccionarGasolinera
+            )
+        )
+    }
+    gasolineraSeleccionada?.let { gasolinera ->
         mapa.overlays.add(
             crearMarcadorGasolinera(
                 mapa = mapa,
                 gasolinera = gasolinera,
                 icono = if (gasolinera.id == idGasolineraMasBarata) {
-                    iconoGasolineraBarata
+                    iconoGasolineraBarataSeleccionada
                 } else {
-                    iconoGasolinera
+                    iconoGasolineraSeleccionada
                 },
                 alSeleccionarGasolinera = alSeleccionarGasolinera
             )
@@ -824,10 +877,24 @@ private fun crearMarcadorGasolinera(
         }
     }
 
-private fun crearIconoGasolinera(contexto: Context, destacada: Boolean = false): Drawable {
+private fun crearIconoGasolinera(
+    contexto: Context,
+    destacada: Boolean = false,
+    seleccionada: Boolean = false
+): Drawable {
     val escala = contexto.resources.displayMetrics.density
-    val ancho = ((if (destacada) 46 else 42) * escala).roundToInt()
-    val alto = ((if (destacada) 58 else 54) * escala).roundToInt()
+    val anchoBase = when {
+        destacada -> 78
+        seleccionada -> 58
+        else -> 42
+    }
+    val altoBase = when {
+        destacada -> 100
+        seleccionada -> 74
+        else -> 54
+    }
+    val ancho = (anchoBase * escala).roundToInt()
+    val alto = (altoBase * escala).roundToInt()
     val mapaBits = Bitmap.createBitmap(ancho, alto, Bitmap.Config.ARGB_8888)
     val lienzo = Canvas(mapaBits)
     val pintura = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -853,7 +920,14 @@ private fun crearIconoGasolinera(contexto: Context, destacada: Boolean = false):
     }
     lienzo.drawCircle(centroX + escala, centroY + escala, radio, sombra)
 
+    if (seleccionada) {
+        pintura.color = blanco
+        pintura.style = Paint.Style.FILL
+        lienzo.drawCircle(centroX, centroY, radio + 4.5f * escala, pintura)
+    }
+
     pintura.color = azul
+    pintura.style = Paint.Style.FILL
     lienzo.drawCircle(centroX, centroY, radio, pintura)
 
     val punta = Path().apply {
