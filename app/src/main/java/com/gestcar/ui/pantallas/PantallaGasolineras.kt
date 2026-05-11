@@ -2,9 +2,18 @@ package com.gestcar.ui.pantallas
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.location.Location
 import android.location.LocationListener
@@ -55,6 +64,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -93,6 +103,19 @@ fun PantallaGasolineras(
     var permisoUbicacionSolicitado by remember { mutableStateOf(false) }
     val radios = remember { listOf(5, 10, 30, 50, 100, 200) }
     val indiceRadio = radios.indexOf(estado.radioKm).takeIf { it >= 0 } ?: 0
+    val colorBarraSistema = MaterialTheme.colorScheme.primary.toArgb()
+
+    DisposableEffect(colorBarraSistema) {
+        val ventana = contexto.encontrarActividad()?.window
+        val colorAnterior = ventana?.statusBarColor
+        ventana?.statusBarColor = colorBarraSistema
+
+        onDispose {
+            if (colorAnterior != null) {
+                ventana.statusBarColor = colorAnterior
+            }
+        }
+    }
 
     val lanzadorPermisos = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -203,6 +226,12 @@ fun PantallaGasolineras(
                                 contexto = contexto,
                                 alObtenerUbicacion = { ubicacion ->
                                     viewModel.usarUbicacion(ubicacion.latitude, ubicacion.longitude)
+                                    centrarMapaEnUbicacion(
+                                        mapa = mapView,
+                                        latitud = ubicacion.latitude,
+                                        longitud = ubicacion.longitude,
+                                        radioKm = estado.radioKm
+                                    )
                                     mensajeUbicacion = null
                                 },
                                 alError = { mensaje -> mensajeUbicacion = mensaje }
@@ -476,12 +505,14 @@ private fun actualizarMapaNativo(
     mapa.overlays.clear()
     mapa.overlays.add(crearCirculoBusqueda(centro, estado.radioKm))
     mapa.overlays.add(crearMarcadorCentro(mapa, centro, estado.nombreCentro))
+    val iconoGasolinera = crearIconoGasolinera(mapa.context)
 
     estado.gasolinerasFiltradas.forEach { gasolinera ->
         mapa.overlays.add(
             crearMarcadorGasolinera(
                 mapa = mapa,
                 gasolinera = gasolinera,
+                icono = iconoGasolinera,
                 alSeleccionarGasolinera = alSeleccionarGasolinera
             )
         )
@@ -514,6 +545,7 @@ private fun crearMarcadorCentro(mapa: MapView, centro: GeoPoint, titulo: String)
 private fun crearMarcadorGasolinera(
     mapa: MapView,
     gasolinera: Gasolinera,
+    icono: Drawable,
     alSeleccionarGasolinera: (Gasolinera) -> Unit
 ): Marker =
     Marker(mapa).apply {
@@ -521,11 +553,97 @@ private fun crearMarcadorGasolinera(
         title = gasolinera.rotulo
         snippet = gasolinera.direccion
         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        this.icon = icono.constantState?.newDrawable()?.mutate() ?: icono
         setOnMarkerClickListener { _, _ ->
             alSeleccionarGasolinera(gasolinera)
             true
         }
     }
+
+private fun crearIconoGasolinera(contexto: Context): Drawable {
+    val escala = contexto.resources.displayMetrics.density
+    val ancho = (42 * escala).roundToInt()
+    val alto = (54 * escala).roundToInt()
+    val mapaBits = Bitmap.createBitmap(ancho, alto, Bitmap.Config.ARGB_8888)
+    val lienzo = Canvas(mapaBits)
+    val pintura = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    val azul = android.graphics.Color.rgb(31, 78, 121)
+    val azulClaro = android.graphics.Color.rgb(74, 144, 217)
+    val blanco = android.graphics.Color.WHITE
+
+    val centroX = ancho / 2f
+    val radio = ancho * 0.36f
+    val centroY = radio + 3f * escala
+
+    val sombra = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.argb(70, 0, 0, 0)
+    }
+    lienzo.drawCircle(centroX + escala, centroY + escala, radio, sombra)
+
+    pintura.color = azul
+    lienzo.drawCircle(centroX, centroY, radio, pintura)
+
+    val punta = Path().apply {
+        moveTo(centroX - radio * 0.55f, centroY + radio * 0.45f)
+        lineTo(centroX, alto - 4f * escala)
+        lineTo(centroX + radio * 0.55f, centroY + radio * 0.45f)
+        close()
+    }
+    lienzo.drawPath(punta, pintura)
+
+    pintura.color = azulClaro
+    pintura.style = Paint.Style.STROKE
+    pintura.strokeWidth = 2.2f * escala
+    lienzo.drawCircle(centroX, centroY, radio - 1.5f * escala, pintura)
+
+    pintura.style = Paint.Style.FILL
+    pintura.color = blanco
+    val cuerpo = RectF(
+        centroX - 7f * escala,
+        centroY - 9f * escala,
+        centroX + 5f * escala,
+        centroY + 9f * escala
+    )
+    lienzo.drawRoundRect(cuerpo, 2f * escala, 2f * escala, pintura)
+
+    pintura.color = azul
+    lienzo.drawRect(
+        centroX - 5f * escala,
+        centroY - 7f * escala,
+        centroX + 3f * escala,
+        centroY - 2f * escala,
+        pintura
+    )
+
+    pintura.color = blanco
+    pintura.strokeWidth = 2f * escala
+    pintura.style = Paint.Style.STROKE
+    val manguera = Path().apply {
+        moveTo(centroX + 5f * escala, centroY - 4f * escala)
+        cubicTo(
+            centroX + 14f * escala,
+            centroY - 2f * escala,
+            centroX + 13f * escala,
+            centroY + 10f * escala,
+            centroX + 8f * escala,
+            centroY + 8f * escala
+        )
+    }
+    lienzo.drawPath(manguera, pintura)
+
+    return BitmapDrawable(contexto.resources, mapaBits)
+}
+
+private fun centrarMapaEnUbicacion(
+    mapa: MapView,
+    latitud: Double,
+    longitud: Double,
+    radioKm: Int
+) {
+    mapa.controller.setZoom(zoomParaRadio(radioKm))
+    mapa.controller.animateTo(GeoPoint(latitud, longitud))
+}
 
 private fun puntosCirculo(centro: GeoPoint, radioMetros: Double): List<GeoPoint> {
     val radioTierraMetros = 6371000.0
@@ -616,3 +734,10 @@ private fun Context.abrirRutaEnMaps(gasolinera: Gasolinera) {
     )
     startActivity(Intent(Intent.ACTION_VIEW, uri))
 }
+
+private tailrec fun Context.encontrarActividad(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.encontrarActividad()
+        else -> null
+    }
