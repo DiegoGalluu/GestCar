@@ -146,10 +146,12 @@ fun PantallaGasolineras(
 
     Scaffold(
         topBar = {
-            BarraSuperiorCompacta(
-                titulo = "Gasolineras",
-                alVolver = alVolver
-            )
+            Box(modifier = Modifier.background(MaterialTheme.colorScheme.primary)) {
+                BarraSuperiorCompacta(
+                    titulo = "Gasolineras",
+                    alVolver = alVolver
+                )
+            }
         }
     ) { padding ->
         Column(
@@ -249,8 +251,7 @@ fun PantallaGasolineras(
                 radios = radios,
                 totalGasolineras = estado.totalGasolinerasFiltradas,
                 marcadoresMostrados = estado.gasolinerasFiltradas.size,
-                alCambiarIndice = { indice -> viewModel.cambiarRadio(radios[indice]) },
-                alAplicar = { viewModel.aplicarFiltro() }
+                alCambiarIndice = { indice -> viewModel.cambiarRadio(radios[indice]) }
             )
 
             estado.mensajeError?.let { mensaje ->
@@ -275,13 +276,13 @@ private fun PanelRadioGasolineras(
     radios: List<Int>,
     totalGasolineras: Int,
     marcadoresMostrados: Int,
-    alCambiarIndice: (Int) -> Unit,
-    alAplicar: () -> Unit
+    alCambiarIndice: (Int) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
@@ -305,13 +306,6 @@ private fun PanelRadioGasolineras(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-
-            Button(
-                onClick = alAplicar,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Aplicar")
-            }
         }
     }
 }
