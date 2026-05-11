@@ -22,7 +22,9 @@ import android.net.Uri
 import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
@@ -33,6 +35,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -41,6 +44,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MyLocation
@@ -70,6 +75,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
@@ -207,11 +213,14 @@ fun PantallaGasolineras(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .clipToBounds()
             ) {
                 val mapView = remember { crearMapViewNativo(contexto) }
 
                 AndroidView(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clipToBounds(),
                     factory = { mapView },
                     update = { mapa ->
                         actualizarMapaNativo(
@@ -346,55 +355,78 @@ private fun DialogoFiltrosGasolineras(
     alLimpiar: () -> Unit,
     alCerrar: () -> Unit
 ) {
+    var combustibleAbierto by remember { mutableStateOf(false) }
+    var ordenAbierto by remember { mutableStateOf(false) }
+    val resumenCombustible = combustibleSeleccionado ?: "Todos"
+    val resumenOrden = if (ordenGasolineras == OrdenGasolineras.PRECIO) {
+        "Precio más bajo"
+    } else {
+        "Más cercanas"
+    }
+
     AlertDialog(
         onDismissRequest = alCerrar,
         title = { Text("Filtrar gasolineras") },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier
+                    .heightIn(max = 460.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(
-                    text = "Combustible",
-                    style = MaterialTheme.typography.titleSmall
+                CabeceraSeccionFiltro(
+                    titulo = "Combustible",
+                    resumen = resumenCombustible,
+                    abierta = combustibleAbierto,
+                    alPulsar = { combustibleAbierto = !combustibleAbierto }
                 )
 
-                FilaFiltroGasolinera(
-                    texto = "Todos",
-                    seleccionado = combustibleSeleccionado == null,
-                    habilitado = true,
-                    alPulsar = { alSeleccionarCombustible(null) }
-                )
+                AnimatedVisibility(visible = combustibleAbierto) {
+                    Column {
+                        FilaFiltroGasolinera(
+                            texto = "Todos",
+                            seleccionado = combustibleSeleccionado == null,
+                            habilitado = true,
+                            alPulsar = { alSeleccionarCombustible(null) }
+                        )
 
-                combustibles.forEach { combustible ->
-                    FilaFiltroGasolinera(
-                        texto = combustible,
-                        seleccionado = combustibleSeleccionado == combustible,
-                        habilitado = true,
-                        alPulsar = { alSeleccionarCombustible(combustible) }
-                    )
+                        combustibles.forEach { combustible ->
+                            FilaFiltroGasolinera(
+                                texto = combustible,
+                                seleccionado = combustibleSeleccionado == combustible,
+                                habilitado = true,
+                                alPulsar = { alSeleccionarCombustible(combustible) }
+                            )
+                        }
+                    }
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
 
-                Text(
-                    text = "Orden",
-                    style = MaterialTheme.typography.titleSmall
+                CabeceraSeccionFiltro(
+                    titulo = "Orden",
+                    resumen = resumenOrden,
+                    abierta = ordenAbierto,
+                    alPulsar = { ordenAbierto = !ordenAbierto }
                 )
 
-                FilaFiltroGasolinera(
-                    texto = "Más cercanas",
-                    seleccionado = ordenGasolineras == OrdenGasolineras.DISTANCIA,
-                    habilitado = true,
-                    alPulsar = { alSeleccionarOrden(OrdenGasolineras.DISTANCIA) }
-                )
+                AnimatedVisibility(visible = ordenAbierto) {
+                    Column {
+                        FilaFiltroGasolinera(
+                            texto = "Más cercanas",
+                            seleccionado = ordenGasolineras == OrdenGasolineras.DISTANCIA,
+                            habilitado = true,
+                            alPulsar = { alSeleccionarOrden(OrdenGasolineras.DISTANCIA) }
+                        )
 
-                FilaFiltroGasolinera(
-                    texto = "Precio más bajo",
-                    seleccionado = ordenGasolineras == OrdenGasolineras.PRECIO,
-                    habilitado = combustibleSeleccionado != null,
-                    alPulsar = { alSeleccionarOrden(OrdenGasolineras.PRECIO) }
-                )
+                        FilaFiltroGasolinera(
+                            texto = "Precio más bajo",
+                            seleccionado = ordenGasolineras == OrdenGasolineras.PRECIO,
+                            habilitado = combustibleSeleccionado != null,
+                            alPulsar = { alSeleccionarOrden(OrdenGasolineras.PRECIO) }
+                        )
+                    }
+                }
 
                 if (combustibleSeleccionado == null) {
                     Text(
@@ -416,6 +448,41 @@ private fun DialogoFiltrosGasolineras(
             }
         }
     )
+}
+
+@Composable
+private fun CabeceraSeccionFiltro(
+    titulo: String,
+    resumen: String,
+    abierta: Boolean,
+    alPulsar: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = alPulsar)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = titulo,
+                style = MaterialTheme.typography.titleSmall
+            )
+            Text(
+                text = resumen,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Icon(
+            imageVector = if (abierta) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary
+        )
+    }
 }
 
 @Composable
@@ -444,7 +511,6 @@ private fun FilaFiltroGasolinera(
         )
     }
 }
-
 @Composable
 private fun PanelRadioGasolineras(
     radioKm: Int,
@@ -692,13 +758,25 @@ private fun actualizarMapaNativo(
     mapa.overlays.add(crearCirculoBusqueda(centro, estado.radioKm))
     mapa.overlays.add(crearMarcadorCentro(mapa, centro, estado.nombreCentro))
     val iconoGasolinera = crearIconoGasolinera(mapa.context)
+    val iconoGasolineraBarata = crearIconoGasolinera(mapa.context, destacada = true)
+    val idGasolineraMasBarata = estado.combustibleSeleccionado
+        ?.takeIf { estado.ordenGasolineras == OrdenGasolineras.PRECIO }
+        ?.let { combustible ->
+            estado.gasolinerasFiltradas.minByOrNull { gasolinera ->
+                gasolinera.precioDeCombustibleVisible(combustible) ?: Double.MAX_VALUE
+            }?.id
+        }
 
     estado.gasolinerasFiltradas.forEach { gasolinera ->
         mapa.overlays.add(
             crearMarcadorGasolinera(
                 mapa = mapa,
                 gasolinera = gasolinera,
-                icono = iconoGasolinera,
+                icono = if (gasolinera.id == idGasolineraMasBarata) {
+                    iconoGasolineraBarata
+                } else {
+                    iconoGasolinera
+                },
                 alSeleccionarGasolinera = alSeleccionarGasolinera
             )
         )
@@ -746,16 +824,24 @@ private fun crearMarcadorGasolinera(
         }
     }
 
-private fun crearIconoGasolinera(contexto: Context): Drawable {
+private fun crearIconoGasolinera(contexto: Context, destacada: Boolean = false): Drawable {
     val escala = contexto.resources.displayMetrics.density
-    val ancho = (42 * escala).roundToInt()
-    val alto = (54 * escala).roundToInt()
+    val ancho = ((if (destacada) 46 else 42) * escala).roundToInt()
+    val alto = ((if (destacada) 58 else 54) * escala).roundToInt()
     val mapaBits = Bitmap.createBitmap(ancho, alto, Bitmap.Config.ARGB_8888)
     val lienzo = Canvas(mapaBits)
     val pintura = Paint(Paint.ANTI_ALIAS_FLAG)
 
-    val azul = android.graphics.Color.rgb(31, 78, 121)
-    val azulClaro = android.graphics.Color.rgb(74, 144, 217)
+    val azul = if (destacada) {
+        android.graphics.Color.rgb(46, 139, 87)
+    } else {
+        android.graphics.Color.rgb(31, 78, 121)
+    }
+    val azulClaro = if (destacada) {
+        android.graphics.Color.rgb(132, 210, 157)
+    } else {
+        android.graphics.Color.rgb(74, 144, 217)
+    }
     val blanco = android.graphics.Color.WHITE
 
     val centroX = ancho / 2f
@@ -882,6 +968,9 @@ private fun textoContadorGasolineras(
 
         else -> "$totalGasolineras gasolineras encontradas"
     }
+
+private fun Gasolinera.precioDeCombustibleVisible(combustible: String): Double? =
+    precios.firstOrNull { precio -> precio.nombre == combustible }?.precio
 
 private fun Context.tienePermisoUbicacion(): Boolean =
     ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
