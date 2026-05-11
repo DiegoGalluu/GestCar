@@ -80,4 +80,7 @@ dependencies {
 
     // imagenes
     implementation(libs.coil.compose)
+
+    // mapas nativos con teselas openstreetmap
+    implementation(libs.osmdroid.android)
 }

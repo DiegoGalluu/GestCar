@@ -18,6 +18,7 @@ import kotlin.math.sqrt
 data class EstadoGasolineras(
     val gasolineras: List<Gasolinera> = emptyList(),
     val gasolinerasFiltradas: List<Gasolinera> = emptyList(),
+    val totalGasolinerasFiltradas: Int = 0,
     val centroLatitud: Double = 40.4168,
     val centroLongitud: Double = -3.7038,
     val nombreCentro: String = "Madrid",
@@ -44,13 +45,16 @@ class GasolineraViewModel : ViewModel() {
             val resultado = repositorio.obtenerGasolineras()
             resultado.onSuccess { gasolineras ->
                 _estado.update { estadoActual ->
+                    val filtro = gasolineras.filtrarPorRadio(
+                        centroLatitud = estadoActual.centroLatitud,
+                        centroLongitud = estadoActual.centroLongitud,
+                        radioKm = estadoActual.radioKm
+                    )
+
                     estadoActual.copy(
                         gasolineras = gasolineras,
-                        gasolinerasFiltradas = gasolineras.filtrarPorRadio(
-                            centroLatitud = estadoActual.centroLatitud,
-                            centroLongitud = estadoActual.centroLongitud,
-                            radioKm = estadoActual.radioKm
-                        ),
+                        gasolinerasFiltradas = filtro.marcadores,
+                        totalGasolinerasFiltradas = filtro.total,
                         estaCargando = false,
                         mensajeError = null
                     )
@@ -67,32 +71,50 @@ class GasolineraViewModel : ViewModel() {
     }
 
     fun cambiarRadio(radioKm: Int) {
-        _estado.update { it.copy(radioKm = radioKm) }
+        _estado.update { estadoActual ->
+            val filtro = estadoActual.gasolineras.filtrarPorRadio(
+                centroLatitud = estadoActual.centroLatitud,
+                centroLongitud = estadoActual.centroLongitud,
+                radioKm = radioKm
+            )
+
+            estadoActual.copy(
+                radioKm = radioKm,
+                gasolinerasFiltradas = filtro.marcadores,
+                totalGasolinerasFiltradas = filtro.total
+            )
+        }
     }
 
     fun aplicarFiltro() {
         _estado.update { estadoActual ->
+            val filtro = estadoActual.gasolineras.filtrarPorRadio(
+                centroLatitud = estadoActual.centroLatitud,
+                centroLongitud = estadoActual.centroLongitud,
+                radioKm = estadoActual.radioKm
+            )
+
             estadoActual.copy(
-                gasolinerasFiltradas = estadoActual.gasolineras.filtrarPorRadio(
-                    centroLatitud = estadoActual.centroLatitud,
-                    centroLongitud = estadoActual.centroLongitud,
-                    radioKm = estadoActual.radioKm
-                )
+                gasolinerasFiltradas = filtro.marcadores,
+                totalGasolinerasFiltradas = filtro.total
             )
         }
     }
 
     fun usarUbicacion(latitud: Double, longitud: Double) {
         _estado.update { estadoActual ->
+            val filtro = estadoActual.gasolineras.filtrarPorRadio(
+                centroLatitud = latitud,
+                centroLongitud = longitud,
+                radioKm = estadoActual.radioKm
+            )
+
             estadoActual.copy(
                 centroLatitud = latitud,
                 centroLongitud = longitud,
                 nombreCentro = "Tu ubicación",
-                gasolinerasFiltradas = estadoActual.gasolineras.filtrarPorRadio(
-                    centroLatitud = latitud,
-                    centroLongitud = longitud,
-                    radioKm = estadoActual.radioKm
-                )
+                gasolinerasFiltradas = filtro.marcadores,
+                totalGasolinerasFiltradas = filtro.total
             )
         }
     }
@@ -101,8 +123,8 @@ class GasolineraViewModel : ViewModel() {
         centroLatitud: Double,
         centroLongitud: Double,
         radioKm: Int
-    ): List<Gasolinera> =
-        map { gasolinera ->
+    ): ResultadoFiltroGasolineras {
+        val gasolinerasOrdenadas = map { gasolinera ->
             gasolinera to distanciaKm(
                 latitudOrigen = centroLatitud,
                 longitudOrigen = centroLongitud,
@@ -112,8 +134,13 @@ class GasolineraViewModel : ViewModel() {
         }
             .filter { (_, distancia) -> distancia <= radioKm }
             .sortedBy { (_, distancia) -> distancia }
-            .take(MAXIMO_MARCADORES)
             .map { (gasolinera, _) -> gasolinera }
+
+        return ResultadoFiltroGasolineras(
+            total = gasolinerasOrdenadas.size,
+            marcadores = gasolinerasOrdenadas.take(MAXIMO_MARCADORES)
+        )
+    }
 
     private fun distanciaKm(
         latitudOrigen: Double,
@@ -136,3 +163,8 @@ class GasolineraViewModel : ViewModel() {
         private const val MAXIMO_MARCADORES = 350
     }
 }
+
+private data class ResultadoFiltroGasolineras(
+    val total: Int,
+    val marcadores: List<Gasolinera>
+)

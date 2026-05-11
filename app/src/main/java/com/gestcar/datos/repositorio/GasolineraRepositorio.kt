@@ -39,12 +39,11 @@ class GasolineraRepositorio {
             try {
                 val respuesta = conexion.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
                 val raiz = json.parseToJsonElement(respuesta).jsonObject
-                val gasolineras = raiz["ListaEESSPrecio"]
+                raiz["ListaEESSPrecio"]
                     ?.jsonArray
                     ?.mapNotNull { elemento -> elemento.jsonObject.aGasolinera() }
+                    ?.distinctBy { gasolinera -> gasolinera.id }
                     .orEmpty()
-
-                gasolineras
             } finally {
                 conexion.disconnect()
             }
@@ -52,6 +51,9 @@ class GasolineraRepositorio {
     }
 
     private fun JsonObject.aGasolinera(): Gasolinera? {
+        val tipoVenta = texto("Tipo Venta")
+        if (tipoVenta.isNotBlank() && !tipoVenta.equals("P", ignoreCase = true)) return null
+
         val latitud = texto("Latitud").aNumeroDecimal() ?: return null
         val longitud = texto("Longitud (WGS84)").aNumeroDecimal() ?: return null
         val id = texto("IDEESS").ifBlank {
@@ -63,6 +65,7 @@ class GasolineraRepositorio {
                 PrecioCombustibleGasolinera(nombre = nombre, precio = precio)
             }
         }
+        if (precios.isEmpty()) return null
 
         return Gasolinera(
             id = id,
