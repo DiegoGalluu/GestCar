@@ -44,6 +44,7 @@ import com.gestcar.ui.viewmodel.RecordatorioViewModel
 import com.gestcar.ui.viewmodel.UNIDAD_TIEMPO_ANIOS
 import com.gestcar.ui.viewmodel.UNIDAD_TIEMPO_DIAS
 import com.gestcar.ui.viewmodel.UNIDAD_TIEMPO_MESES
+import com.gestcar.ui.viewmodel.UNIDAD_TIEMPO_SEMANAS
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -201,6 +202,7 @@ private fun textoPeriodicidadRecordatorio(
     if (cantidadTiempo != null && cantidadTiempo > 0 && unidadTiempo != null) {
         val unidad = when (unidadTiempo) {
             UNIDAD_TIEMPO_DIAS -> if (cantidadTiempo == 1) "día" else "días"
+            UNIDAD_TIEMPO_SEMANAS -> if (cantidadTiempo == 1) "semana" else "semanas"
             UNIDAD_TIEMPO_MESES -> if (cantidadTiempo == 1) "mes" else "meses"
             UNIDAD_TIEMPO_ANIOS -> if (cantidadTiempo == 1) "año" else "años"
             else -> null

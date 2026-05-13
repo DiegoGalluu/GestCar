@@ -67,8 +67,7 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
             _estadoFormulario.value = EstadoFormularioRecordatorio(
                 recordatorio = Recordatorio(
                     id = UUID.randomUUID().toString(),
-                    vehiculoId = vehiculoId,
-                    fechaLimite = System.currentTimeMillis()
+                    vehiculoId = vehiculoId
                 ),
                 kilometrajeVehiculoActual = vehiculo?.kilometraje ?: 0.0
             )
@@ -234,6 +233,7 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
 
         val campoCalendario = when (unidad) {
             UNIDAD_TIEMPO_DIAS -> Calendar.DAY_OF_YEAR
+            UNIDAD_TIEMPO_SEMANAS -> Calendar.WEEK_OF_YEAR
             UNIDAD_TIEMPO_MESES -> Calendar.MONTH
             UNIDAD_TIEMPO_ANIOS -> Calendar.YEAR
             else -> return null
@@ -247,5 +247,6 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
 }
 
 const val UNIDAD_TIEMPO_DIAS = "DIAS"
+const val UNIDAD_TIEMPO_SEMANAS = "SEMANAS"
 const val UNIDAD_TIEMPO_MESES = "MESES"
 const val UNIDAD_TIEMPO_ANIOS = "ANIOS"
