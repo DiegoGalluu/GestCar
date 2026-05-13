@@ -101,6 +101,7 @@ import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -350,6 +351,14 @@ fun PantallaGasolineras(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
+
+                ControlesZoomMapa(
+                    alAcercar = { acercarMapa(mapView) },
+                    alAlejar = { alejarMapa(mapView) },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                )
 
                 if (estado.estaCargando) {
                     Card(
@@ -696,6 +705,47 @@ private fun SelectorRadioGasolineras(
 }
 
 @Composable
+private fun ControlesZoomMapa(
+    alAcercar: () -> Unit,
+    alAlejar: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        BotonZoomMapa(texto = "+", alPulsar = alAcercar)
+        BotonZoomMapa(texto = "-", alPulsar = alAlejar)
+    }
+}
+
+@Composable
+private fun BotonZoomMapa(
+    texto: String,
+    alPulsar: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .size(44.dp)
+            .clickable(onClick = alPulsar),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = texto,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
 private fun TarjetaGasolineraSeleccionada(
     gasolinera: Gasolinera,
     combustibleSeleccionado: String?,
@@ -798,11 +848,22 @@ private fun crearMapViewNativo(contexto: Context): MapView {
     return MapView(contexto).apply {
         setTileSource(TileSourceFactory.MAPNIK)
         setMultiTouchControls(true)
+        zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
         minZoomLevel = 5.0
         maxZoomLevel = 19.0
         controller.setZoom(12.0)
         controller.setCenter(GeoPoint(40.4168, -3.7038))
     }
+}
+
+private fun acercarMapa(mapa: MapView) {
+    val nuevoZoom = (mapa.zoomLevelDouble + 1.0).coerceAtMost(mapa.maxZoomLevel)
+    mapa.controller.setZoom(nuevoZoom)
+}
+
+private fun alejarMapa(mapa: MapView) {
+    val nuevoZoom = (mapa.zoomLevelDouble - 1.0).coerceAtLeast(mapa.minZoomLevel)
+    mapa.controller.setZoom(nuevoZoom)
 }
 
 private fun actualizarMapaNativo(
@@ -915,6 +976,14 @@ private fun agruparGasolinerasPorPantalla(
     gasolineras: List<Gasolinera>
 ): List<GrupoGasolineras> {
     if (gasolineras.isEmpty()) return emptyList()
+    if (mapa.zoomLevelDouble >= mapa.maxZoomLevel - 0.75) {
+        return gasolineras.map { gasolinera ->
+            GrupoGasolineras(
+                gasolineras = listOf(gasolinera),
+                centro = GeoPoint(gasolinera.latitud, gasolinera.longitud)
+            )
+        }
+    }
 
     val escala = mapa.context.resources.displayMetrics.density
     val radioAgrupacionPx = (70f * escala).roundToInt()
