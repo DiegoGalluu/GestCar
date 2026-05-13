@@ -865,8 +865,6 @@ private fun actualizarMapaNativo(
                 crearMarcadorGrupoGasolineras(
                     mapa = mapa,
                     grupo = grupo,
-                    estado = estado,
-                    gasolineraSeleccionadaId = gasolineraSeleccionadaId,
                     alSeleccionarGasolinera = alSeleccionarGasolinera
                 )
             )
@@ -1012,8 +1010,6 @@ private fun crearMarcadorGasolinera(
 private fun crearMarcadorGrupoGasolineras(
     mapa: MapView,
     grupo: GrupoGasolineras,
-    estado: EstadoGasolineras,
-    gasolineraSeleccionadaId: String?,
     alSeleccionarGasolinera: (Gasolinera) -> Unit
 ): Marker =
     Marker(mapa).apply {
@@ -1022,19 +1018,22 @@ private fun crearMarcadorGrupoGasolineras(
         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
         icon = crearIconoGrupoGasolineras(mapa.context, grupo.gasolineras.size)
         setOnMarkerClickListener { _, _ ->
-            // tocar un grupo solo acerca el zoom actual, no movemos el mapa hacia el cluster
-            // si el usuario ya se habia orientado visualmente, no le cambiamos el punto de referencia
-            val nuevoZoom = (mapa.zoomLevelDouble + 2.0).coerceAtMost(mapa.maxZoomLevel)
-            mapa.controller.setZoom(nuevoZoom)
-            mapa.post {
-                actualizarMapaNativo(
-                    mapa = mapa,
-                    estado = estado,
-                    gasolineraSeleccionadaId = gasolineraSeleccionadaId,
-                    alSeleccionarGasolinera = alSeleccionarGasolinera,
-                    centrarMapa = false
+            // al tocar un grupo no movemos ni acercamos el mapa
+            // solo cambiamos ese circulo por las chinchetas reales que contiene
+            // asi el usuario no pierde la referencia visual de donde estaba mirando
+            mapa.overlays.remove(this)
+            val iconoGasolinera = crearIconoGasolinera(mapa.context)
+            grupo.gasolineras.forEach { gasolinera ->
+                mapa.overlays.add(
+                    crearMarcadorGasolinera(
+                        mapa = mapa,
+                        gasolinera = gasolinera,
+                        icono = iconoGasolinera,
+                        alSeleccionarGasolinera = alSeleccionarGasolinera
+                    )
                 )
             }
+            mapa.invalidate()
             true
         }
     }
