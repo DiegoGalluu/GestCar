@@ -97,6 +97,9 @@ import com.gestcar.ui.viewmodel.EstadoGasolineras
 import com.gestcar.ui.viewmodel.GasolineraViewModel
 import com.gestcar.ui.viewmodel.OrdenGasolineras
 import org.osmdroid.config.Configuration
+import org.osmdroid.events.MapListener
+import org.osmdroid.events.ScrollEvent
+import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -220,6 +223,9 @@ fun PantallaGasolineras(
                     .clipToBounds()
             ) {
                 val mapView = remember { crearMapViewNativo(contexto) }
+                var claveCentradoAnterior by remember {
+                    mutableStateOf<Triple<Double, Double, Int>?>(null)
+                }
 
                 AndroidView(
                     modifier = Modifier
@@ -227,15 +233,51 @@ fun PantallaGasolineras(
                         .clipToBounds(),
                     factory = { mapView },
                     update = { mapa ->
+                        val claveCentrado = Triple(
+                            estado.centroLatitud,
+                            estado.centroLongitud,
+                            estado.radioKm
+                        )
+                        val debeCentrar = claveCentradoAnterior != claveCentrado
+                        if (debeCentrar) {
+                            claveCentradoAnterior = claveCentrado
+                        }
+
                         actualizarMapaNativo(
                             mapa = mapa,
                             estado = estado,
                             gasolineraSeleccionadaId = gasolineraSeleccionada?.id,
                             alSeleccionarGasolinera = { gasolineraSeleccionada = it },
-                            centrarMapa = true
+                            centrarMapa = debeCentrar
                         )
                     }
                 )
+
+                DisposableEffect(mapView, estado, gasolineraSeleccionada?.id) {
+                    val listener = object : MapListener {
+                        override fun onScroll(event: ScrollEvent?): Boolean = false
+
+                        override fun onZoom(event: ZoomEvent?): Boolean {
+                            // al hacer zoom recalculamos los grupos sin tocar el centro del mapa
+                            // asi los marcadores se abren de forma natural y el usuario no pierde la orientacion
+                            mapView.post {
+                                actualizarMapaNativo(
+                                    mapa = mapView,
+                                    estado = estado,
+                                    gasolineraSeleccionadaId = gasolineraSeleccionada?.id,
+                                    alSeleccionarGasolinera = { gasolineraSeleccionada = it },
+                                    centrarMapa = false
+                                )
+                            }
+                            return false
+                        }
+                    }
+
+                    mapView.addMapListener(listener)
+                    onDispose {
+                        mapView.removeMapListener(listener)
+                    }
+                }
 
                 DisposableEffect(mapView) {
                     mapView.onResume()
@@ -446,7 +488,7 @@ private fun DialogoFiltrosGasolineras(
         },
         confirmButton = {
             TextButton(onClick = alCerrar) {
-                Text("Cerrar")
+                Text("Aceptar")
             }
         },
         dismissButton = {
@@ -980,21 +1022,19 @@ private fun crearMarcadorGrupoGasolineras(
         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
         icon = crearIconoGrupoGasolineras(mapa.context, grupo.gasolineras.size)
         setOnMarkerClickListener { _, _ ->
+            // tocar un grupo solo acerca el zoom actual, no movemos el mapa hacia el cluster
+            // si el usuario ya se habia orientado visualmente, no le cambiamos el punto de referencia
             val nuevoZoom = (mapa.zoomLevelDouble + 2.0).coerceAtMost(mapa.maxZoomLevel)
             mapa.controller.setZoom(nuevoZoom)
-            mapa.controller.animateTo(grupo.centro)
-            mapa.postDelayed(
-                {
-                    actualizarMapaNativo(
-                        mapa = mapa,
-                        estado = estado,
-                        gasolineraSeleccionadaId = gasolineraSeleccionadaId,
-                        alSeleccionarGasolinera = alSeleccionarGasolinera,
-                        centrarMapa = false
-                    )
-                },
-                350L
-            )
+            mapa.post {
+                actualizarMapaNativo(
+                    mapa = mapa,
+                    estado = estado,
+                    gasolineraSeleccionadaId = gasolineraSeleccionadaId,
+                    alSeleccionarGasolinera = alSeleccionarGasolinera,
+                    centrarMapa = false
+                )
+            }
             true
         }
     }
