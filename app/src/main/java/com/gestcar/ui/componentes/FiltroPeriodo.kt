@@ -5,20 +5,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -46,14 +46,18 @@ fun DialogoFiltroPeriodo(
 
     AlertDialog(
         onDismissRequest = alCancelar,
-        title = { Text(titulo) },
+        shape = RoundedCornerShape(20.dp),
+        containerColor = Color.White,
+        title = null,
         text = {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = titulo,
+                    color = Color.Black,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)
+                )
+                HorizontalDivider(color = Color.Black.copy(alpha = 0.16f))
                 opciones.forEach { (periodo, etiqueta) ->
                     FilaOpcionPeriodo(
                         etiqueta = etiqueta,
@@ -62,19 +66,16 @@ fun DialogoFiltroPeriodo(
                     )
                     if (periodo != opciones.last().first) {
                         HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 20.dp),
                             color = Color.Black.copy(alpha = 0.16f)
                         )
                     }
                 }
+                HorizontalDivider(color = Color.Black.copy(alpha = 0.16f))
+                FilaCerrarFiltro(alCancelar)
             }
         },
         confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = alCancelar) {
-                Text("Cerrar")
-            }
-        }
+        dismissButton = {}
     )
 }
 
@@ -95,6 +96,25 @@ private fun FilaOpcionPeriodo(
             .clickable(onClick = alPulsar)
             .padding(horizontal = 22.dp, vertical = 16.dp)
     )
+}
+
+@Composable
+private fun FilaCerrarFiltro(alCancelar: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp)
+            .clickable(onClick = alCancelar)
+            .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Cerrar",
+            color = Color(0xFF1F4E79),
+            fontWeight = FontWeight.Medium
+        )
+    }
 }
 
 @Composable
