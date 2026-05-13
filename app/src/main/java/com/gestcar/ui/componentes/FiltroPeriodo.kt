@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.gestcar.ui.viewmodel.PeriodoRepostajes
 import java.util.Calendar
 
@@ -54,6 +55,7 @@ fun DialogoFiltroPeriodo(
                 Text(
                     text = titulo,
                     color = Color.Black,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)
                 )
