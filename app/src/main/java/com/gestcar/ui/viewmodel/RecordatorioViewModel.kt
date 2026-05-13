@@ -107,13 +107,6 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
                 return@launch
             }
 
-            if (recordatorio.fechaLimite == null && recordatorio.kilometrajeLimite == null) {
-                _estadoFormulario.value = estadoActual.copy(
-                    mensajeError = "Indica una fecha límite o un kilometraje límite"
-                )
-                return@launch
-            }
-
             if (recordatorio.kilometrajeLimite != null && recordatorio.kilometrajeLimite <= 0) {
                 _estadoFormulario.value = estadoActual.copy(
                     mensajeError = "El kilometraje límite debe ser mayor que cero"

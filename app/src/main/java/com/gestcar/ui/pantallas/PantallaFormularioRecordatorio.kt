@@ -37,7 +37,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -83,11 +82,10 @@ fun PantallaFormularioRecordatorio(
     val valorKilometrosFormulario = recordatorio.periodicidadKilometros ?: recordatorio.kilometrajeLimite
     val kilometrosInvalidos = avisoKilometrosActivo && (valorKilometrosFormulario == null || valorKilometrosFormulario <= 0)
     val tiempoPeriodicoInvalido = recordatorio.periodicidadTiempoCantidad != null && recordatorio.periodicidadTiempoCantidad <= 0
-    val sinObjetivo = !avisoFechaActivo && !avisoKilometrosActivo
     val kilometrajeInferiorNoPeriodico = recordatorio.periodicidadKilometros == null &&
         recordatorio.kilometrajeLimite != null &&
         recordatorio.kilometrajeLimite < kilometrajeActual
-    val hayErrores = conceptoVacio || sinObjetivo || kilometrosInvalidos || tiempoPeriodicoInvalido
+    val hayErrores = conceptoVacio || kilometrosInvalidos || tiempoPeriodicoInvalido
 
     LaunchedEffect(vehiculoId, recordatorioId) {
         if (esNuevo) {
@@ -139,37 +137,64 @@ fun PantallaFormularioRecordatorio(
                 abierta = seccionFechaAbierta,
                 alCambiar = { seccionFechaAbierta = !seccionFechaAbierta }
             ) {
-                CampoFecha(
-                    etiqueta = "Fecha límite",
-                    fecha = recordatorio.fechaLimite ?: System.currentTimeMillis(),
-                    alSeleccionarFecha = {
-                        viewModel.actualizarFormulario(recordatorio.copy(fechaLimite = it))
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                FilaConSwitch(
-                    texto = "Periódico",
-                    activado = recordatorio.periodicidadTiempoCantidad != null,
-                    alCambiar = { activado ->
-                        if (activado) {
-                            val recordatorioConFecha = recordatorio.copy(
-                                fechaLimite = recordatorio.fechaLimite ?: System.currentTimeMillis()
+                if (recordatorio.fechaLimite == null) {
+                    Text(
+                        text = "Sin fecha límite",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextButton(
+                        onClick = {
+                            viewModel.actualizarFormulario(
+                                recordatorio.copy(fechaLimite = System.currentTimeMillis())
                             )
-                            viewModel.actualizarFormulario(recordatorioConFecha)
-                            mostrarDialogoTiempoPeriodico = true
-                        } else {
+                        }
+                    ) {
+                        Text("+ Añadir fecha")
+                    }
+                } else {
+                    CampoFecha(
+                        etiqueta = "Fecha límite",
+                        fecha = recordatorio.fechaLimite,
+                        alSeleccionarFecha = {
+                            viewModel.actualizarFormulario(recordatorio.copy(fechaLimite = it))
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    TextButton(
+                        onClick = {
                             viewModel.actualizarFormulario(
                                 recordatorio.copy(
+                                    fechaLimite = null,
                                     periodicidadTiempoCantidad = null,
                                     periodicidadTiempoUnidad = null
                                 )
                             )
                         }
+                    ) {
+                        Text("Quitar fecha")
                     }
-                )
 
-                TextoResumenPeriodicidadTiempo(recordatorio)
+                    FilaConSwitch(
+                        texto = "Periódico",
+                        activado = recordatorio.periodicidadTiempoCantidad != null,
+                        alCambiar = { activado ->
+                            if (activado) {
+                                mostrarDialogoTiempoPeriodico = true
+                            } else {
+                                viewModel.actualizarFormulario(
+                                    recordatorio.copy(
+                                        periodicidadTiempoCantidad = null,
+                                        periodicidadTiempoUnidad = null
+                                    )
+                                )
+                            }
+                        }
+                    )
+
+                    TextoResumenPeriodicidadTiempo(recordatorio)
+                }
             }
 
             SeccionDesplegableRecordatorio(
@@ -263,7 +288,6 @@ fun PantallaFormularioRecordatorio(
             MensajesValidacionRecordatorio(
                 mostrar = intentoGuardar,
                 conceptoVacio = conceptoVacio,
-                sinObjetivo = sinObjetivo,
                 kilometrosInvalidos = kilometrosInvalidos,
                 tiempoPeriodicoInvalido = tiempoPeriodicoInvalido
             )
@@ -289,7 +313,6 @@ fun PantallaFormularioRecordatorio(
                 mostrarDialogoTiempoPeriodico = false
                 viewModel.actualizarFormulario(
                     recordatorio.copy(
-                        fechaLimite = recordatorio.fechaLimite ?: System.currentTimeMillis(),
                         periodicidadTiempoCantidad = cantidad,
                         periodicidadTiempoUnidad = unidad
                     )
@@ -563,7 +586,6 @@ private fun TextoResumenPeriodicidadKilometros(recordatorio: Recordatorio) {
 private fun MensajesValidacionRecordatorio(
     mostrar: Boolean,
     conceptoVacio: Boolean,
-    sinObjetivo: Boolean,
     kilometrosInvalidos: Boolean,
     tiempoPeriodicoInvalido: Boolean
 ) {
@@ -573,7 +595,6 @@ private fun MensajesValidacionRecordatorio(
 
     when {
         conceptoVacio -> Snackbar { Text("Faltan campos obligatorios por rellenar") }
-        sinObjetivo -> Snackbar { Text("Indica una fecha o un kilometraje para el recordatorio") }
         kilometrosInvalidos -> Snackbar { Text("El kilometraje debe ser mayor que cero") }
         tiempoPeriodicoInvalido -> Snackbar { Text("La periodicidad por fecha debe ser mayor que cero") }
     }
