@@ -30,6 +30,7 @@
         <activity
             android:name=".ActividadPrincipal"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.GestCar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
