@@ -50,6 +50,8 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
 
     private val _estadoFormulario = MutableStateFlow(EstadoFormularioDocumentacion())
     val estadoFormulario: StateFlow<EstadoFormularioDocumentacion> = _estadoFormulario.asStateFlow()
+    private var trabajoDetalle: Job? = null
+    private var versionCambiosAdjuntos: Long = 0
 
     fun cargarDocumentos(vehiculoId: String) {
         trabajoLista?.cancel()
@@ -98,7 +100,9 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
     }
 
     fun cargarDetalle(documentoId: String) {
-        viewModelScope.launch {
+        trabajoDetalle?.cancel()
+        trabajoDetalle = viewModelScope.launch {
+            val versionInicioAdjuntos = versionCambiosAdjuntos
             val documentoInicial = repositorio.obtenerDocumentoPorId(documentoId) ?: return@launch
             val camposIniciales = repositorio.obtenerCamposLista(documentoId)
             val adjuntosIniciales = repositorio.obtenerAdjuntosLista(documentoId)
@@ -114,6 +118,9 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
             val documentoActualizado = repositorio.obtenerDocumentoPorId(documentoId) ?: return@launch
             val camposActualizados = repositorio.obtenerCamposLista(documentoId)
             val adjuntosActualizados = repositorio.obtenerAdjuntosLista(documentoId)
+            if (versionInicioAdjuntos != versionCambiosAdjuntos) {
+                return@launch
+            }
             _estadoFormulario.value = EstadoFormularioDocumentacion(
                 documento = documentoActualizado,
                 campos = camposActualizados.ifEmpty { listOf(campoVacio(documentoId)) },
@@ -279,6 +286,7 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
                     orden = estadoActual.adjuntos.size
                 )
             }.mapCatching { adjunto ->
+                versionCambiosAdjuntos++
                 val adjuntosInmediatos = ordenarAdjuntos(
                     estadoActual.adjuntos.filterNot { it.id == adjunto.id } + adjunto
                 )
@@ -295,7 +303,10 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
                     val adjuntosActualizados = repositorio.obtenerAdjuntosLista(documentoId)
                     val estadoVivo = _estadoFormulario.value
                     _estadoFormulario.value = estadoVivo.copy(
-                        adjuntos = ordenarAdjuntos(adjuntosActualizados),
+                        adjuntos = fusionarAdjuntosPreferiendoVisibles(
+                            visibles = estadoVivo.adjuntos,
+                            persistidos = adjuntosActualizados
+                        ),
                         mensajeError = null
                     )
                     cargarUrlsFirmadas(adjuntosActualizados)
@@ -310,10 +321,22 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
 
     fun eliminarAdjunto(adjunto: AdjuntoDocumento) {
         viewModelScope.launch {
+            versionCambiosAdjuntos++
+            val estadoDespuesDeEliminar = _estadoFormulario.value.copy(
+                adjuntos = _estadoFormulario.value.adjuntos.filterNot { it.id == adjunto.id },
+                urlsFirmadasAdjuntos = _estadoFormulario.value.urlsFirmadasAdjuntos - adjunto.id,
+                mensajeError = null
+            )
+            _estadoFormulario.value = estadoDespuesDeEliminar
+
             GestorArchivosDocumento.eliminarArchivo(adjunto)
             repositorio.eliminarAdjunto(adjunto)
+            val adjuntosPersistidos = repositorio.obtenerAdjuntosLista(adjunto.documentoId)
             _estadoFormulario.value = _estadoFormulario.value.copy(
-                adjuntos = repositorio.obtenerAdjuntosLista(adjunto.documentoId),
+                adjuntos = resolverAdjuntosTrasEliminar(
+                    visibles = _estadoFormulario.value.adjuntos,
+                    persistidos = adjuntosPersistidos
+                ),
                 urlsFirmadasAdjuntos = _estadoFormulario.value.urlsFirmadasAdjuntos - adjunto.id,
                 mensajeError = null
             )
@@ -350,6 +373,35 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
 
     private fun ordenarAdjuntos(adjuntos: List<AdjuntoDocumento>): List<AdjuntoDocumento> {
         return adjuntos.sortedWith(compareBy<AdjuntoDocumento> { it.orden }.thenBy { it.fechaAlta })
+    }
+
+    private fun fusionarAdjuntosPreferiendoVisibles(
+        visibles: List<AdjuntoDocumento>,
+        persistidos: List<AdjuntoDocumento>
+    ): List<AdjuntoDocumento> {
+        val persistidosPorId = persistidos.associateBy { it.id }
+        val visiblesActualizados = visibles.map { adjuntoVisible ->
+            persistidosPorId[adjuntoVisible.id]?.let { adjuntoPersistido ->
+                adjuntoPersistido.copy(
+                    uriLocal = adjuntoPersistido.uriLocal.ifBlank { adjuntoVisible.uriLocal }
+                )
+            } ?: adjuntoVisible
+        }
+        val idsVisibles = visiblesActualizados.map { it.id }.toSet()
+        return ordenarAdjuntos(visiblesActualizados + persistidos.filterNot { it.id in idsVisibles })
+    }
+
+    private fun resolverAdjuntosTrasEliminar(
+        visibles: List<AdjuntoDocumento>,
+        persistidos: List<AdjuntoDocumento>
+    ): List<AdjuntoDocumento> {
+        if (persistidos.isEmpty() && visibles.isNotEmpty()) {
+            return ordenarAdjuntos(visibles)
+        }
+        return fusionarAdjuntosPreferiendoVisibles(
+            visibles = visibles,
+            persistidos = persistidos
+        )
     }
 
     private fun campoVacio(
