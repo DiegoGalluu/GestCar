@@ -170,7 +170,13 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
                 fechaCompletado = fechaActual
             )
 
-            repositorio.guardar(recordatorioCompletado)
+            val resultado = repositorio.guardar(recordatorioCompletado)
+            if (resultado.isSuccess) {
+                _estadoFormulario.value = _estadoFormulario.value.copy(
+                    recordatorio = recordatorioCompletado,
+                    mensajeError = null
+                )
+            }
             crearSiguienteRecordatorioSiProcede(recordatorioCompletado)?.let { siguiente ->
                 repositorio.guardar(siguiente)
             }
@@ -180,12 +186,17 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
 
     fun reabrirRecordatorio(recordatorio: Recordatorio) {
         viewModelScope.launch {
-            repositorio.guardar(
-                recordatorio.copy(
-                    completado = false,
-                    fechaCompletado = null
-                )
+            val recordatorioReabierto = recordatorio.copy(
+                completado = false,
+                fechaCompletado = null
             )
+            val resultado = repositorio.guardar(recordatorioReabierto)
+            if (resultado.isSuccess) {
+                _estadoFormulario.value = _estadoFormulario.value.copy(
+                    recordatorio = recordatorioReabierto,
+                    mensajeError = null
+                )
+            }
             PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
         }
     }
