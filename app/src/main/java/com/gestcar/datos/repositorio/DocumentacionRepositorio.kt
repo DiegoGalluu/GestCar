@@ -93,7 +93,7 @@ class DocumentacionRepositorio(
             val ahora = System.currentTimeMillis()
             val documentoLimpio = documento.copy(
                 titulo = documento.titulo.trim(),
-                notas = documento.notas?.trim()?.takeIf { it.isNotBlank() },
+                notas = documento.notas?.trim().orEmpty(),
                 actualizadoEn = ahora
             )
 

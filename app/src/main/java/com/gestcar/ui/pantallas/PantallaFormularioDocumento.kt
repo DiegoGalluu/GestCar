@@ -221,7 +221,7 @@ fun PantallaFormularioDocumento(
                 OutlinedTextField(
                     value = documento.notas ?: "",
                     onValueChange = {
-                        viewModel.actualizarDocumento(documento.copy(notas = it.ifBlank { null }))
+                        viewModel.actualizarDocumento(documento.copy(notas = it))
                     },
                     label = { Text("Notas") },
                     minLines = 3,
