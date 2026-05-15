@@ -59,13 +59,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -305,7 +305,7 @@ fun PantallaGasolineras(
                     )
                 }
 
-                FloatingActionButton(
+                SmallFloatingActionButton(
                     onClick = { mostrarFiltros = true },
                     containerColor = MaterialTheme.colorScheme.surface,
                     modifier = Modifier
@@ -319,7 +319,7 @@ fun PantallaGasolineras(
                     )
                 }
 
-                FloatingActionButton(
+                SmallFloatingActionButton(
                     onClick = {
                         if (contexto.tienePermisoUbicacion()) {
                             solicitarUbicacionActual(
@@ -362,7 +362,7 @@ fun PantallaGasolineras(
                     alAlejar = { alejarMapa(mapView) },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(start = 16.dp, top = 84.dp, end = 16.dp, bottom = 16.dp)
+                        .padding(start = 16.dp, top = 64.dp, end = 16.dp, bottom = 16.dp)
                 )
 
                 if (estado.estaCargando) {
@@ -739,7 +739,7 @@ private fun BotonZoomMapa(
     descripcion: String,
     alPulsar: () -> Unit
 ) {
-    FloatingActionButton(
+    SmallFloatingActionButton(
         onClick = alPulsar,
         containerColor = MaterialTheme.colorScheme.surface
     ) {
