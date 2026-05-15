@@ -177,7 +177,7 @@ class DocumentacionRepositorio(
                 val documento = documentoDto.aEntidad()
                 val documentoLocal = documentoDao.obtenerPorId(documento.id)
                 val remotoEsMasNuevo = documentoLocal == null ||
-                    documento.actualizadoEn >= documentoLocal.actualizadoEn
+                    documento.actualizadoEn > documentoLocal.actualizadoEn
 
                 if (!remotoEsMasNuevo) {
                     return@forEach
@@ -292,7 +292,7 @@ class DocumentacionRepositorio(
             .sortedBy { it.orden }
             .forEach { adjunto ->
                 val adjuntoLocal = adjuntoDao.obtenerPorId(adjunto.id)
-                if (adjuntoLocal == null || adjunto.actualizadoEn >= adjuntoLocal.actualizadoEn) {
+                if (adjuntoLocal == null || adjunto.actualizadoEn > adjuntoLocal.actualizadoEn) {
                     adjuntoDao.insertar(adjunto)
                 }
             }

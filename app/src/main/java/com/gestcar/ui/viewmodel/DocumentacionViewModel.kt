@@ -10,6 +10,7 @@ import com.gestcar.datos.entidades.CampoDocumento
 import com.gestcar.datos.entidades.DocumentoVehiculo
 import com.gestcar.datos.repositorio.DocumentacionRepositorio
 import com.gestcar.util.GestorArchivosDocumento
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,13 +46,18 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
 
     private val _estadoLista = MutableStateFlow(EstadoListaDocumentacion())
     val estadoLista: StateFlow<EstadoListaDocumentacion> = _estadoLista.asStateFlow()
+    private var trabajoLista: Job? = null
 
     private val _estadoFormulario = MutableStateFlow(EstadoFormularioDocumentacion())
     val estadoFormulario: StateFlow<EstadoFormularioDocumentacion> = _estadoFormulario.asStateFlow()
 
     fun cargarDocumentos(vehiculoId: String) {
-        viewModelScope.launch {
-            _estadoLista.value = _estadoLista.value.copy(estaCargando = true, mensajeError = null)
+        trabajoLista?.cancel()
+        trabajoLista = viewModelScope.launch {
+            _estadoLista.value = _estadoLista.value.copy(
+                estaCargando = _estadoLista.value.documentos.isEmpty(),
+                mensajeError = null
+            )
             launch {
                 repositorio.sincronizar(vehiculoId)
             }
