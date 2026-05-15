@@ -25,4 +25,7 @@ interface AdjuntoDocumentoDao {
 
     @Delete
     suspend fun eliminar(adjunto: AdjuntoDocumento)
+
+    @Query("DELETE FROM adjuntos_documento WHERE id = :id")
+    suspend fun eliminarPorId(id: String)
 }

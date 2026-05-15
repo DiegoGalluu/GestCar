@@ -58,11 +58,13 @@ class DocumentacionRepositorio(
 
     suspend fun guardarAdjunto(adjunto: AdjuntoDocumento): Result<Unit> {
         return try {
-            adjuntoDao.insertar(adjunto)
+            val adjuntoActualizado = adjunto.copy(actualizadoEn = System.currentTimeMillis())
+            adjuntoDao.insertar(adjuntoActualizado)
             runCatching {
                 withTimeoutOrNull(TIEMPO_MAXIMO_SYNC_RAPIDA_MS) {
-                    val adjuntoSincronizado = sincronizarAdjunto(adjunto)
+                    val adjuntoSincronizado = sincronizarAdjunto(adjuntoActualizado)
                     adjuntoDao.insertar(adjuntoSincronizado)
+                    tocarDocumentoPadre(adjuntoSincronizado.documentoId, adjuntoSincronizado.actualizadoEn)
                 }
             }
             Result.success(Unit)
@@ -77,6 +79,7 @@ class DocumentacionRepositorio(
             runCatching {
                 withTimeoutOrNull(TIEMPO_MAXIMO_SYNC_RAPIDA_MS) {
                     eliminarAdjuntoRemoto(adjunto)
+                    tocarDocumentoPadre(adjunto.documentoId, System.currentTimeMillis())
                 }
             }
             Result.success(Unit)
@@ -179,12 +182,11 @@ class DocumentacionRepositorio(
                 val remotoEsMasNuevo = documentoLocal == null ||
                     documento.actualizadoEn > documentoLocal.actualizadoEn
 
-                if (!remotoEsMasNuevo) {
-                    return@forEach
+                if (remotoEsMasNuevo) {
+                    documentoDao.insertar(documento)
+                    descargarCamposDocumento(documento.id)
                 }
 
-                documentoDao.insertar(documento)
-                descargarCamposDocumento(documento.id)
                 runCatching {
                     descargarAdjuntosDocumento(documento.id)
                 }
@@ -284,18 +286,28 @@ class DocumentacionRepositorio(
     }
 
     private suspend fun descargarAdjuntosDocumento(documentoId: String) {
-        obtenerAdjuntosRemotos(documentoId)
+        val adjuntosRemotos = obtenerAdjuntosRemotos(documentoId)
             .map { dto ->
                 val adjuntoLocal = adjuntoDao.obtenerPorId(dto.id)
                 dto.aEntidad(uriLocal = adjuntoLocal?.uriLocal.orEmpty())
             }
             .sortedBy { it.orden }
-            .forEach { adjunto ->
-                val adjuntoLocal = adjuntoDao.obtenerPorId(adjunto.id)
-                if (adjuntoLocal == null || adjunto.actualizadoEn > adjuntoLocal.actualizadoEn) {
-                    adjuntoDao.insertar(adjunto)
-                }
+        val idsRemotos = adjuntosRemotos.map { it.id }.toSet()
+
+        adjuntoDao.obtenerPorDocumentoLista(documentoId)
+            .filter { adjunto -> adjunto.id !in idsRemotos && !adjunto.rutaStorage.isNullOrBlank() }
+            .forEach { adjunto -> adjuntoDao.eliminarPorId(adjunto.id) }
+
+        adjuntosRemotos.forEach { adjunto ->
+            val adjuntoLocal = adjuntoDao.obtenerPorId(adjunto.id)
+            val remotoEsMasNuevo = adjuntoLocal == null ||
+                adjunto.actualizadoEn >= adjuntoLocal.actualizadoEn ||
+                adjunto.rutaStorage != adjuntoLocal.rutaStorage
+
+            if (remotoEsMasNuevo) {
+                adjuntoDao.insertar(adjunto)
             }
+        }
     }
 
     private suspend fun sincronizarAdjuntosDocumento(documentoId: String) {
@@ -355,6 +367,22 @@ class DocumentacionRepositorio(
 
         ClienteSupabase.cliente.postgrest[tablaAdjuntosRemota]
             .delete { filter { eq("id", adjunto.id) } }
+    }
+
+    private suspend fun tocarDocumentoPadre(documentoId: String, actualizadoEn: Long) {
+        val documento = documentoDao.obtenerPorId(documentoId) ?: return
+        documentoDao.insertar(documento.copy(actualizadoEn = actualizadoEn))
+
+        ClienteSupabase.cliente.postgrest[tablaDocumentosRemota]
+            .update(
+                update = {
+                    set("actualizado_en", actualizadoEn)
+                },
+                request = {
+                    filter { eq("id", documentoId) }
+                    select(Columns.list("id"))
+                }
+            )
     }
 
     suspend fun obtenerUrlFirmadaAdjunto(adjunto: AdjuntoDocumento): String? {
