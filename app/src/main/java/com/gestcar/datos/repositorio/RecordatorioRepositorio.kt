@@ -67,21 +67,52 @@ class RecordatorioRepositorio(
         return try {
             // el usuario puede crear recordatorios sin red
             // al volver la conexion se suben antes de descargar lo remoto
-            recordatorioDao.obtenerPorVehiculoLista(vehiculoId).forEach { recordatorio ->
+            val errores = mutableListOf<Throwable>()
+            val recordatoriosLocales = recordatorioDao.obtenerPorVehiculoLista(vehiculoId)
+            val recordatoriosRemotosIniciales = runCatching {
+                ClienteSupabase.cliente.postgrest[tablaRemota]
+                    .select { filter { eq("vehiculo_id", vehiculoId) } }
+                    .decodeList<RecordatorioDto>()
+            }.getOrElse { emptyList() }
+            val recordatoriosRemotosPorId = recordatoriosRemotosIniciales.associateBy { it.id }
+
+            recordatoriosLocales.forEach { recordatorio ->
+                val recordatorioRemoto = recordatoriosRemotosPorId[recordatorio.id]
+                val localEsMasNuevo = recordatorioRemoto == null ||
+                    recordatorio.actualizadoEn > recordatorioRemoto.actualizadoEn
+
+                if (!localEsMasNuevo) {
+                    return@forEach
+                }
+
                 runCatching { sincronizarRecordatorio(recordatorio) }
+                    .onFailure { errores.add(it) }
             }
 
             val recordatoriosRemotos = runCatching {
                 ClienteSupabase.cliente.postgrest[tablaRemota]
                     .select { filter { eq("vehiculo_id", vehiculoId) } }
                     .decodeList<RecordatorioDto>()
-            }.getOrElse { emptyList() }
+            }.getOrElse { recordatoriosRemotosIniciales }
 
             recordatoriosRemotos.forEach { dto ->
-                recordatorioDao.insertar(dto.aEntidad())
+                val recordatorio = dto.aEntidad()
+                val recordatorioLocal = recordatorioDao.obtenerPorId(recordatorio.id)
+                val remotoEsMasNuevo = recordatorioLocal == null ||
+                    recordatorio.actualizadoEn >= recordatorioLocal.actualizadoEn
+
+                if (!remotoEsMasNuevo) {
+                    return@forEach
+                }
+
+                recordatorioDao.insertar(recordatorio)
             }
 
-            Result.success(Unit)
+            if (errores.isEmpty()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(errores.first())
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
