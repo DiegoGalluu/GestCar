@@ -19,9 +19,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -64,7 +61,6 @@ class ActividadPrincipal : ComponentActivity() {
                 authViewModelRef = authViewModel
                 val estadoAuth by authViewModel.estado.collectAsState()
                 val contexto = LocalContext.current
-                var esperandoCargaVehiculos by remember { mutableStateOf(false) }
 
                 // cuando hay una sesion activa observamos la conectividad
                 // cada vez que vuelve internet lanzamos una sincronizacion puntual
@@ -79,20 +75,9 @@ class ActividadPrincipal : ComponentActivity() {
                     }
                 }
 
-                // si el usuario ya tenia sesion no queremos mostrar login durante un segundo
-                // por eso mantenemos el splash hasta que supabase confirma sesion y vehiculos carga
-                LaunchedEffect(
-                    estadoAuth.estaComprobandoSesion,
-                    estadoAuth.estaAutenticado,
-                    estadoAuth.usuarioId
-                ) {
-                    esperandoCargaVehiculos = estadoAuth.estaAutenticado &&
-                        estadoAuth.usuarioId.isNotBlank() &&
-                        !estadoAuth.estaComprobandoSesion
-                }
-
-                // el grafo se monta solo cuando la comprobacion de sesion ha terminado
-                // encima dejamos un splash con fade para cubrir la primera carga real de vehiculos
+                // el grafo se monta solo cuando la comprobacion de sesion ha terminado.
+                // el splash global no debe depender de una pantalla concreta, porque Android puede
+                // restaurar la app directamente en una ruta secundaria como gasolineras.
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (!estadoAuth.estaComprobandoSesion) {
                         GrafoNavegacion(
@@ -100,14 +85,11 @@ class ActividadPrincipal : ComponentActivity() {
                             estaAutenticado = estadoAuth.estaAutenticado,
                             usuarioId = estadoAuth.usuarioId,
                             alCerrarSesion = { authViewModel.cerrarSesion() },
-                            alListaVehiculosCargada = {
-                                esperandoCargaVehiculos = false
-                            }
                         )
                     }
 
                     AnimatedVisibility(
-                        visible = estadoAuth.estaComprobandoSesion || esperandoCargaVehiculos,
+                        visible = estadoAuth.estaComprobandoSesion,
                         enter = fadeIn(animationSpec = tween(160)),
                         exit = fadeOut(animationSpec = tween(220))
                     ) {
