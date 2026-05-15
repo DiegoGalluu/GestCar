@@ -89,6 +89,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.remoto.Gasolinera
@@ -296,6 +297,7 @@ fun PantallaGasolineras(
                         alCerrar = { gasolineraSeleccionada = null },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
+                            .zIndex(4f)
                             .padding(16.dp)
                     )
                 }
@@ -357,6 +359,7 @@ fun PantallaGasolineras(
                     alAlejar = { alejarMapa(mapView) },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
+                        .zIndex(2f)
                         .padding(16.dp)
                 )
 
