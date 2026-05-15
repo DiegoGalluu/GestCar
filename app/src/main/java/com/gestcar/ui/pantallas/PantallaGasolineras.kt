@@ -46,12 +46,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -82,6 +84,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -354,15 +357,13 @@ fun PantallaGasolineras(
                     )
                 }
 
-                if (gasolineraSeleccionada == null) {
-                    ControlesZoomMapa(
-                        alAcercar = { acercarMapa(mapView) },
-                        alAlejar = { alejarMapa(mapView) },
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(16.dp)
-                    )
-                }
+                ControlesZoomMapa(
+                    alAcercar = { acercarMapa(mapView) },
+                    alAlejar = { alejarMapa(mapView) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(start = 16.dp, top = 84.dp, end = 16.dp, bottom = 16.dp)
+                )
 
                 if (estado.estaCargando) {
                     Card(
@@ -716,36 +717,37 @@ private fun ControlesZoomMapa(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        BotonZoomMapa(texto = "+", alPulsar = alAcercar)
-        BotonZoomMapa(texto = "-", alPulsar = alAlejar)
+        BotonZoomMapa(
+            icono = Icons.Default.Add,
+            descripcion = "Ampliar mapa",
+            alPulsar = alAcercar
+        )
+        BotonZoomMapa(
+            icono = Icons.Default.Remove,
+            descripcion = "Reducir mapa",
+            alPulsar = alAlejar
+        )
     }
 }
 
 @Composable
 private fun BotonZoomMapa(
-    texto: String,
+    icono: ImageVector,
+    descripcion: String,
     alPulsar: () -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .size(44.dp)
-            .clickable(onClick = alPulsar),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    FloatingActionButton(
+        onClick = alPulsar,
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = texto,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
+        Icon(
+            imageVector = icono,
+            contentDescription = descripcion,
+            tint = MaterialTheme.colorScheme.primary
+        )
     }
 }
 
