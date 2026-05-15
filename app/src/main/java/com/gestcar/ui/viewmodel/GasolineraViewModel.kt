@@ -1,6 +1,7 @@
 package com.gestcar.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.gestcar.datos.remoto.Gasolinera
 import com.gestcar.datos.repositorio.GasolineraRepositorio
@@ -35,9 +36,9 @@ enum class OrdenGasolineras {
     PRECIO
 }
 
-class GasolineraViewModel : ViewModel() {
+class GasolineraViewModel(aplicacion: Application) : AndroidViewModel(aplicacion) {
 
-    private val repositorio = GasolineraRepositorio()
+    private val repositorio = GasolineraRepositorio(aplicacion)
 
     private val _estado = MutableStateFlow(EstadoGasolineras())
     val estado: StateFlow<EstadoGasolineras> = _estado.asStateFlow()

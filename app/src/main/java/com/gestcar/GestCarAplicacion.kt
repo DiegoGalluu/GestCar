@@ -1,6 +1,7 @@
 package com.gestcar
 
 import android.app.Application
+import com.gestcar.util.PlanificadorGasolineras
 import com.gestcar.util.PlanificadorNotificaciones
 import com.gestcar.util.PlanificadorSincronizacion
 
@@ -12,6 +13,7 @@ class GestCarAplicacion : Application() {
     override fun onCreate() {
         super.onCreate()
         PlanificadorSincronizacion.programarSincronizacionPeriodica(this)
+        PlanificadorGasolineras.programarActualizacionPeriodica(this)
         PlanificadorNotificaciones.programarRevisionVencimientos(this)
     }
 }
