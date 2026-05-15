@@ -180,22 +180,17 @@ class MantenimientoViewModel(aplicacion: Application) : AndroidViewModel(aplicac
     fun cambiarEstadoRealizado(mantenimiento: Mantenimiento) {
         viewModelScope.launch {
             val ahora = System.currentTimeMillis()
-            val mantenimientoActualizado = if (mantenimiento.realizado) {
-                mantenimiento.copy(
-                    realizado = false,
-                    fechaRealizado = null
-                )
-            } else {
-                mantenimiento.copy(
-                    realizado = true,
-                    fechaRealizado = ahora
-                )
-            }
+            val marcarComoRealizado = !mantenimiento.realizado
+            val fechaRealizado = if (marcarComoRealizado) ahora else null
 
-            val resultado = repositorio.guardar(mantenimientoActualizado)
+            val resultado = repositorio.cambiarEstado(
+                mantenimiento = mantenimiento,
+                realizado = marcarComoRealizado,
+                fechaRealizado = fechaRealizado
+            )
             if (resultado.isSuccess) {
                 _estadoFormulario.value = _estadoFormulario.value.copy(
-                    mantenimiento = mantenimientoActualizado,
+                    mantenimiento = resultado.getOrThrow(),
                     mensajeError = null
                 )
                 PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())

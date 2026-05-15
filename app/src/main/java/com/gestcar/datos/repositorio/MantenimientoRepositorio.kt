@@ -58,6 +58,43 @@ class MantenimientoRepositorio(
         return guardar(mantenimiento)
     }
 
+    suspend fun cambiarEstado(
+        mantenimiento: Mantenimiento,
+        realizado: Boolean,
+        fechaRealizado: Long?
+    ): Result<Mantenimiento> {
+        return try {
+            val mantenimientoActualizado = mantenimiento.copy(
+                realizado = realizado,
+                fechaRealizado = fechaRealizado,
+                actualizadoEn = System.currentTimeMillis()
+            )
+
+            mantenimientoDao.insertar(mantenimientoActualizado)
+
+            ClienteSupabase.cliente.postgrest[tablaRemota]
+                .update(
+                    update = {
+                        set("realizado", mantenimientoActualizado.realizado)
+                        if (mantenimientoActualizado.fechaRealizado == null) {
+                            setToNull("fecha_realizado")
+                        } else {
+                            set("fecha_realizado", mantenimientoActualizado.fechaRealizado)
+                        }
+                        set("actualizado_en", mantenimientoActualizado.actualizadoEn)
+                    },
+                    request = {
+                        filter { eq("id", mantenimientoActualizado.id) }
+                        select(Columns.list("id"))
+                    }
+                )
+
+            Result.success(mantenimientoActualizado)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun eliminar(mantenimiento: Mantenimiento): Result<Unit> {
         return try {
             mantenimientoDao.eliminar(mantenimiento)
@@ -75,39 +112,27 @@ class MantenimientoRepositorio(
 
     suspend fun sincronizar(vehiculoId: String): Result<Unit> {
         return try {
-            val errores = mutableListOf<Throwable>()
             val mantenimientosLocales = mantenimientoDao.obtenerPorVehiculoLista(vehiculoId)
-            val mantenimientosRemotosIniciales = runCatching {
-                ClienteSupabase.cliente.postgrest[tablaRemota]
-                    .select { filter { eq("vehiculo_id", vehiculoId) } }
-                    .decodeList<MantenimientoDto>()
-            }.getOrElse { emptyList() }
-            val mantenimientosRemotosPorId = mantenimientosRemotosIniciales.associateBy { it.id }
-
-            mantenimientosLocales.forEach { mantenimiento ->
-                val mantenimientoRemoto = mantenimientosRemotosPorId[mantenimiento.id]
-                val localEsMasNuevo = mantenimientoRemoto == null ||
-                    mantenimiento.actualizadoEn > mantenimientoRemoto.actualizadoEn
-
-                if (!localEsMasNuevo) {
-                    return@forEach
-                }
-
-                runCatching { sincronizarMantenimiento(mantenimiento) }
-                    .onFailure { errores.add(it) }
-            }
-
             val mantenimientosRemotos = runCatching {
                 ClienteSupabase.cliente.postgrest[tablaRemota]
                     .select { filter { eq("vehiculo_id", vehiculoId) } }
                     .decodeList<MantenimientoDto>()
-            }.getOrElse { mantenimientosRemotosIniciales }
+            }.getOrElse { return Result.failure(it) }
+            val mantenimientosRemotosPorId = mantenimientosRemotos.associateBy { it.id }
+
+            mantenimientosLocales.forEach { mantenimiento ->
+                if (mantenimientosRemotosPorId[mantenimiento.id] == null) {
+                    mantenimientoDao.eliminarPorId(mantenimiento.id)
+                }
+            }
 
             mantenimientosRemotos.forEach { dto ->
                 val mantenimiento = dto.aEntidad()
                 val mantenimientoLocal = mantenimientoDao.obtenerPorId(mantenimiento.id)
                 val remotoEsMasNuevo = mantenimientoLocal == null ||
-                    mantenimiento.actualizadoEn > mantenimientoLocal.actualizadoEn
+                    mantenimiento.actualizadoEn >= mantenimientoLocal.actualizadoEn ||
+                    mantenimiento.realizado != mantenimientoLocal.realizado ||
+                    mantenimiento.fechaRealizado != mantenimientoLocal.fechaRealizado
 
                 if (!remotoEsMasNuevo) {
                     return@forEach
@@ -116,11 +141,7 @@ class MantenimientoRepositorio(
                 mantenimientoDao.insertar(mantenimiento)
             }
 
-            if (errores.isEmpty()) {
-                Result.success(Unit)
-            } else {
-                Result.failure(errores.first())
-            }
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -29,4 +29,7 @@ interface MantenimientoDao {
 
     @Delete
     suspend fun eliminar(mantenimiento: Mantenimiento)
+
+    @Query("DELETE FROM mantenimientos WHERE id = :id")
+    suspend fun eliminarPorId(id: String)
 }
