@@ -192,9 +192,18 @@ class MantenimientoViewModel(aplicacion: Application) : AndroidViewModel(aplicac
                 )
             }
 
-            repositorio.guardar(mantenimientoActualizado)
-            _estadoFormulario.value = _estadoFormulario.value.copy(mantenimiento = mantenimientoActualizado)
-            PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
+            val resultado = repositorio.guardar(mantenimientoActualizado)
+            if (resultado.isSuccess) {
+                _estadoFormulario.value = _estadoFormulario.value.copy(
+                    mantenimiento = mantenimientoActualizado,
+                    mensajeError = null
+                )
+                PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
+            } else {
+                _estadoFormulario.value = _estadoFormulario.value.copy(
+                    mensajeError = "No se ha podido sincronizar el estado con Supabase"
+                )
+            }
         }
     }
 }

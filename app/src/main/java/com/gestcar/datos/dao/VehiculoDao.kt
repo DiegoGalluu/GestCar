@@ -43,6 +43,9 @@ interface VehiculoDao {
     @Delete
     suspend fun eliminar(vehiculo: Vehiculo)
 
+    @Query("DELETE FROM vehiculos WHERE id = :id")
+    suspend fun eliminarPorId(id: String)
+
     // eliminar todos los vehiculos de un usuario, se usa al cerrar sesion
     // tambien se usa al eliminar cuenta porque las tablas hijas tienen cascade
     @Query("DELETE FROM vehiculos WHERE usuarioId = :usuarioId")

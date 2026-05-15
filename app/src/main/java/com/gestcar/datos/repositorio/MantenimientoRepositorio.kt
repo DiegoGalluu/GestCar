@@ -45,8 +45,8 @@ class MantenimientoRepositorio(
             mantenimientoDao.insertar(mantenimientoActualizado)
             actualizarKilometrajeVehiculoSiHaceFalta(mantenimientoActualizado)
 
-            // primero manda room, si supabase falla lo reintentaremos luego
             runCatching { sincronizarMantenimiento(mantenimientoActualizado) }
+                .onFailure { return Result.failure(it) }
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -129,13 +129,8 @@ class MantenimientoRepositorio(
     suspend fun sincronizarPendientesDelUsuario(usuarioId: String): Result<Unit> {
         return try {
             val errores = mutableListOf<Throwable>()
-            // mantenimientos depende de vehiculos
-            // por eso sincronizamos recorriendo los vehiculos del usuario
             vehiculoDao.obtenerVehiculosPorUsuarioLista(usuarioId).forEach { vehiculo ->
-                mantenimientoDao.obtenerPorVehiculoLista(vehiculo.id).forEach { mantenimiento ->
-                    runCatching { sincronizarMantenimiento(mantenimiento) }
-                        .onFailure { errores.add(it) }
-                }
+                sincronizar(vehiculo.id).onFailure { errores.add(it) }
             }
 
             if (errores.isNotEmpty()) {

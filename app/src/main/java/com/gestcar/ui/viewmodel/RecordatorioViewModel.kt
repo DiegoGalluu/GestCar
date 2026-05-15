@@ -176,6 +176,11 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
                     recordatorio = recordatorioCompletado,
                     mensajeError = null
                 )
+            } else {
+                _estadoFormulario.value = _estadoFormulario.value.copy(
+                    mensajeError = "No se ha podido sincronizar el estado con Supabase"
+                )
+                return@launch
             }
             crearSiguienteRecordatorioSiProcede(recordatorioCompletado)?.let { siguiente ->
                 repositorio.guardar(siguiente)
@@ -196,6 +201,11 @@ class RecordatorioViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
                     recordatorio = recordatorioReabierto,
                     mensajeError = null
                 )
+            } else {
+                _estadoFormulario.value = _estadoFormulario.value.copy(
+                    mensajeError = "No se ha podido sincronizar el estado con Supabase"
+                )
+                return@launch
             }
             PlanificadorSincronizacion.encolarSincronizacionPuntual(getApplication())
         }

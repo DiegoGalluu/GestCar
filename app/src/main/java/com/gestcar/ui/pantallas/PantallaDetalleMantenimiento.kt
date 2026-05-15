@@ -141,6 +141,14 @@ fun PantallaDetalleMantenimiento(
                 ) {
                     Text(if (mantenimiento.realizado) "Marcar como pendiente" else "Marcar como realizada")
                 }
+                estado.mensajeError?.let { error ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }

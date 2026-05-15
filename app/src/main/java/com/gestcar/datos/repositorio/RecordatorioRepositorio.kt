@@ -39,8 +39,8 @@ class RecordatorioRepositorio(
 
             recordatorioDao.insertar(recordatorioActualizado)
 
-            // guardamos primero en room, si la red falla se reintentara luego
             runCatching { sincronizarRecordatorio(recordatorioActualizado) }
+                .onFailure { return Result.failure(it) }
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -122,10 +122,7 @@ class RecordatorioRepositorio(
         return try {
             val errores = mutableListOf<Throwable>()
             vehiculoDao.obtenerVehiculosPorUsuarioLista(usuarioId).forEach { vehiculo ->
-                recordatorioDao.obtenerPorVehiculoLista(vehiculo.id).forEach { recordatorio ->
-                    runCatching { sincronizarRecordatorio(recordatorio) }
-                        .onFailure { errores.add(it) }
-                }
+                sincronizar(vehiculo.id).onFailure { errores.add(it) }
             }
 
             if (errores.isNotEmpty()) {

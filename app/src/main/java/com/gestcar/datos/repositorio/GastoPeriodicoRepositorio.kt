@@ -44,8 +44,8 @@ class GastoPeriodicoRepositorio(
 
             gastoPeriodicoDao.insertar(gastoActualizado)
 
-            // room manda primero, supabase ya se pondra al dia cuando pueda
             runCatching { sincronizarGasto(gastoActualizado) }
+                .onFailure { return Result.failure(it) }
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -128,13 +128,8 @@ class GastoPeriodicoRepositorio(
     suspend fun sincronizarPendientesDelUsuario(usuarioId: String): Result<Unit> {
         return try {
             val errores = mutableListOf<Throwable>()
-            // si una sync falla devolvemos fallo para que workmanager pueda reintentar
-            // pero seguimos probando con el resto para no bloquear todo por un solo registro
             vehiculoDao.obtenerVehiculosPorUsuarioLista(usuarioId).forEach { vehiculo ->
-                gastoPeriodicoDao.obtenerPorVehiculoLista(vehiculo.id).forEach { gasto ->
-                    runCatching { sincronizarGasto(gasto) }
-                        .onFailure { errores.add(it) }
-                }
+                sincronizar(vehiculo.id).onFailure { errores.add(it) }
             }
 
             if (errores.isNotEmpty()) {

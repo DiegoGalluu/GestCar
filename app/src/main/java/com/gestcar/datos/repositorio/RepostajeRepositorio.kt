@@ -75,25 +75,52 @@ class RepostajeRepositorio(
 
     suspend fun sincronizar(vehiculoId: String): Result<Unit> {
         return try {
-            // primero subimos todo lo local
-            // si el usuario creo repostajes sin cobertura se recuperan en cuanto haya red
-            repostajeDao.obtenerPorVehiculoLista(vehiculoId).forEach { repostaje ->
-                runCatching { sincronizarRepostaje(repostaje) }
-            }
-
-            // despues bajamos lo remoto
-            // esto permite que otro dispositivo tambien aporte repostajes al mismo vehiculo
-            val repostajesRemotos = runCatching {
+            val errores = mutableListOf<Throwable>()
+            val repostajesLocales = repostajeDao.obtenerPorVehiculoLista(vehiculoId)
+            val repostajesRemotosIniciales = runCatching {
                 ClienteSupabase.cliente.postgrest[tablaRemota]
                     .select { filter { eq("vehiculo_id", vehiculoId) } }
                     .decodeList<RepostajeDto>()
             }.getOrElse { emptyList() }
+            val repostajesRemotosPorId = repostajesRemotosIniciales.associateBy { it.id }
 
-            repostajesRemotos.forEach { dto ->
-                repostajeDao.insertar(dto.aEntidad())
+            repostajesLocales.forEach { repostaje ->
+                val repostajeRemoto = repostajesRemotosPorId[repostaje.id]
+                val localEsMasNuevo = repostajeRemoto == null ||
+                    repostaje.actualizadoEn > repostajeRemoto.actualizadoEn
+
+                if (!localEsMasNuevo) {
+                    return@forEach
+                }
+
+                runCatching { sincronizarRepostaje(repostaje) }
+                    .onFailure { errores.add(it) }
             }
 
-            Result.success(Unit)
+            val repostajesRemotos = runCatching {
+                ClienteSupabase.cliente.postgrest[tablaRemota]
+                    .select { filter { eq("vehiculo_id", vehiculoId) } }
+                    .decodeList<RepostajeDto>()
+            }.getOrElse { repostajesRemotosIniciales }
+
+            repostajesRemotos.forEach { dto ->
+                val repostaje = dto.aEntidad()
+                val repostajeLocal = repostajeDao.obtenerPorId(repostaje.id)
+                val remotoEsMasNuevo = repostajeLocal == null ||
+                    repostaje.actualizadoEn > repostajeLocal.actualizadoEn
+
+                if (!remotoEsMasNuevo) {
+                    return@forEach
+                }
+
+                repostajeDao.insertar(repostaje)
+            }
+
+            if (errores.isEmpty()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(errores.first())
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -102,13 +129,8 @@ class RepostajeRepositorio(
     suspend fun sincronizarPendientesDelUsuario(usuarioId: String): Result<Unit> {
         return try {
             val errores = mutableListOf<Throwable>()
-            // recorremos vehiculo por vehiculo porque repostajes depende de vehiculo_id
-            // esto mantiene el modelo compatible con las reglas rls de supabase
             vehiculoDao.obtenerVehiculosPorUsuarioLista(usuarioId).forEach { vehiculo ->
-                repostajeDao.obtenerPorVehiculoLista(vehiculo.id).forEach { repostaje ->
-                    runCatching { sincronizarRepostaje(repostaje) }
-                        .onFailure { errores.add(it) }
-                }
+                sincronizar(vehiculo.id).onFailure { errores.add(it) }
             }
 
             if (errores.isNotEmpty()) {

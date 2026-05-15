@@ -107,21 +107,35 @@ class VehiculoRepositorio(
     }
 
     // sincronizar los vehiculos remotos con los locales
-    // primero intenta subir los cambios locales pendientes y despues descarga el estado remoto
-    // esto permite trabajar sin internet y sincronizar en cuanto vuelva la conexion
+    // primero leemos supabase para evitar que un dispositivo con una copia vieja
+    // vuelva a subir un vehiculo que ya fue borrado desde otro movil
     suspend fun sincronizar(usuarioId: String): Result<Unit> {
         try {
             val vehiculosLocales = obtenerVehiculosLocales(usuarioId)
+            val vehiculosRemotos = ClienteSupabase.cliente.postgrest[tablaRemota]
+                .select { filter { eq("usuario_id", usuarioId) } }
+                .decodeList<VehiculoDto>()
+            val vehiculosRemotosPorId = vehiculosRemotos.associateBy { it.id }
+
             vehiculosLocales.forEach { vehiculo ->
-                sincronizarVehiculo(vehiculo)
+                val vehiculoRemoto = vehiculosRemotosPorId[vehiculo.id]
+                when {
+                    vehiculoRemoto == null -> {
+                        vehiculoDao.eliminarPorId(vehiculo.id)
+                    }
+
+                    vehiculo.actualizadoEn > vehiculoRemoto.actualizadoEn -> {
+                        sincronizarVehiculo(vehiculo)
+                    }
+                }
             }
 
-            val vehiculosRemotos = ClienteSupabase.cliente.postgrest[tablaRemota]
+            val vehiculosRemotosActualizados = ClienteSupabase.cliente.postgrest[tablaRemota]
                 .select { filter { eq("usuario_id", usuarioId) } }
                 .decodeList<VehiculoDto>()
 
             // guardamos cada vehiculo remoto en local, replace si ya existe
-            vehiculosRemotos.forEach { dto ->
+            vehiculosRemotosActualizados.forEach { dto ->
                 val vehiculoLocal = vehiculoDao.obtenerPorId(dto.id)
                 val vehiculoRemoto = dto.aEntidad()
                 vehiculoDao.insertar(

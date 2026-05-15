@@ -148,6 +148,14 @@ fun PantallaDetalleRecordatorio(
                 ) {
                     Text(if (recordatorio.completado) "Marcar como pendiente" else "Marcar como completado")
                 }
+                estado.mensajeError?.let { error ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
