@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.TreeMap
 
 data class GastoMensualEstadistica(
     val mes: String,
@@ -208,20 +209,32 @@ class EstadisticasViewModel(aplicacion: Application) : AndroidViewModel(aplicaci
         mantenimientos: List<Mantenimiento>,
         gastos: List<GastoPeriodico>
     ): List<GastoMensualEstadistica> {
-        val importesPorMes = linkedMapOf<String, Double>()
-        val formato = SimpleDateFormat("MMM yyyy", Locale("es", "ES"))
+        val importesPorMes = TreeMap<String, Double>()
+        val formatoEtiqueta = SimpleDateFormat("MMM yyyy", Locale("es", "ES"))
 
         fun sumar(fecha: Long, importe: Double) {
-            val clave = formato.format(fecha)
+            val calendario = Calendar.getInstance().apply {
+                timeInMillis = fecha
+            }
+            val clave = "%04d-%02d".format(
+                calendario.get(Calendar.YEAR),
+                calendario.get(Calendar.MONTH) + 1
+            )
             importesPorMes[clave] = (importesPorMes[clave] ?: 0.0) + importe
         }
 
-        repostajes.sortedBy { it.fecha }.forEach { sumar(it.fecha, it.importeTotal) }
-        mantenimientos.sortedBy { it.fechaRealizado ?: it.fecha }.forEach { sumar(it.fechaRealizado ?: it.fecha, it.coste) }
-        gastos.sortedBy { it.fechaPago ?: it.fecha }.forEach { sumar(it.fechaPago ?: it.fecha, it.importe) }
+        repostajes.forEach { sumar(it.fecha, it.importeTotal) }
+        mantenimientos.forEach { sumar(it.fechaRealizado ?: it.fecha, it.coste) }
+        gastos.forEach { sumar(it.fechaPago ?: it.fecha, it.importe) }
 
-        return importesPorMes.map { (mes, total) ->
-            GastoMensualEstadistica(mes = mes, total = total)
+        return importesPorMes.map { (clave, total) ->
+            val partes = clave.split("-")
+            val calendario = Calendar.getInstance().apply {
+                set(Calendar.YEAR, partes[0].toInt())
+                set(Calendar.MONTH, partes[1].toInt() - 1)
+                set(Calendar.DAY_OF_MONTH, 1)
+            }
+            GastoMensualEstadistica(mes = formatoEtiqueta.format(calendario.time), total = total)
         }.takeLast(12)
     }
 

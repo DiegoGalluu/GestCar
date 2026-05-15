@@ -99,6 +99,16 @@ class MantenimientoViewModel(aplicacion: Application) : AndroidViewModel(aplicac
         }
     }
 
+    fun refrescarMantenimientosLocales(vehiculoId: String) {
+        viewModelScope.launch {
+            val mantenimientos = repositorio.obtenerMantenimientosLocales(vehiculoId)
+            _estadoLista.value = _estadoLista.value.copy(
+                mantenimientos = mantenimientos,
+                estaCargando = false
+            )
+        }
+    }
+
     fun cambiarFiltroCategoria(filtro: String) {
         _estadoLista.value = _estadoLista.value.copy(filtroCategoria = filtro)
     }

@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -41,6 +42,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.DialogoFiltroPeriodo
@@ -77,6 +81,7 @@ fun PantallaListaMantenimientos(
     var fechaInicioPersonalizada by remember { mutableStateOf<Long?>(null) }
     var fechaFinPersonalizada by remember { mutableStateOf<Long?>(null) }
     val colorCategoriaActual = colorFiltroMantenimiento(estadoMantenimientos.filtroCategoria)
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(usuarioId, vehiculoInicialId) {
         vehiculoActivoViewModel.cargarVehiculos(usuarioId, vehiculoInicialId)
@@ -84,6 +89,19 @@ fun PantallaListaMantenimientos(
 
     LaunchedEffect(vehiculoActivo?.id) {
         vehiculoActivo?.let { mantenimientoViewModel.cargarMantenimientos(it.id) }
+    }
+
+    DisposableEffect(lifecycleOwner, vehiculoActivo?.id) {
+        val vehiculoId = vehiculoActivo?.id
+        val observador = LifecycleEventObserver { _, evento ->
+            if (evento == Lifecycle.Event.ON_RESUME && vehiculoId != null) {
+                mantenimientoViewModel.refrescarMantenimientosLocales(vehiculoId)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observador)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observador)
+        }
     }
 
     Scaffold(

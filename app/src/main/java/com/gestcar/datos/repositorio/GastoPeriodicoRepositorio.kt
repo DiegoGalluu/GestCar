@@ -28,6 +28,10 @@ class GastoPeriodicoRepositorio(
         return gastoPeriodicoDao.obtenerPorId(id)
     }
 
+    suspend fun obtenerGastosLocales(vehiculoId: String): List<GastoPeriodico> {
+        return gastoPeriodicoDao.obtenerPorVehiculoLista(vehiculoId)
+    }
+
     suspend fun guardar(gasto: GastoPeriodico): Result<Unit> {
         return try {
             // periodicidad se guarda en mayusculas para que los filtros no dependan del texto de ui
@@ -70,23 +74,52 @@ class GastoPeriodicoRepositorio(
 
     suspend fun sincronizar(vehiculoId: String): Result<Unit> {
         return try {
-            // subida local primero, descarga remota despues
-            // es el mismo patron offline first que usa el resto de operaciones
-            gastoPeriodicoDao.obtenerPorVehiculoLista(vehiculoId).forEach { gasto ->
+            val errores = mutableListOf<Throwable>()
+            val gastosLocales = gastoPeriodicoDao.obtenerPorVehiculoLista(vehiculoId)
+            val gastosRemotosIniciales = runCatching {
+                ClienteSupabase.cliente.postgrest[tablaRemota]
+                    .select { filter { eq("vehiculo_id", vehiculoId) } }
+                    .decodeList<GastoPeriodicoDto>()
+            }.getOrElse { emptyList() }
+            val gastosRemotosPorId = gastosRemotosIniciales.associateBy { it.id }
+
+            gastosLocales.forEach { gasto ->
+                val gastoRemoto = gastosRemotosPorId[gasto.id]
+                val localEsMasNuevo = gastoRemoto == null ||
+                    gasto.actualizadoEn > gastoRemoto.actualizadoEn
+
+                if (!localEsMasNuevo) {
+                    return@forEach
+                }
+
                 runCatching { sincronizarGasto(gasto) }
+                    .onFailure { errores.add(it) }
             }
 
             val gastosRemotos = runCatching {
                 ClienteSupabase.cliente.postgrest[tablaRemota]
                     .select { filter { eq("vehiculo_id", vehiculoId) } }
                     .decodeList<GastoPeriodicoDto>()
-            }.getOrElse { emptyList() }
+            }.getOrElse { gastosRemotosIniciales }
 
             gastosRemotos.forEach { dto ->
-                gastoPeriodicoDao.insertar(dto.aEntidad())
+                val gasto = dto.aEntidad()
+                val gastoLocal = gastoPeriodicoDao.obtenerPorId(gasto.id)
+                val remotoEsMasNuevo = gastoLocal == null ||
+                    gasto.actualizadoEn > gastoLocal.actualizadoEn
+
+                if (!remotoEsMasNuevo) {
+                    return@forEach
+                }
+
+                gastoPeriodicoDao.insertar(gasto)
             }
 
-            Result.success(Unit)
+            if (errores.isEmpty()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(errores.first())
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

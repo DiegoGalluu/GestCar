@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,6 +37,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.entidades.GastoPeriodico
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
@@ -70,6 +74,7 @@ fun PantallaListaGastos(
     var periodoSeleccionado by rememberSaveable { mutableStateOf(PeriodoRepostajes.TODO) }
     var fechaInicioPersonalizada by rememberSaveable { mutableStateOf<Long?>(null) }
     var fechaFinPersonalizada by rememberSaveable { mutableStateOf<Long?>(null) }
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(usuarioId, vehiculoInicialId) {
         vehiculoActivoViewModel.cargarVehiculos(usuarioId, vehiculoInicialId)
@@ -77,6 +82,19 @@ fun PantallaListaGastos(
 
     LaunchedEffect(vehiculoActivo?.id) {
         vehiculoActivo?.let { gastoViewModel.cargarGastos(it.id) }
+    }
+
+    DisposableEffect(lifecycleOwner, vehiculoActivo?.id) {
+        val vehiculoId = vehiculoActivo?.id
+        val observador = LifecycleEventObserver { _, evento ->
+            if (evento == Lifecycle.Event.ON_RESUME && vehiculoId != null) {
+                gastoViewModel.refrescarGastosLocales(vehiculoId)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observador)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observador)
+        }
     }
 
     Scaffold(

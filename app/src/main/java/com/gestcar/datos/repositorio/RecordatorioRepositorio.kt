@@ -99,7 +99,7 @@ class RecordatorioRepositorio(
                 val recordatorio = dto.aEntidad()
                 val recordatorioLocal = recordatorioDao.obtenerPorId(recordatorio.id)
                 val remotoEsMasNuevo = recordatorioLocal == null ||
-                    recordatorio.actualizadoEn >= recordatorioLocal.actualizadoEn
+                    recordatorio.actualizadoEn > recordatorioLocal.actualizadoEn
 
                 if (!remotoEsMasNuevo) {
                     return@forEach

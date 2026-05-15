@@ -28,6 +28,10 @@ class MantenimientoRepositorio(
         return mantenimientoDao.obtenerPorId(id)
     }
 
+    suspend fun obtenerMantenimientosLocales(vehiculoId: String): List<Mantenimiento> {
+        return mantenimientoDao.obtenerPorVehiculoLista(vehiculoId)
+    }
+
     suspend fun guardar(mantenimiento: Mantenimiento): Result<Unit> {
         return try {
             // normalizamos texto y categoria antes de guardar
@@ -71,23 +75,52 @@ class MantenimientoRepositorio(
 
     suspend fun sincronizar(vehiculoId: String): Result<Unit> {
         return try {
-            // subimos primero lo local para no perder trabajos creados offline
-            mantenimientoDao.obtenerPorVehiculoLista(vehiculoId).forEach { mantenimiento ->
-                runCatching { sincronizarMantenimiento(mantenimiento) }
-            }
-
-            // despues incorporamos lo remoto para mantener varios dispositivos alineados
-            val mantenimientosRemotos = runCatching {
+            val errores = mutableListOf<Throwable>()
+            val mantenimientosLocales = mantenimientoDao.obtenerPorVehiculoLista(vehiculoId)
+            val mantenimientosRemotosIniciales = runCatching {
                 ClienteSupabase.cliente.postgrest[tablaRemota]
                     .select { filter { eq("vehiculo_id", vehiculoId) } }
                     .decodeList<MantenimientoDto>()
             }.getOrElse { emptyList() }
+            val mantenimientosRemotosPorId = mantenimientosRemotosIniciales.associateBy { it.id }
 
-            mantenimientosRemotos.forEach { dto ->
-                mantenimientoDao.insertar(dto.aEntidad())
+            mantenimientosLocales.forEach { mantenimiento ->
+                val mantenimientoRemoto = mantenimientosRemotosPorId[mantenimiento.id]
+                val localEsMasNuevo = mantenimientoRemoto == null ||
+                    mantenimiento.actualizadoEn > mantenimientoRemoto.actualizadoEn
+
+                if (!localEsMasNuevo) {
+                    return@forEach
+                }
+
+                runCatching { sincronizarMantenimiento(mantenimiento) }
+                    .onFailure { errores.add(it) }
             }
 
-            Result.success(Unit)
+            val mantenimientosRemotos = runCatching {
+                ClienteSupabase.cliente.postgrest[tablaRemota]
+                    .select { filter { eq("vehiculo_id", vehiculoId) } }
+                    .decodeList<MantenimientoDto>()
+            }.getOrElse { mantenimientosRemotosIniciales }
+
+            mantenimientosRemotos.forEach { dto ->
+                val mantenimiento = dto.aEntidad()
+                val mantenimientoLocal = mantenimientoDao.obtenerPorId(mantenimiento.id)
+                val remotoEsMasNuevo = mantenimientoLocal == null ||
+                    mantenimiento.actualizadoEn > mantenimientoLocal.actualizadoEn
+
+                if (!remotoEsMasNuevo) {
+                    return@forEach
+                }
+
+                mantenimientoDao.insertar(mantenimiento)
+            }
+
+            if (errores.isEmpty()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(errores.first())
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

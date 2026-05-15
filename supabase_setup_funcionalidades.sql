@@ -85,9 +85,14 @@ create table if not exists mantenimientos (
     coste double precision not null default 0,
     taller text,
     descripcion text,
+    realizado boolean not null default true,
+    fecha_realizado bigint,
     actualizado_en bigint not null,
     created_at timestamptz default now()
 );
+
+alter table mantenimientos add column if not exists realizado boolean not null default true;
+alter table mantenimientos add column if not exists fecha_realizado bigint;
 
 create index if not exists idx_mantenimientos_vehiculo_id on mantenimientos(vehiculo_id);
 alter table mantenimientos enable row level security;
@@ -240,6 +245,14 @@ create table if not exists recordatorios (
     actualizado_en bigint not null,
     created_at timestamptz default now()
 );
+
+alter table recordatorios add column if not exists periodicidad_tiempo_cantidad integer;
+alter table recordatorios add column if not exists periodicidad_tiempo_unidad text;
+alter table recordatorios add column if not exists periodicidad_kilometros double precision;
+alter table recordatorios add column if not exists completado boolean not null default false;
+alter table recordatorios add column if not exists fecha_completado bigint;
+alter table recordatorios add column if not exists notas text;
+alter table recordatorios add column if not exists actualizado_en bigint not null default 0;
 
 create index if not exists idx_recordatorios_vehiculo_id on recordatorios(vehiculo_id);
 alter table recordatorios enable row level security;

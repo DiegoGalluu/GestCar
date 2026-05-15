@@ -84,6 +84,16 @@ class GastoPeriodicoViewModel(aplicacion: Application) : AndroidViewModel(aplica
         }
     }
 
+    fun refrescarGastosLocales(vehiculoId: String) {
+        viewModelScope.launch {
+            val gastos = repositorio.obtenerGastosLocales(vehiculoId)
+            _estadoLista.value = _estadoLista.value.copy(
+                gastos = gastos,
+                estaCargando = false
+            )
+        }
+    }
+
     fun resetearFormulario(vehiculoId: String) {
         _estadoFormulario.value = EstadoFormularioGasto(
             gasto = GastoPeriodico(
