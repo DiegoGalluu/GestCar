@@ -354,14 +354,15 @@ fun PantallaGasolineras(
                     )
                 }
 
-                ControlesZoomMapa(
-                    alAcercar = { acercarMapa(mapView) },
-                    alAlejar = { alejarMapa(mapView) },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .zIndex(2f)
-                        .padding(16.dp)
-                )
+                if (gasolineraSeleccionada == null) {
+                    ControlesZoomMapa(
+                        alAcercar = { acercarMapa(mapView) },
+                        alAlejar = { alejarMapa(mapView) },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp)
+                    )
+                }
 
                 if (estado.estaCargando) {
                     Card(
