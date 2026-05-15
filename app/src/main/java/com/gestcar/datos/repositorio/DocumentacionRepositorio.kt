@@ -293,9 +293,14 @@ class DocumentacionRepositorio(
             }
             .sortedBy { it.orden }
         val idsRemotos = adjuntosRemotos.map { it.id }.toSet()
+        val ahora = System.currentTimeMillis()
 
         adjuntoDao.obtenerPorDocumentoLista(documentoId)
-            .filter { adjunto -> adjunto.id !in idsRemotos && !adjunto.rutaStorage.isNullOrBlank() }
+            .filter { adjunto ->
+                adjunto.id !in idsRemotos &&
+                    !adjunto.rutaStorage.isNullOrBlank() &&
+                    ahora - adjunto.actualizadoEn > MARGEN_ADJUNTO_RECIENTE_MS
+            }
             .forEach { adjunto -> adjuntoDao.eliminarPorId(adjunto.id) }
 
         adjuntosRemotos.forEach { adjunto ->
@@ -423,5 +428,6 @@ class DocumentacionRepositorio(
 
     companion object {
         private const val TIEMPO_MAXIMO_SYNC_RAPIDA_MS = 4_000L
+        private const val MARGEN_ADJUNTO_RECIENTE_MS = 30_000L
     }
 }

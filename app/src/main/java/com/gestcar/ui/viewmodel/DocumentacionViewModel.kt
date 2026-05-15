@@ -279,6 +279,13 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
                     orden = estadoActual.adjuntos.size
                 )
             }.mapCatching { adjunto ->
+                val adjuntosInmediatos = ordenarAdjuntos(
+                    estadoActual.adjuntos.filterNot { it.id == adjunto.id } + adjunto
+                )
+                _estadoFormulario.value = estadoActual.copy(
+                    adjuntos = adjuntosInmediatos,
+                    mensajeError = null
+                )
                 repositorio.guardarAdjunto(adjunto).getOrThrow()
                 adjunto
             }
@@ -286,14 +293,15 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
             resultado
                 .onSuccess {
                     val adjuntosActualizados = repositorio.obtenerAdjuntosLista(documentoId)
-                    _estadoFormulario.value = estadoActual.copy(
-                        adjuntos = adjuntosActualizados,
+                    val estadoVivo = _estadoFormulario.value
+                    _estadoFormulario.value = estadoVivo.copy(
+                        adjuntos = ordenarAdjuntos(adjuntosActualizados),
                         mensajeError = null
                     )
                     cargarUrlsFirmadas(adjuntosActualizados)
                 }
                 .onFailure {
-                    _estadoFormulario.value = estadoActual.copy(
+                    _estadoFormulario.value = _estadoFormulario.value.copy(
                         mensajeError = it.message ?: "No se ha podido añadir el archivo"
                     )
                 }
@@ -338,6 +346,10 @@ class DocumentacionViewModel(aplicacion: Application) : AndroidViewModel(aplicac
                 )
             }
         }
+    }
+
+    private fun ordenarAdjuntos(adjuntos: List<AdjuntoDocumento>): List<AdjuntoDocumento> {
+        return adjuntos.sortedWith(compareBy<AdjuntoDocumento> { it.orden }.thenBy { it.fechaAlta })
     }
 
     private fun campoVacio(
