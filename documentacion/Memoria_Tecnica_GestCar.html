@@ -1,0 +1,615 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Memoria Técnica GestCar</title>
+<style>
+  @page { size: A4; margin: 2.1cm 2.0cm 2.1cm 2.0cm; }
+  body { font-family: Aptos, Calibri, Arial, sans-serif; color: #111111; background: #ffffff; font-size: 11pt; line-height: 1.38; }
+  h1 { color: #1F4E79; font-size: 24pt; margin-top: 28pt; margin-bottom: 12pt; page-break-before: always; border-bottom: 2px solid #B7D7EA; padding-bottom: 6pt; }
+  h2 { color: #1F4E79; font-size: 17pt; margin-top: 20pt; margin-bottom: 8pt; }
+  h3 { color: #255E8F; font-size: 13.5pt; margin-top: 14pt; margin-bottom: 6pt; }
+  h4 { color: #255E8F; font-size: 11.5pt; margin-top: 10pt; margin-bottom: 4pt; }
+  p { margin: 0 0 8pt 0; text-align: justify; }
+  ul { margin-top: 2pt; margin-bottom: 8pt; }
+  li { margin-bottom: 3pt; }
+  .cover { page-break-after: always; text-align: center; padding-top: 110pt; }
+  .cover h1 { page-break-before: auto; border: none; font-size: 32pt; color: #1F4E79; margin-bottom: 18pt; }
+  .cover .subtitulo { font-size: 17pt; color: #345; margin-bottom: 50pt; }
+  .cover .meta { margin-top: 60pt; font-size: 11pt; color: #333; line-height: 1.6; }
+  .aviso-indice { background: #EEF7F6; border-left: 6px solid #75B8A8; padding: 10pt 12pt; margin: 10pt 0 14pt 0; }
+  .nota { background: #F3F8FB; border-left: 5px solid #8FC5E8; padding: 9pt 12pt; margin: 10pt 0; }
+  .decision { background: #F7F2E8; border-left: 5px solid #E1BD78; padding: 9pt 12pt; margin: 10pt 0; }
+  .seguridad { background: #F4F8F3; border-left: 5px solid #8CBF8B; padding: 9pt 12pt; margin: 10pt 0; }
+  table { border-collapse: collapse; width: 100%; margin: 8pt 0 14pt 0; }
+  .tabla th { background: #DCEEF8; color: #173B57; font-weight: bold; border: 1px solid #9CBFD6; padding: 7pt; text-align: left; }
+  .tabla td { border: 1px solid #C8D8E2; padding: 7pt; vertical-align: top; }
+  .tabla tr:nth-child(even) td { background: #F8FBFD; }
+  .placeholder { border-collapse: collapse; width: 100%; margin: 12pt 0 18pt 0; }
+  .placeholder td { border: 2px dashed #8FB2C9; background: #F7FBFD; height: 150pt; text-align: center; vertical-align: middle; padding: 18pt; }
+  .placeholder-title { color: #1F4E79; font-size: 14pt; font-weight: bold; margin-bottom: 8pt; }
+  .placeholder-desc { color: #415566; font-size: 10.5pt; }
+  .caption { color: #555; font-size: 9.5pt; text-align: center; margin-top: -8pt; margin-bottom: 12pt; }
+  .diagram { background: #FFFFFF; border: 1px solid #BFD6E5; padding: 10pt; margin: 8pt 0 16pt 0; }
+  .diagram table td { border: 1px solid #BCD4E4; background: #F8FCFE; text-align: center; padding: 8pt; }
+  .soft { color: #4A6675; }
+  .sin-salto h1:first-of-type { page-break-before: auto; }
+  code { font-family: Consolas, 'Courier New', monospace; background: #F3F5F6; padding: 1pt 3pt; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>Memoria Técnica</h1>
+  <div class="subtitulo">GestCar: aplicación Android para la gestión integral de vehículos particulares</div>
+  <div class="meta">
+    Trabajo de Fin de Grado<br>
+    Desarrollo de Aplicaciones Multiplataforma<br>
+    Autor: Diego Gallardo<br>
+    Fecha: mayo de 2026<br>
+    Versión del documento: borrador editable para revisión
+  </div>
+</div>
+
+<p style="page-break-before: always;"></p>
+<div class="aviso-indice">
+  <strong>Nota para edición final.</strong> Este documento no incluye índice automático porque se insertará manualmente desde Word antes de generar el PDF final. Los títulos están estructurados con jerarquía suficiente para crear una tabla de contenido automática.
+</div>
+
+<h1>Resumen</h1>
+<p>GestCar es una aplicación Android nativa desarrollada en Kotlin con Jetpack Compose cuyo objetivo es centralizar la gestión de vehículos particulares. La aplicación permite registrar vehículos, repostajes, mantenimientos, reparaciones, gastos, recordatorios, documentación y archivos asociados, manteniendo además un enfoque offline-first mediante Room y sincronización remota mediante Supabase.</p>
+<p>El proyecto surge de una necesidad práctica: la información de un vehículo suele estar repartida entre papeles físicos, aplicaciones de aseguradoras, correos electrónicos, facturas, fotografías, notas personales y recuerdos del propio usuario. GestCar propone reunir esa información en una aplicación móvil sencilla, visual y orientada al uso cotidiano.</p>
+<p>La solución implementa autenticación mediante correo electrónico, persistencia de sesión, recuperación de contraseña, almacenamiento local, sincronización con backend, gestión de imágenes, adjuntos documentales, notificaciones, estadísticas, exportación de datos, control de vencimientos y consulta de gasolineras cercanas con precios de carburante.</p>
+<p>Desde el punto de vista técnico, el proyecto aplica una arquitectura MVVM con separación de responsabilidades entre pantallas Compose, ViewModels, repositorios, DAOs, entidades Room, DTOs remotos y utilidades. La decisión de guardar primero en local y sincronizar después permite que la aplicación siga funcionando aunque el usuario no tenga conexión en el momento de introducir un dato.</p>
+<p>El resultado es una aplicación funcional avanzada, con una base extensible y orientada a resolver un caso real. La memoria documenta objetivos, análisis, diseño, arquitectura, modelo de datos, implementación, seguridad, pruebas, manual de usuario, instalación, despliegue y posibles líneas de mejora.</p>
+
+<h1>Abstract</h1>
+<p>GestCar is a native Android application built with Kotlin and Jetpack Compose. Its main purpose is to centralize the management of private vehicles, including vehicle records, fuel refills, maintenance operations, repairs, recurring expenses, reminders, documentation cards and attached files. The application follows an offline-first approach using Room as a local database and Supabase as a remote backend.</p>
+<p>The project addresses a common real-life problem: vehicle-related information is usually scattered across physical documents, insurance applications, emails, invoices, photos and personal notes. GestCar provides a single mobile tool where users can store, consult and update relevant data from their own devices.</p>
+<p>The system includes email authentication, session persistence, password recovery, local storage, remote synchronization, image management, document attachments, notifications, statistics, data export, due-date control and nearby gas station lookup using external fuel price data.</p>
+<p>From a technical perspective, the application is structured around the MVVM pattern and separates UI, state management, repositories, local database access, remote DTO mapping and utility logic. The local-first persistence strategy improves resilience, allowing users to continue using the app even when network connectivity is temporarily unavailable.</p>
+
+<h1>Palabras clave</h1>
+<p>Android, Kotlin, Jetpack Compose, Room, Supabase, MVVM, offline-first, gestión de vehículos, sincronización, documentación digital, mantenimiento, repostajes, gastos, recordatorios.</p>
+
+<h1>1. Introducción</h1>
+<h2>1.1 Contexto del proyecto</h2>
+<p>El mantenimiento de un vehículo no se limita únicamente a repostar combustible o pasar revisiones. En la práctica, un usuario puede necesitar recordar cuándo cambió el aceite, cuánto costó una reparación, cuándo vence el seguro, qué matrícula tiene un vehículo secundario, dónde guardó la póliza, qué documentación lleva asociada una moto o qué consumo real está teniendo un coche con los años.</p>
+<p>La mayoría de usuarios resuelve estas necesidades de forma fragmentada. Algunas personas usan notas del móvil, otras fotografías, otras una hoja de cálculo, otras correos electrónicos, y muchas dependen directamente de la memoria. Esta dispersión aumenta el riesgo de perder información, duplicar esfuerzos o no tener datos importantes cuando se necesitan.</p>
+<p>GestCar nace como una respuesta a ese problema. El proyecto no pretende sustituir a una aplicación oficial de una aseguradora ni a un sistema profesional de flotas, sino ofrecer a un usuario particular una herramienta centralizada, flexible y suficientemente potente para gestionar sus vehículos de forma ordenada.</p>
+
+<h2>1.2 Problema detectado</h2>
+<p>El problema principal es la falta de un punto único de consulta para información relevante del vehículo. Aunque existen aplicaciones especializadas en repostajes o mantenimiento, muchas se centran en un único aspecto y no integran documentación, recordatorios, gastos, fotografías y funcionamiento offline de forma coherente.</p>
+<p>Además, en escenarios reales el usuario puede no tener conexión a internet. Por ejemplo, puede registrar un repostaje en una gasolinera con poca cobertura, guardar una reparación en un taller subterráneo o consultar una documentación en un momento en el que la red no funciona. Si la aplicación dependiera exclusivamente de internet, el uso quedaría limitado.</p>
+<p>Por ese motivo, GestCar se ha planteado desde el inicio con una base local sólida y sincronización posterior. El dato importante se guarda primero en el dispositivo y se sube al backend cuando las condiciones de red lo permiten.</p>
+
+<h2>1.3 Alcance</h2>
+<p>El alcance del proyecto incluye el desarrollo de una aplicación Android funcional con autenticación, persistencia local, sincronización remota, gestión de vehículos, repostajes, mantenimientos, gastos, recordatorios, documentación, adjuntos, estadísticas, exportación, cuenta de usuario, avisos visuales de conectividad, notificaciones y consulta de gasolineras.</p>
+<p>No se incluye en el alcance una versión iOS, una aplicación web pública, un panel administrativo completo ni un sistema de flotas profesional multiempresa. Tampoco se incluye la publicación final en Google Play, aunque la estructura del proyecto permite generar APKs de prueba y preparar una versión release en una fase posterior.</p>
+
+<h2>1.4 Estado actual</h2>
+<p>La aplicación se encuentra en un estado funcional avanzado. Las principales secciones ya están implementadas y conectadas con la arquitectura local-remota. Existen todavía áreas que pueden seguir puliéndose, especialmente en validación visual, pruebas automatizadas y estabilización de la pantalla de gasolineras, pero el núcleo funcional de la aplicación está desarrollado.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: pantalla de carga de GestCar</div>
+      <div class='placeholder-desc'>Debe mostrar la pantalla inicial o splash antes de acceder al login o a la lista de vehículos.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: pantalla principal de vehículos</div>
+      <div class='placeholder-desc'>Debe mostrar una lista de vehículos reales de prueba y el botón de creación.</div>
+    </td>
+  </tr>
+</table><h1>2. Objetivos</h1>
+<h2>2.1 Objetivo general</h2>
+<p>Desarrollar una aplicación Android nativa que permita a usuarios particulares gestionar de forma centralizada la información relevante de sus vehículos, combinando una experiencia de uso sencilla con una arquitectura robusta basada en persistencia local, sincronización remota y medidas de seguridad adecuadas para datos personales.</p>
+
+<h2>2.2 Objetivos específicos</h2><ul><li>Implementar un sistema de autenticación con registro, confirmación por correo, inicio de sesión, recuperación de contraseña y persistencia de sesión.</li><li>Permitir la gestión completa de vehículos, incluyendo datos técnicos, matrícula, kilometraje, foto, notas y organización por prioridad.</li><li>Registrar repostajes y calcular métricas útiles como consumo medio y coste medio de combustible.</li><li>Registrar mantenimientos y reparaciones, diferenciando operaciones pendientes y realizadas.</li><li>Controlar gastos únicos y periódicos, incluyendo vencimientos, pagos y renovación de avisos.</li><li>Crear recordatorios por fecha, kilometraje o periodicidad.</li><li>Centralizar documentación del vehículo mediante tarjetas configurables por el usuario.</li><li>Permitir adjuntar fotografías y documentos a la documentación del vehículo.</li><li>Mantener funcionamiento sin conexión mediante Room y sincronización posterior con Supabase.</li><li>Implementar avisos de conectividad, sincronización en segundo plano y notificaciones del sistema.</li><li>Ofrecer estadísticas y opciones de exportación útiles para el usuario.</li><li>Incorporar una sección de gasolineras cercanas basada en ubicación y datos externos.</li><li>Documentar el proyecto de forma clara, justificando decisiones técnicas y funcionales.</li></ul><h2>2.3 Objetivos personales y formativos</h2>
+<p>Además de los objetivos funcionales, el proyecto persigue objetivos formativos propios de un Trabajo de Fin de Grado. Entre ellos destacan aplicar arquitectura MVVM en un proyecto real, trabajar con almacenamiento local y remoto, gestionar autenticación, diseñar interfaces con Jetpack Compose, tratar permisos del dispositivo, manejar archivos, programar tareas en segundo plano y preparar documentación técnica profesional.</p>
+<p>El proyecto también permite demostrar capacidad de iteración. Durante el desarrollo se han corregido decisiones iniciales, se han simplificado flujos de usuario, se han reforzado aspectos de seguridad y se han añadido funcionalidades a partir de pruebas reales en dispositivos.</p>
+
+<h1>3. Análisis de requisitos</h1>
+<h2>3.1 Actores del sistema</h2>
+<p>El sistema está diseñado principalmente para un actor: el usuario autenticado. No obstante, también se considera el usuario no autenticado durante los flujos de registro, inicio de sesión y recuperación de contraseña.</p><table class='tabla'><thead><tr><th>Actor</th><th>Descripción</th><th>Acciones principales</th></tr></thead><tbody><tr><td>Usuario no autenticado</td><td>Persona que abre la app sin sesión activa.</td><td>Registrarse, iniciar sesión, recuperar contraseña.</td></tr><tr><td>Usuario autenticado</td><td>Persona con sesión activa y datos asociados.</td><td>Gestionar vehículos, repostajes, gastos, mantenimientos, documentación, recordatorios, cuenta y gasolineras.</td></tr><tr><td>Backend</td><td>Servicios remotos utilizados por la aplicación.</td><td>Autenticación, persistencia remota, almacenamiento de archivos y seguridad por usuario.</td></tr><tr><td>Sistema Android</td><td>Sistema operativo del dispositivo.</td><td>Permisos, cámara, galería, documentos, notificaciones, conectividad y tareas en segundo plano.</td></tr></tbody></table><h2>3.2 Requisitos funcionales</h2><table class='tabla'><thead><tr><th>Código</th><th>Requisito</th><th>Descripción</th></tr></thead><tbody><tr><td>RF-01</td><td>Registro de usuario</td><td>La aplicación permite crear una cuenta mediante correo electrónico y contraseña, solicitando confirmación por correo antes de permitir el uso completo.</td></tr><tr><td>RF-02</td><td>Inicio de sesión</td><td>El usuario puede iniciar sesión con credenciales válidas y conservar la sesión entre cierres de la aplicación.</td></tr><tr><td>RF-03</td><td>Recuperación de contraseña</td><td>La aplicación permite solicitar un enlace de restablecimiento y cambiar la contraseña desde un flujo específico.</td></tr><tr><td>RF-04</td><td>Gestión de vehículos</td><td>El usuario puede crear, consultar, editar, eliminar y ordenar vehículos, incluyendo datos técnicos, kilometraje y fotografía.</td></tr><tr><td>RF-05</td><td>Vehículos habituales</td><td>El usuario puede organizar los vehículos en habituales y secundarios para priorizar selectores y pantallas de consulta.</td></tr><tr><td>RF-06</td><td>Gestión de repostajes</td><td>El usuario puede registrar repostajes con fecha, kilómetros, litros, precio por litro, importe, gasolinera y notas.</td></tr><tr><td>RF-07</td><td>Cálculo de consumo</td><td>La aplicación calcula consumo medio en litros cada cien kilómetros y coste medio de combustible cada cien kilómetros.</td></tr><tr><td>RF-08</td><td>Gestión de mantenimientos</td><td>El usuario puede registrar mantenimientos pendientes o realizados, con componente libre, fecha, kilómetros, coste, taller y descripción.</td></tr><tr><td>RF-09</td><td>Gestión de reparaciones</td><td>La aplicación separa reparaciones de mantenimientos sin imponer listas cerradas de averías.</td></tr><tr><td>RF-10</td><td>Gestión de gastos</td><td>El usuario puede registrar gastos únicos o periódicos, distinguir pendientes y pagados y controlar vencimientos.</td></tr><tr><td>RF-11</td><td>Recordatorios</td><td>El usuario puede crear recordatorios por fecha, kilometraje o ambos, incluyendo periodicidad temporal y por kilómetros.</td></tr><tr><td>RF-12</td><td>Notificaciones</td><td>La aplicación programa avisos para vencimientos próximos y recordatorios relevantes mediante tareas en segundo plano.</td></tr><tr><td>RF-13</td><td>Estadísticas</td><td>La aplicación resume consumo, coste medio, coste acumulado, operaciones y métricas útiles por vehículo.</td></tr><tr><td>RF-14</td><td>Exportación</td><td>La aplicación ofrece opciones de exportación y resumen compartible para facilitar el uso externo de la información.</td></tr><tr><td>RF-15</td><td>Documentación</td><td>El usuario puede crear tarjetas de documentación con campos personalizados y adjuntos asociados.</td></tr><tr><td>RF-16</td><td>Adjuntos</td><td>La documentación admite imágenes, fotografías de cámara y documentos seleccionados desde el gestor del sistema.</td></tr><tr><td>RF-17</td><td>Cuenta</td><td>El usuario puede consultar datos básicos de cuenta, cerrar sesión, cambiar contraseña y solicitar eliminación de cuenta.</td></tr><tr><td>RF-18</td><td>Conectividad</td><td>La aplicación informa visualmente cuando no hay conexión y cuando se recupera la red.</td></tr><tr><td>RF-19</td><td>Gasolineras</td><td>La aplicación incorpora una pantalla para consultar gasolineras cercanas usando ubicación, rango y datos externos de precios.</td></tr></tbody></table><h2>3.3 Requisitos no funcionales</h2><table class='tabla'><thead><tr><th>Código</th><th>Requisito</th><th>Descripción</th></tr></thead><tbody><tr><td>RNF-01</td><td>Privacidad</td><td>Los datos deben estar asociados al usuario autenticado y no deben mezclarse entre cuentas.</td></tr><tr><td>RNF-02</td><td>Seguridad</td><td>No se deben exponer claves privadas, tokens, URLs internas sensibles ni identificadores técnicos innecesarios al usuario final.</td></tr><tr><td>RNF-03</td><td>Disponibilidad offline</td><td>La aplicación debe poder consultar y crear registros sin conexión gracias a Room.</td></tr><tr><td>RNF-04</td><td>Sincronización</td><td>Los datos locales deben sincronizarse con el backend cuando exista conexión, incluyendo reintentos en segundo plano.</td></tr><tr><td>RNF-05</td><td>Usabilidad</td><td>Los formularios deben señalar errores de validación, evitar campos rígidos innecesarios y facilitar el uso desde móvil.</td></tr><tr><td>RNF-06</td><td>Mantenibilidad</td><td>La arquitectura debe separar pantallas, ViewModels, repositorios, DAOs, entidades y utilidades.</td></tr><tr><td>RNF-07</td><td>Compatibilidad</td><td>La app debe ejecutarse en Android 8.0 o superior, con target SDK moderno.</td></tr><tr><td>RNF-08</td><td>Rendimiento</td><td>Las imágenes deben comprimirse y mantenerse en almacenamiento privado para no penalizar carga ni consumo de datos.</td></tr><tr><td>RNF-09</td><td>Escalabilidad funcional</td><td>El modelo debe permitir añadir nuevas secciones sin reescribir la arquitectura base.</td></tr><tr><td>RNF-10</td><td>Accesibilidad básica</td><td>La navegación debe ser clara y no depender exclusivamente de los botones físicos del sistema.</td></tr></tbody></table><h2>3.4 Casos de uso principales</h2><table class='tabla'><thead><tr><th>Código</th><th>Caso de uso</th><th>Actor</th><th>Resumen</th></tr></thead><tbody><tr><td>CU-01</td><td>Registrarse</td><td>Usuario no autenticado</td><td>Introduce correo y contraseña, recibe confirmación y activa la cuenta.</td></tr><tr><td>CU-02</td><td>Iniciar sesión</td><td>Usuario registrado</td><td>Accede a sus datos y mantiene sesión persistente.</td></tr><tr><td>CU-03</td><td>Crear vehículo</td><td>Usuario autenticado</td><td>Registra marca, modelo, matrícula, kilometraje y datos técnicos.</td></tr><tr><td>CU-04</td><td>Añadir foto</td><td>Usuario autenticado</td><td>Selecciona cámara o galería y guarda una imagen comprimida del vehículo.</td></tr><tr><td>CU-05</td><td>Registrar repostaje</td><td>Usuario autenticado</td><td>Introduce datos de combustible y actualiza métricas del vehículo.</td></tr><tr><td>CU-06</td><td>Registrar mantenimiento</td><td>Usuario autenticado</td><td>Añade una tarea pendiente o una operación realizada.</td></tr><tr><td>CU-07</td><td>Controlar gasto</td><td>Usuario autenticado</td><td>Registra pago, vencimiento y periodicidad de un gasto.</td></tr><tr><td>CU-08</td><td>Crear recordatorio</td><td>Usuario autenticado</td><td>Configura aviso por fecha, kilómetros o recurrencia.</td></tr><tr><td>CU-09</td><td>Consultar documentación</td><td>Usuario autenticado</td><td>Accede a tarjetas personalizadas y adjuntos del vehículo.</td></tr><tr><td>CU-10</td><td>Exportar información</td><td>Usuario autenticado</td><td>Genera un resumen o archivo reutilizable con los datos del vehículo.</td></tr><tr><td>CU-11</td><td>Buscar gasolineras</td><td>Usuario autenticado</td><td>Consulta puntos cercanos y precios mediante ubicación y rango.</td></tr><tr><td>CU-12</td><td>Eliminar cuenta</td><td>Usuario autenticado</td><td>Confirma dos veces la eliminación para evitar acciones accidentales.</td></tr></tbody></table><div class="diagram">
+  <strong>Diagrama conceptual de casos de uso.</strong>
+  <table>
+    <tr><td>Usuario no autenticado</td><td>Registro<br>Inicio de sesión<br>Recuperación de contraseña</td></tr>
+    <tr><td>Usuario autenticado</td><td>Vehículos<br>Repostajes<br>Mantenimientos<br>Gastos<br>Recordatorios<br>Documentación<br>Estadísticas<br>Cuenta<br>Gasolineras</td></tr>
+    <tr><td>Sistema Android</td><td>Cámara<br>Galería<br>Gestor de documentos<br>Notificaciones<br>Ubicación<br>Conectividad</td></tr>
+    <tr><td>Backend</td><td>Autenticación<br>Base de datos remota<br>Storage privado<br>Políticas de acceso</td></tr>
+  </table>
+</div><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Diagrama pendiente: casos de uso en formato gráfico</div>
+      <div class='placeholder-desc'>Sustituir por un diagrama UML de casos de uso si se desea presentar visualmente.</div>
+    </td>
+  </tr>
+</table><h1>4. Tecnologías utilizadas y justificación</h1>
+<h2>4.1 Kotlin</h2>
+<p>Kotlin se ha elegido por ser el lenguaje recomendado para desarrollo Android moderno. Permite escribir código conciso, seguro frente a nulos, compatible con corrutinas y con una integración excelente con Jetpack Compose, Room y el ecosistema Android.</p>
+<p>En el proyecto se utiliza Kotlin tanto para la lógica de negocio como para las pantallas, ViewModels, repositorios, entidades, DTOs y utilidades. La elección evita mezclar Java y Kotlin y permite mantener un estilo uniforme.</p>
+
+<h2>4.2 Jetpack Compose</h2>
+<p>Jetpack Compose se ha utilizado como framework de interfaz. La principal ventaja es que permite construir pantallas declarativas, basadas en estado, con menos código repetitivo que el sistema tradicional de vistas XML.</p>
+<p>Compose encaja especialmente bien con StateFlow y ViewModel. Las pantallas observan el estado y se recomponen cuando cambian los datos. Esto resulta útil en una aplicación con datos locales reactivos, formularios y múltiples listas.</p>
+
+<h2>4.3 Material Design 3</h2>
+<p>Material Design 3 se utiliza como base visual. La aplicación no adopta una plantilla genérica sin personalidad, sino una paleta propia basada en azul oscuro, azul claro, tonos suaves para tarjetas y colores calmados para estados visuales.</p>
+<p>La elección de colores evita transmitir connotaciones negativas innecesarias. Por ejemplo, en mantenimientos y reparaciones se han utilizado colores diferenciados sin asociar una categoría a rojo o verde, ya que ambas son acciones normales dentro del mantenimiento de un vehículo.</p>
+
+<h2>4.4 Room</h2>
+<p>Room se utiliza como base de datos local. Esta decisión es clave porque GestCar no debe depender completamente de la conexión. Room permite guardar vehículos, repostajes, gastos, mantenimientos, recordatorios, documentación y adjuntos localmente.</p>
+<p>El uso de Room aporta además consultas reactivas mediante Flow, migraciones controladas y una capa DAO clara. La base de datos local se encuentra en versión 10, reflejando la evolución funcional del proyecto.</p>
+
+<h2>4.5 Supabase</h2>
+<p>Supabase se utiliza como backend remoto para autenticación, base de datos y almacenamiento. Ofrece una solución adecuada para un proyecto académico con presupuesto cero, ya que proporciona autenticación, PostgREST, base de datos PostgreSQL, Storage y Row Level Security.</p>
+<p>En la app solo se utiliza configuración pública permitida para clientes móviles. Las claves privilegiadas no forman parte del APK ni del repositorio público.</p>
+
+<h2>4.6 WorkManager</h2>
+<p>WorkManager se utiliza para tareas en segundo plano, principalmente sincronización y notificaciones de vencimientos. Es una herramienta adecuada cuando no se necesita ejecutar una tarea en un segundo exacto, sino garantizar que se ejecute de forma razonable respetando batería, conectividad y decisiones del sistema Android.</p>
+
+<h2>4.7 Coil</h2>
+<p>Coil se utiliza para cargar imágenes en Compose. Es una librería ligera y moderna, apropiada para mostrar fotografías de vehículos y previsualizaciones de adjuntos sin cargar manualmente bitmaps en cada pantalla.</p>
+
+<h2>4.8 Ktor y Kotlin Serialization</h2>
+<p>Ktor se utiliza como cliente HTTP en el ecosistema Supabase y para integraciones externas. Kotlin Serialization permite mapear DTOs entre Kotlin y formatos remotos, utilizando anotaciones para transformar nombres de campos entre camelCase y snake_case.</p>
+
+<h2>4.9 Servicios externos de correo</h2>
+<p>Para correos transaccionales se configuró un proveedor SMTP externo. Esta decisión evita depender de los límites restrictivos del servicio de correo integrado del backend y permite gestionar confirmaciones de cuenta y recuperación de contraseña de forma más estable.</p>
+
+<h2>4.10 Datos públicos de gasolineras</h2>
+<p>La sección de gasolineras se plantea usando datos públicos de estaciones de servicio y precios de carburantes. El objetivo es ofrecer información útil sin depender de APIs de pago ni de servicios que puedan generar costes inesperados.</p>
+
+<h1>5. Arquitectura del sistema</h1>
+<h2>5.1 Visión general</h2>
+<p>La arquitectura del proyecto sigue el patrón MVVM. Esta separación permite que las pantallas se centren en la interfaz, los ViewModels gestionen estado y validaciones, los repositorios coordinen Room y Supabase, y las entidades/DTOs representen los datos en cada capa.</p>
+<div class="diagram">
+  <strong>Diagrama de arquitectura por capas.</strong>
+  <table>
+    <tr><td>Pantallas Compose</td><td>Componentes reutilizables</td><td>Navegación</td></tr>
+    <tr><td colspan="3">ViewModels con StateFlow y corrutinas</td></tr>
+    <tr><td colspan="3">Repositorios offline-first</td></tr>
+    <tr><td>DAOs Room</td><td>DTOs remotos</td><td>Utilidades</td></tr>
+    <tr><td>Base de datos local</td><td>Supabase PostgREST</td><td>Supabase Storage / Auth</td></tr>
+  </table>
+</div>
+
+<h2>5.2 Capa de interfaz</h2>
+<p>La capa de interfaz se encuentra principalmente dentro de <code>ui/pantallas</code> y <code>ui/componentes</code>. Las pantallas son Composables que representan vistas completas: lista de vehículos, formulario de repostaje, detalle de mantenimiento, pantalla de cuenta, documentación, gasolineras, etc.</p>
+<p>Los componentes reutilizables permiten evitar duplicación. Entre ellos destacan el selector de vehículo activo, campo de fecha, tarjetas de cada tipo de entidad, barra superior compacta, filtro de periodo y componentes de imagen.</p>
+
+<h2>5.3 Capa ViewModel</h2>
+<p>Los ViewModels se ubican en <code>ui/viewmodel</code>. Cada sección importante dispone de su propio ViewModel. Esta capa expone estados mediante StateFlow, recibe eventos de usuario, valida formularios y lanza operaciones en corrutinas.</p>
+<p>El uso de ViewModel evita que una pantalla Compose tenga lógica de persistencia directa. Esto facilita pruebas, mantenimiento y futuras ampliaciones.</p>
+
+<h2>5.4 Capa de repositorios</h2>
+<p>Los repositorios están en <code>datos/repositorio</code>. Su papel es coordinar la base local y el backend remoto. La regla general del proyecto es guardar primero en Room, actualizar la interfaz y después intentar sincronizar con Supabase.</p>
+<p>Este patrón reduce el riesgo de pérdida de datos cuando no hay conexión. Si falla la subida, el dato queda localmente disponible y puede sincronizarse más adelante.</p>
+
+<h2>5.5 Capa local Room</h2>
+<p>Room contiene entidades y DAOs. Las entidades representan tablas locales y los DAOs encapsulan consultas. La base de datos principal es <code>GestCarBaseDatos</code>, que registra todas las entidades y las migraciones necesarias.</p>
+
+<h2>5.6 Capa remota</h2>
+<p>La capa remota incluye DTOs y cliente de Supabase. Los DTOs permiten separar el modelo local del formato remoto, especialmente cuando los nombres de campos difieren entre Kotlin y PostgreSQL.</p>
+
+<h2>5.7 Flujo de sincronización</h2>
+<p>El flujo general de sincronización sigue una estrategia offline-first. Cuando el usuario guarda un dato, la app lo escribe en Room. Después intenta enviarlo al backend. Si no puede, el registro conserva su marca temporal y podrá reintentarse.</p>
+<div class="diagram">
+  <strong>Secuencia conceptual de guardado offline-first.</strong>
+  <table>
+    <tr><td>1</td><td>Usuario rellena formulario</td></tr>
+    <tr><td>2</td><td>ViewModel valida campos</td></tr>
+    <tr><td>3</td><td>Repositorio guarda en Room</td></tr>
+    <tr><td>4</td><td>UI se actualiza desde Flow local</td></tr>
+    <tr><td>5</td><td>Repositorio intenta upsert remoto</td></tr>
+    <tr><td>6</td><td>Si falla, WorkManager reintentará posteriormente</td></tr>
+  </table>
+</div>
+
+<h1>6. Modelo de datos</h1>
+<h2>6.1 Entidades principales</h2><table class='tabla'><thead><tr><th>Entidad</th><th>Tabla local</th><th>Responsabilidad</th></tr></thead><tbody><tr><td>Vehiculo</td><td>vehiculos</td><td>Datos principales del vehículo, foto, kilometraje, orden y pertenencia al usuario.</td></tr><tr><td>Repostaje</td><td>repostajes</td><td>Historial de combustible asociado a un vehículo.</td></tr><tr><td>Mantenimiento</td><td>mantenimientos</td><td>Operaciones mecánicas pendientes o realizadas, separadas entre mantenimiento y reparación.</td></tr><tr><td>GastoPeriodico</td><td>gastos_periodicos</td><td>Gastos únicos o recurrentes, vencimientos y estado de pago.</td></tr><tr><td>Recordatorio</td><td>recordatorios</td><td>Avisos por fecha, kilometraje y periodicidad.</td></tr><tr><td>DocumentoVehiculo</td><td>documentos_vehiculo</td><td>Tarjetas de documentación personalizadas por vehículo.</td></tr><tr><td>CampoDocumento</td><td>campos_documento</td><td>Pares nombre-valor ordenables dentro de cada tarjeta documental.</td></tr><tr><td>AdjuntoDocumento</td><td>adjuntos_documento</td><td>Metadatos de archivos asociados a documentación, con copia local y ruta remota.</td></tr></tbody></table><h2>6.2 Relaciones</h2>
+<p>La entidad central es el vehículo. Repostajes, mantenimientos, gastos, recordatorios y documentación dependen de un vehículo mediante clave foránea. A su vez, una tarjeta de documentación puede tener múltiples campos personalizados y múltiples adjuntos.</p>
+<div class="diagram">
+  <strong>Diagrama conceptual de relaciones.</strong>
+  <table>
+    <tr><td rowspan="5">Vehiculo</td><td>1 : N</td><td>Repostaje</td></tr>
+    <tr><td>1 : N</td><td>Mantenimiento</td></tr>
+    <tr><td>1 : N</td><td>GastoPeriodico</td></tr>
+    <tr><td>1 : N</td><td>Recordatorio</td></tr>
+    <tr><td>1 : N</td><td>DocumentoVehiculo</td></tr>
+    <tr><td>DocumentoVehiculo</td><td>1 : N</td><td>CampoDocumento</td></tr>
+    <tr><td>DocumentoVehiculo</td><td>1 : N</td><td>AdjuntoDocumento</td></tr>
+  </table>
+</div>
+
+<h2>6.3 Migraciones</h2>
+<p>La base de datos local se encuentra en versión 10. Las migraciones reflejan la evolución del proyecto: cambio de año de fabricación a fecha parcial, incorporación de repostajes, mantenimientos, gastos, recordatorios, estados de pago, orden de vehículos, periodicidad de recordatorios, documentación flexible y adjuntos.</p><table class='tabla'><thead><tr><th>Migración</th><th>Cambio principal</th><th>Justificación</th></tr></thead><tbody><tr><td>1 → 2</td><td>Reestructuración de fecha de fabricación del vehículo.</td><td>Permitir año obligatorio y mes/día opcionales.</td></tr><tr><td>2 → 3</td><td>Creación de repostajes, mantenimientos, gastos y recordatorios.</td><td>Ampliar la app más allá del CRUD de vehículos.</td></tr><tr><td>3 → 4</td><td>Campos de pagado y fecha de pago en gastos.</td><td>Diferenciar gastos pendientes e históricos.</td></tr><tr><td>4 → 5</td><td>Campos de realizado y fecha realizada en mantenimientos.</td><td>Permitir checklist de reparaciones y mantenimientos.</td></tr><tr><td>5 → 6</td><td>Campos habitual y ordenLista en vehículos.</td><td>Priorizar vehículos habituales y mejorar selectores.</td></tr><tr><td>6 → 7</td><td>Periodicidad en recordatorios.</td><td>Crear avisos repetibles por tiempo y kilómetros.</td></tr><tr><td>7 → 8</td><td>Documentación flexible.</td><td>Permitir tarjetas documentales configurables.</td></tr><tr><td>8 → 9</td><td>Adjuntos documentales.</td><td>Asociar archivos a la documentación.</td></tr><tr><td>9 → 10</td><td>Ruta remota y fecha de sincronización en adjuntos.</td><td>Sincronizar archivos con almacenamiento remoto sin perder copia local.</td></tr></tbody></table><h2>6.4 Identificadores y fechas</h2>
+<p>Los identificadores se gestionan como cadenas UUID. Esta decisión facilita la compatibilidad entre Room y Supabase, evita depender de autoincrementos locales y reduce conflictos de sincronización.</p>
+<p>Las fechas se almacenan como valores Long en milisegundos desde epoch. Este formato simplifica comparaciones, filtros temporales, cálculos de vencimiento y serialización entre capas.</p>
+
+<h1>7. Diseño de interfaz y experiencia de usuario</h1>
+<h2>7.1 Principios visuales</h2>
+<p>La interfaz busca ser clara, tranquila y práctica. Se utilizan tarjetas, formularios simples, botones flotantes y una barra inferior con iconos. La app prioriza lectura rápida y acciones directas.</p>
+<p>La paleta evita saturar al usuario. El azul se utiliza como color principal, los tonos suaves como fondo de tarjetas y colores diferenciados para estados o categorías sin connotaciones agresivas.</p>
+
+<h2>7.2 Navegación principal</h2>
+<p>La navegación principal se organiza mediante una barra inferior con cinco secciones: vehículos, gastos, repostajes, mantenimiento y más. Esta decisión deja a mano las operaciones principales sin esconderlas en menús profundos.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: barra inferior con iconos principales</div>
+      <div class='placeholder-desc'>Debe mostrar las cinco secciones principales de la aplicación.</div>
+    </td>
+  </tr>
+</table><h2>7.3 Barras superiores</h2>
+<p>Las pantallas utilizan una barra superior compacta con título y acciones contextuales. En pantallas secundarias se incluye flecha de retroceso para no depender únicamente de la navegación del sistema.</p>
+
+<h2>7.4 Selectores de vehículo</h2>
+<p>Las pantallas relacionadas con datos de vehículo incluyen un selector de vehículo activo. El orden de ese selector respeta la organización definida por el usuario en la pantalla de vehículos, priorizando los vehículos habituales.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: selector de vehículo activo</div>
+      <div class='placeholder-desc'>Debe mostrar un vehículo seleccionado y desplegable de cambio.</div>
+    </td>
+  </tr>
+</table><h2>7.5 Formularios</h2>
+<p>Los formularios utilizan campos claros y validaciones visuales. Los campos obligatorios se señalan con asterisco, y cuando falta información se resalta el campo correspondiente. Los campos numéricos se han ajustado para aceptar coma o punto decimal según la costumbre del usuario.</p>
+
+<h2>7.6 Placeholder de capturas</h2>
+<p>Las capturas reales deben incorporarse antes de la entrega final. En esta memoria se han dejado cajas de una sola celda para indicar dónde debe ir cada evidencia visual.</p>
+
+<h1>8. Desarrollo funcional</h1>
+<h2>8.1 Autenticación</h2>
+<p>La autenticación permite registrar usuarios mediante correo electrónico, confirmar la cuenta, iniciar sesión, persistir sesión y recuperar contraseña. El flujo de recuperación utiliza deep links para devolver al usuario a la aplicación tras abrir el enlace del correo.</p>
+<p>Se prestó especial atención a los campos de contraseña. Estos campos se configuran para evitar sugerencias predictivas inseguras y mantener un comportamiento coherente entre login, registro y cambio de contraseña.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: pantalla de inicio de sesión</div>
+      <div class='placeholder-desc'>Debe mostrar correo, contraseña, recuperación de contraseña y enlace de registro.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: pantalla de registro</div>
+      <div class='placeholder-desc'>Debe mostrar campos de correo, contraseña, confirmación y mensaje de revisión de correo.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: pantalla de restablecimiento de contraseña</div>
+      <div class='placeholder-desc'>Debe mostrar campos protegidos y acción de guardar nueva contraseña.</div>
+    </td>
+  </tr>
+</table><h2>8.2 Vehículos</h2>
+<p>La sección de vehículos permite registrar los datos básicos del vehículo. Se admiten fecha de fabricación completa o parcial, siendo obligatorio únicamente el año. La matrícula se normaliza con un enfoque flexible para no bloquear al usuario ante formatos antiguos o poco habituales.</p>
+<p>Además, el usuario puede añadir una foto del vehículo. Si no se añade foto, la app mantiene iconos por defecto. Las imágenes se comprimen, se guardan localmente y se suben al storage remoto cuando es posible.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: formulario de vehículo</div>
+      <div class='placeholder-desc'>Debe mostrar campos obligatorios, opcionales, fecha de fabricación y validaciones.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: detalle de vehículo con fotografía</div>
+      <div class='placeholder-desc'>Debe mostrar foto, matrícula, datos técnicos y resumen de actividad.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: organización de vehículos habituales y otros vehículos</div>
+      <div class='placeholder-desc'>Debe mostrar modo de edición con arrastre y secciones.</div>
+    </td>
+  </tr>
+</table><h2>8.3 Repostajes</h2>
+<p>Los repostajes permiten calcular el consumo real del vehículo. El usuario introduce kilometraje, litros, precio por litro, gasolinera y notas. La aplicación calcula importes y métricas como consumo medio y coste medio por cada cien kilómetros.</p>
+<p>La pantalla admite filtros temporales para consultar únicamente repostajes de un periodo. Esto evita que el histórico completo oculte la información más reciente.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: lista de repostajes con métricas</div>
+      <div class='placeholder-desc'>Debe mostrar consumo medio, coste medio, tarjetas de repostaje y selector de periodo.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: formulario de repostaje</div>
+      <div class='placeholder-desc'>Debe mostrar fecha, kilómetros, litros, precio por litro, importe y notas.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: detalle de repostaje</div>
+      <div class='placeholder-desc'>Debe mostrar todos los datos guardados antes de editar.</div>
+    </td>
+  </tr>
+</table><h2>8.4 Mantenimientos y reparaciones</h2>
+<p>La pantalla de mantenimiento separa operaciones pendientes y realizadas. También diferencia mantenimientos y reparaciones, pero sin forzar una lista cerrada de componentes. El usuario puede escribir libremente el componente o la operación.</p>
+<p>El coste no se limita a valores positivos estrictos porque existen reparaciones gratuitas por garantía, campañas de fabricante o cobertura de seguros. El coste cero es por tanto un caso válido.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: lista de mantenimientos con filtros</div>
+      <div class='placeholder-desc'>Debe mostrar pendientes, realizadas, chip de mantenimiento/reparación y total económico.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: formulario de mantenimiento</div>
+      <div class='placeholder-desc'>Debe mostrar tipo o componente libre, estado, categoría, fecha, kilómetros, coste, taller y descripción.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: detalle de mantenimiento</div>
+      <div class='placeholder-desc'>Debe mostrar información completa y acción para marcar como realizada si procede.</div>
+    </td>
+  </tr>
+</table><h2>8.5 Gastos</h2>
+<p>Los gastos cubren pagos no necesariamente mecánicos: seguro, ITV, impuesto, parking, peajes, lavados y otros conceptos. La app diferencia pendientes y pagados, y utiliza la fecha de vencimiento para reflejar visualmente si un gasto está vencido, próximo o al día.</p>
+<p>Cuando un gasto periódico se marca como pagado, la aplicación puede proponer la creación del siguiente aviso con la misma periodicidad. Esta lógica evita que el usuario tenga que crear manualmente un gasto nuevo cada año o mes.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: lista de gastos pendientes y pagados</div>
+      <div class='placeholder-desc'>Debe mostrar estados visuales, sección pagados plegable y gastos periódicos.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: detalle de gasto</div>
+      <div class='placeholder-desc'>Debe mostrar datos del gasto y botón de marcar como pagado.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: modal de creación del siguiente gasto</div>
+      <div class='placeholder-desc'>Debe mostrar confirmación para generar el siguiente vencimiento.</div>
+    </td>
+  </tr>
+</table><h2>8.6 Recordatorios</h2>
+<p>Los recordatorios permiten avisar al usuario por fecha, kilometraje o una combinación de ambos. La interfaz se simplificó para que el usuario no tenga que gestionar demasiados interruptores. Si configura periodicidad, la app interpreta el valor como repetición; si no, lo trata como aviso puntual.</p>
+<p>Esta flexibilidad permite casos como cambio de aceite cada cierto número de kilómetros, revisión de neumáticos cada cierto tiempo o inspecciones que dependen de fecha y kilometraje.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: lista de recordatorios</div>
+      <div class='placeholder-desc'>Debe mostrar pendientes, completados y estados por fecha/kilometraje.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: formulario simplificado de recordatorio</div>
+      <div class='placeholder-desc'>Debe mostrar fecha límite, kilometraje límite, periodicidad y comentarios.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: detalle de recordatorio</div>
+      <div class='placeholder-desc'>Debe mostrar datos y acción de completar.</div>
+    </td>
+  </tr>
+</table><h2>8.7 Estadísticas</h2>
+<p>La sección de estadísticas resume información económica y de uso. El objetivo no es solo mostrar números, sino convertir los registros diarios en información útil: consumo, coste medio, coste acumulado, coste por kilómetro y operaciones realizadas.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: pantalla de estadísticas</div>
+      <div class='placeholder-desc'>Debe mostrar tarjetas de indicadores, filtros y gráficos o resúmenes visuales.</div>
+    </td>
+  </tr>
+</table><h2>8.8 Exportación de datos</h2>
+<p>La exportación permite sacar información fuera de la aplicación. Se plantean formatos útiles para usuario final como CSV, Excel, PDF y texto compartible. El texto compartible está pensado para enviar por WhatsApp o similar un resumen breve de un vehículo.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: modal de exportación</div>
+      <div class='placeholder-desc'>Debe mostrar opciones CSV, PDF, Excel y texto compartible.</div>
+    </td>
+  </tr>
+</table><h2>8.9 Documentación del vehículo</h2>
+<p>La documentación es una de las secciones más diferenciales del proyecto. En lugar de imponer tipos cerrados de documentos, la app permite crear tarjetas personalizadas. Cada tarjeta puede tener un título, notas, campos configurables y adjuntos.</p>
+<p>Por ejemplo, el usuario puede crear una tarjeta llamada Seguro y añadir campos como aseguradora, número de póliza, teléfono, coberturas o cualquier otro dato relevante. También puede crear tarjetas para permiso de circulación, certificado histórico, parking, documentación de empresa, accesorios o revisiones específicas.</p>
+<p>Los campos personalizados se pueden reordenar mediante interacción táctil. Esto permite que el usuario adapte la presentación a su propio criterio sin depender de un orden fijo.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: lista de documentación</div>
+      <div class='placeholder-desc'>Debe mostrar tarjetas documentales por vehículo.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: detalle de documentación</div>
+      <div class='placeholder-desc'>Debe mostrar campos personalizados, notas y archivos asociados.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: edición de documentación con reordenación</div>
+      <div class='placeholder-desc'>Debe mostrar campos arrastrables y orden personalizados.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: adjuntos de documentación</div>
+      <div class='placeholder-desc'>Debe mostrar previsualización de imagen o documento, similar a una tarjeta de archivo.</div>
+    </td>
+  </tr>
+</table><h2>8.10 Cuenta de usuario</h2>
+<p>La pantalla de cuenta muestra el correo electrónico y acciones relevantes: cerrar sesión, cambiar contraseña y eliminar cuenta. Por seguridad no se muestran identificadores internos del backend ni información que no aporte valor al usuario final.</p>
+<p>La eliminación de cuenta requiere doble confirmación. La primera ventana explica el alcance de la acción y la segunda solicita confirmación final para evitar borrados accidentales.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: pantalla de cuenta</div>
+      <div class='placeholder-desc'>Debe mostrar correo, cerrar sesión, cambio de contraseña y eliminar cuenta.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: doble confirmación de eliminación de cuenta</div>
+      <div class='placeholder-desc'>Debe mostrar advertencia de borrado de datos asociados.</div>
+    </td>
+  </tr>
+</table><h2>8.11 Gasolineras</h2>
+<p>La pantalla de gasolineras se plantea como una mejora de valor para el usuario. Permite consultar estaciones de servicio cercanas y precios de carburante dentro de un radio seleccionado. La navegación final se delega en Google Maps, ya que GestCar informa, pero no pretende convertirse en una aplicación de navegación.</p>
+<p>Esta funcionalidad utiliza ubicación del dispositivo, datos externos y representación visual en mapa. Por su naturaleza, es una de las partes más sensibles a permisos, conectividad y disponibilidad del servicio externo.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: pantalla de gasolineras con mapa</div>
+      <div class='placeholder-desc'>Debe mostrar mapa, rango de búsqueda, ubicación y puntos de estaciones.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: detalle de gasolinera</div>
+      <div class='placeholder-desc'>Debe mostrar nombre, dirección, precios disponibles y botón Ir.</div>
+    </td>
+  </tr>
+</table><h1>9. Seguridad y privacidad</h1>
+<h2>9.1 Datos tratados</h2>
+<p>GestCar puede almacenar información sensible: matrículas, fotografías, historial de uso, gastos, mantenimientos, documentación, adjuntos y datos de cuenta. Aunque no se trata de una aplicación bancaria, el conjunto de datos puede revelar hábitos, posesiones, direcciones indirectas o documentación personal.</p>
+<p>Por ese motivo, la seguridad no se considera un añadido, sino una parte central del diseño.</p>
+
+<h2>9.2 Separación por usuario</h2>
+<p>Los datos remotos se asocian al usuario autenticado. Las políticas de acceso del backend impiden que un usuario consulte o modifique registros que no le pertenecen. En la app, los registros también incorporan identificadores de usuario o relaciones indirectas mediante vehículo.</p>
+
+<h2>9.3 Storage privado</h2>
+<p>Las imágenes y adjuntos se tratan mediante almacenamiento privado. La app no depende de buckets públicos para exponer ficheros sensibles. Cuando necesita acceder a un archivo remoto, se utiliza una ruta controlada y mecanismos temporales o autorizados según la configuración del backend.</p>
+
+<h2>9.4 Credenciales y repositorio</h2>
+<p>El repositorio público no debe contener credenciales, tokens, contraseñas, claves privilegiadas, scripts sensibles ni datos reales de usuarios. La configuración privada debe gestionarse fuera de la documentación pública.</p>
+
+<h2>9.5 Eliminación de cuenta</h2>
+<p>La eliminación de cuenta se plantea como una operación protegida en backend. Desde la interfaz se solicita doble confirmación porque la acción afecta a datos personales y registros asociados a vehículos.</p>
+
+<h2>9.6 Riesgos mitigados</h2><table class='tabla'><thead><tr><th>Riesgo</th><th>Medida aplicada</th><th>Resultado esperado</th></tr></thead><tbody><tr><td>Acceso cruzado entre usuarios</td><td>Row Level Security y asociación por usuario.</td><td>Cada usuario accede únicamente a sus datos.</td></tr><tr><td>Exposición de archivos</td><td>Storage privado y rutas controladas.</td><td>Los adjuntos no quedan públicamente listables.</td></tr><tr><td>Pérdida de datos sin conexión</td><td>Room y sincronización posterior.</td><td>El usuario conserva datos locales.</td></tr><tr><td>Contraseñas visibles o sugeridas</td><td>Campos protegidos y sin texto predictivo.</td><td>Menor riesgo de exposición en pantalla o teclado.</td></tr><tr><td>Borrado accidental</td><td>Doble confirmación para eliminar cuenta.</td><td>Menor probabilidad de pérdida irreversible.</td></tr><tr><td>Secretos en GitHub</td><td>README sin claves ni SQL sensible.</td><td>Menor superficie de exposición pública.</td></tr></tbody></table><h1>10. Funcionamiento offline y sincronización</h1>
+<h2>10.1 Enfoque offline-first</h2>
+<p>El enfoque offline-first significa que la aplicación no espera a que el backend confirme una operación para reflejarla localmente. Primero se guarda en Room, después se intenta sincronizar. Esta decisión mejora la experiencia de usuario y protege datos en situaciones sin cobertura.</p>
+
+<h2>10.2 Sincronización automática</h2>
+<p>La sincronización se activa en diferentes momentos: al abrir pantallas, al recuperar conexión, al guardar cambios y mediante tareas programadas. El objetivo es reducir inconsistencias entre dispositivos sin obligar al usuario a pulsar un botón manual.</p>
+
+<h2>10.3 Banner de conectividad</h2>
+<p>La aplicación muestra avisos cuando no hay conexión y cuando se recupera. Estos avisos aparecen bajo la barra superior para no interrumpir el trabajo, pero informan claramente del estado.</p><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: banner No hay conexión</div>
+      <div class='placeholder-desc'>Debe mostrar aviso gris oscuro centrado bajo la barra superior.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: banner Vuelves a tener conexión</div>
+      <div class='placeholder-desc'>Debe mostrar aviso verde centrado bajo la barra superior.</div>
+    </td>
+  </tr>
+</table><h2>10.4 Tareas en segundo plano</h2>
+<p>WorkManager permite ejecutar sincronizaciones y avisos respetando restricciones de Android. Esto es importante porque los usuarios no mantienen la app abierta constantemente. Si registran un dato sin conexión y cierran la app, una tarea posterior puede intentar sincronizarlo cuando el sistema lo permita.</p>
+
+<h1>11. Notificaciones</h1>
+<h2>11.1 Objetivo</h2>
+<p>Las notificaciones se usan para avisar de vencimientos y recordatorios importantes. La intención no es saturar al usuario, sino ayudarle a no olvidar gastos o tareas relevantes.</p>
+
+<h2>11.2 Estrategia de avisos</h2>
+<p>Para gastos con vencimiento se plantea aviso con antelación, aviso intermedio y aviso durante la semana del vencimiento. El sistema puede ajustar la hora exacta de ejecución según las políticas de Android, por lo que no se fuerza una hora exacta crítica.</p><table class='tabla'><thead><tr><th>Situación</th><th>Mensaje orientativo</th><th>Justificación</th></tr></thead><tbody><tr><td>30 días antes</td><td>Tienes un gasto próximo a vencer.</td><td>Primer aviso tranquilo, sin urgencia.</td></tr><tr><td>15 días antes</td><td>El gasto con nombre X vence en 15 días.</td><td>Recordatorio intermedio.</td></tr><tr><td>Semana del vencimiento</td><td>El gasto con nombre X vence esta semana.</td><td>Aviso más visible sin repetir fecha innecesariamente.</td></tr><tr><td>Último día</td><td>El gasto con nombre X vence hoy.</td><td>Aviso final para evitar descuido.</td></tr><tr><td>Recordatorio por kilometraje</td><td>Revisa el recordatorio X.</td><td>Depende del kilometraje registrado del vehículo.</td></tr></tbody></table><h1>12. Validaciones y usabilidad</h1>
+<h2>12.1 Formularios</h2>
+<p>Los formularios validan campos obligatorios y resaltan errores en rojo cuando falta información. Se evita mostrar textos largos como “obligatorio” u “opcional” en cada etiqueta, utilizando asteriscos en los campos necesarios y mensajes de advertencia al guardar.</p>
+
+<h2>12.2 Entradas numéricas</h2>
+<p>Los importes y precios aceptan coma o punto decimal. Esta decisión mejora la usabilidad en España, donde es frecuente escribir decimales con coma. La app normaliza internamente el valor para calcular y guardar correctamente.</p>
+
+<h2>12.3 Matrículas</h2>
+<p>La normalización de matrículas se diseñó con flexibilidad. En España conviven formatos modernos, formatos provinciales antiguos y formatos especiales. La aplicación evita bloquear al usuario ante casos raros, pero puede advertir si el formato no parece reconocible.</p>
+
+<h2>12.4 Navegación</h2>
+<p>La navegación se reforzó para evitar pantallas sin salida. Las pantallas secundarias incluyen flecha de retroceso y los accesos desde tarjetas conservan el contexto del vehículo.</p>
+
+<h1>13. Pruebas y validación</h1>
+<h2>13.1 Estrategia de pruebas</h2>
+<p>La validación se ha realizado principalmente mediante pruebas funcionales manuales en emuladores y dispositivos físicos. Se han probado flujos completos, sincronización entre dispositivos, uso offline, formularios, imágenes, adjuntos, navegación y autenticación.</p><table class='tabla'><thead><tr><th>Módulo</th><th>Pruebas realizadas</th><th>Estado</th></tr></thead><tbody><tr><td>Autenticación</td><td>Registro, confirmación por correo, login, persistencia de sesión, cierre de sesión y recuperación de contraseña.</td><td>Validado en emulador y dispositivos físicos durante el desarrollo.</td></tr><tr><td>Vehículos</td><td>CRUD, fotografía, edición, borrado, orden habitual/secundario y selectores.</td><td>Validado mediante uso funcional y sincronización entre pantallas.</td></tr><tr><td>Repostajes</td><td>Alta, edición, detalle, borrado, cálculo de consumo y filtros temporales.</td><td>Validado con datos reales de prueba y actualización de kilometraje.</td></tr><tr><td>Mantenimientos</td><td>Pendientes, realizados, coste cero, componentes libres, filtros y totales.</td><td>Validado con casos de mantenimiento y reparación.</td></tr><tr><td>Gastos</td><td>Pendientes, pagados, vencimientos, renovación periódica y estados visuales.</td><td>Validado con ITV, impuesto, parking, peajes y lavados.</td></tr><tr><td>Recordatorios</td><td>Fecha, kilometraje, periodicidad y completado.</td><td>Validado con recordatorios manuales y escenarios de vencimiento.</td></tr><tr><td>Documentación</td><td>Tarjetas, campos dinámicos, reordenación, adjuntos, cámara, galería, documentos y borrado remoto.</td><td>Validado con sincronización entre dispositivos.</td></tr><tr><td>Offline-first</td><td>Creación sin red, aviso de conectividad y subida posterior.</td><td>Validado desactivando conexión en emulador y dispositivo.</td></tr><tr><td>Notificaciones</td><td>Programación de avisos mediante WorkManager.</td><td>Pendiente de ampliar con pruebas de larga duración.</td></tr><tr><td>Gasolineras</td><td>Ubicación, rango, API externa y mapa.</td><td>En fase de estabilización funcional y revisión visual.</td></tr></tbody></table><h2>13.2 Dispositivos y entornos utilizados</h2><table class='tabla'><thead><tr><th>Entorno</th><th>Sistema</th><th>Resultado</th></tr></thead><tbody><tr><td>PC Intel</td><td>Windows 10, Android Studio Otter 3 Feature Drop 2025.2.3</td><td>Proyecto clonado y ejecutado correctamente en emulador.</td></tr><tr><td>PC AMD</td><td>Windows 11, Android Studio Panda 3 2025.3.3</td><td>Proyecto clonado y ejecutado correctamente.</td></tr><tr><td>Máquina virtual AMD</td><td>Windows 11, Android Studio Panda 4 2025.3.4</td><td>Proyecto descargado y abierto correctamente.</td></tr><tr><td>BlueStacks</td><td>BlueStacks 5.22.168.1001</td><td>APK instalado y ejecutado.</td></tr><tr><td>MuMu Player</td><td>Versión 5.27.2.3530</td><td>APK instalado y ejecutado.</td></tr><tr><td>Xiaomi Redmi 7</td><td>Android 10</td><td>APK instalado y ejecutado.</td></tr><tr><td>Samsung A20e</td><td>Android 11</td><td>APK instalado y ejecutado.</td></tr><tr><td>Xiaomi Poco F5</td><td>Android 13</td><td>APK instalado y ejecutado.</td></tr><tr><td>Xiaomi 11T Pro</td><td>Android 14</td><td>APK instalado y ejecutado.</td></tr></tbody></table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: evidencia de ejecución en emulador</div>
+      <div class='placeholder-desc'>Añadir captura de Android Studio con la app abierta.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: evidencia de ejecución en dispositivo físico</div>
+      <div class='placeholder-desc'>Añadir captura del móvil con GestCar funcionando.</div>
+    </td>
+  </tr>
+</table><table class="placeholder">
+  <tr>
+    <td>
+      <div class="placeholder-title">Captura pendiente: evidencia de sincronización entre dispositivos</div>
+      <div class='placeholder-desc'>Mostrar el mismo dato creado en un dispositivo y consultado en otro.</div>
+    </td>
+  </tr>
+</table><h2>13.3 Pruebas offline</h2>
+<p>Se han realizado pruebas desactivando la red del dispositivo, creando registros y recuperando conexión posteriormente. El objetivo es verificar que los datos no desaparecen si Supabase no está disponible en el momento de guardar.</p>
+
+<h2>13.4 Pruebas de seguridad funcional</h2>
+<p>Se revisó que la aplicación no mostrara identificadores internos de usuario, que las contraseñas no usaran sugerencias predictivas, que la eliminación de cuenta requiriera doble confirmación y que los adjuntos se trataran como datos sensibles.</p>
+
+<h2>13.5 Limitaciones de prueba</h2>
+<p>No se dispone todavía de una batería completa de tests automatizados. La validación manual ha cubierto muchos escenarios reales, pero como mejora futura sería recomendable incorporar pruebas unitarias sobre repositorios, normalizadores, cálculos de estadísticas y validadores de formularios.</p>
+
+<h1>14. Manual de instalación y despliegue</h1>
+<h2>14.1 Instalación como usuario final mediante APK</h2>
+<p>La forma más sencilla de probar GestCar es instalar un APK generado desde el proyecto. El repositorio de GitHub contiene código fuente, pero no es directamente una aplicación instalable en un teléfono.</p><ul><li>Recibir el archivo APK generado por el desarrollador.</li><li>Copiarlo al dispositivo Android mediante cable, Drive, correo, mensajería o gestor de archivos.</li><li>Abrir el APK desde el dispositivo.</li><li>Permitir instalación desde la fuente utilizada si Android lo solicita.</li><li>Instalar GestCar.</li><li>Abrir la aplicación.</li><li>Registrarse o iniciar sesión.</li><li>Confirmar el correo electrónico si se está usando una cuenta nueva.</li><li>Crear un primer vehículo para comenzar a usar las secciones funcionales.</li></ul><h2>14.2 Instalación desde Android Studio</h2>
+<p>Esta opción está pensada para revisión técnica o desarrollo. Permite compilar el proyecto desde el código fuente.</p><ul><li>Instalar Android Studio actualizado.</li><li>Instalar el SDK de Android requerido.</li><li>Descargar o clonar el repositorio.</li><li>Abrir la carpeta raíz del proyecto desde Android Studio.</li><li>Esperar a que Gradle sincronice dependencias.</li><li>Seleccionar el módulo app.</li><li>Crear o iniciar un emulador Android.</li><li>Ejecutar la aplicación desde el botón Run.</li><li>Si se usa un dispositivo físico, activar depuración USB y aceptar la autorización RSA.</li></ul><h2>14.3 Generación de APK debug</h2>
+<p>Desde Android Studio puede generarse un APK debug mediante la opción de menú Build &gt; Build Bundle(s) / APK(s) &gt; Build APK(s). También puede generarse desde terminal ejecutando Gradle.</p>
+<div class="nota">Ruta habitual del APK debug: <code>app/build/outputs/apk/debug/</code></div>
+
+<h2>14.4 Configuración privada</h2>
+<p>Para conectar la aplicación con servicios externos reales es necesario disponer de configuración privada del backend, autenticación, storage, políticas y SMTP. Esos valores no deben incluirse en repositorios públicos ni en anexos entregables si pueden comprometer la seguridad.</p>
+
+<h2>14.5 Problemas frecuentes</h2><table class='tabla'><thead><tr><th>Problema</th><th>Causa probable</th><th>Solución recomendada</th></tr></thead><tbody><tr><td>La app no inicia sesión</td><td>Correo sin confirmar, contraseña incorrecta, red desactivada o backend pausado.</td><td>Comprobar correo, contraseña, conexión y estado del proyecto remoto.</td></tr><tr><td>El APK no instala</td><td>APK release sin firma válida o archivo dañado.</td><td>Usar APK debug generado correctamente o firmar release.</td></tr><tr><td>No llegan correos</td><td>SMTP no configurado o límite del proveedor.</td><td>Revisar proveedor SMTP y panel de autenticación.</td></tr><tr><td>No se ven imágenes</td><td>Sin red y sin copia local, storage no accesible o ruta desactualizada.</td><td>Comprobar copia local, sincronización y permisos de storage.</td></tr><tr><td>Gradle no sincroniza</td><td>Dependencias sin descargar o SDK incorrecto.</td><td>Actualizar SDK, revisar conexión y limpiar proyecto.</td></tr><tr><td>Mapa en blanco</td><td>Problema de WebView, tiles, permisos o red.</td><td>Revisar diagnóstico de la pantalla, permisos y Logcat.</td></tr></tbody></table><h1>15. Manual de usuario</h1>
+<h2>15.1 Primer uso</h2>
+<p>Al abrir GestCar por primera vez, el usuario verá la pantalla de inicio de sesión. Si todavía no tiene cuenta, debe acceder a registro, introducir correo y contraseña, confirmar el correo recibido y volver a iniciar sesión.</p>
+
+<h2>15.2 Crear vehículo</h2>
+<p>Después de iniciar sesión, el primer paso recomendado es crear un vehículo. Sin vehículos, las pantallas de repostajes, gastos, mantenimientos, recordatorios y documentación no tienen una referencia sobre la que trabajar.</p>
+
+<h2>15.3 Gestionar datos del vehículo</h2>
+<p>Desde la ficha del vehículo se puede consultar información principal y acceder a resúmenes de actividad. La app centraliza repostajes, gastos, mantenimientos, recordatorios y documentación.</p>
+
+<h2>15.4 Consultar métricas</h2>
+<p>Las métricas ayudan a interpretar el uso del vehículo. El consumo medio actual muestra litros cada cien kilómetros, mientras que el coste medio de combustible indica cuánto cuesta recorrer cien kilómetros según los repostajes registrados.</p>
+
+<h2>15.5 Gestionar documentación</h2>
+<p>La documentación permite crear tarjetas libres. El usuario decide el título y los campos. Esta flexibilidad evita que la app limite documentos que no han sido previstos durante el diseño.</p>
+
+<h2>15.6 Uso sin conexión</h2>
+<p>Si el dispositivo no tiene conexión, la aplicación avisa mediante un banner. El usuario puede seguir creando y editando muchos datos. La sincronización se realizará cuando vuelva la conexión.</p>
+
+<h1>16. Conclusiones</h1>
+<p>GestCar ha evolucionado desde una aplicación centrada en vehículos hasta una herramienta integral de gestión. La arquitectura elegida ha permitido añadir módulos complejos sin romper el núcleo inicial: repostajes, mantenimientos, gastos, recordatorios, documentación, adjuntos, estadísticas, cuenta, notificaciones y gasolineras.</p>
+<p>La principal fortaleza del proyecto es que resuelve un problema real con una solución práctica. No se limita a demostrar una tecnología aislada, sino que combina persistencia local, sincronización remota, seguridad, UX móvil, manejo de archivos, permisos, background work y datos externos.</p>
+<p>El enfoque offline-first es especialmente relevante porque diferencia la aplicación de un simple cliente remoto. Un usuario puede crear información sin conexión y no perderla. Esto encaja con casos reales como garajes, talleres, gasolineras con poca cobertura o uso en carretera.</p>
+<p>La sección de documentación aporta valor diferencial al permitir que el usuario modele su propia información. En lugar de imponer formularios rígidos para todos los documentos posibles, GestCar permite tarjetas y campos personalizados, lo que aumenta la vida útil del diseño.</p>
+<p>Como líneas de mejora, se recomienda estabilizar completamente la pantalla de gasolineras, ampliar pruebas automatizadas, preparar firma release, mejorar accesibilidad, revisar textos finales y completar capturas reales antes de la entrega definitiva.</p>
+
+<h1>17. Líneas futuras</h1><ul><li>Publicación controlada en Google Play con firma release y política de privacidad.</li><li>Pruebas unitarias y de integración para repositorios, cálculos y validadores.</li><li>Cifrado adicional de documentación sensible en local.</li><li>Mejoras avanzadas en mapa de gasolineras, buscador de localidad y caché de resultados.</li><li>Exportación PDF con diseño definitivo y logo de la aplicación.</li><li>Soporte para varios idiomas si el proyecto crece.</li><li>Panel de ajustes para preferencias de notificaciones y sincronización.</li><li>Mejoras de accesibilidad para tamaños de fuente elevados y lectores de pantalla.</li><li>Sistema de copias de seguridad manuales cifradas.</li><li>Comparativa de consumos entre vehículos del mismo usuario.</li></ul><h1>18. Bibliografía</h1>
+<p>Las siguientes referencias se presentan en formato APA 7 orientativo y deberán revisarse antes de la entrega final para ajustar fecha de consulta si el centro lo exige.</p>
+<ul><li>Android Developers. (2026). <em>Jetpack Compose documentation</em>. https://developer.android.com/compose</li><li>Android Developers. (2026). <em>Room persistence library</em>. https://developer.android.com/training/data-storage/room</li><li>Android Developers. (2026). <em>WorkManager</em>. https://developer.android.com/topic/libraries/architecture/workmanager</li><li>Android Developers. (2026). <em>App architecture guide</em>. https://developer.android.com/topic/architecture</li><li>JetBrains. (2026). <em>Kotlin language documentation</em>. https://kotlinlang.org/docs/home.html</li><li>Supabase. (2026). <em>Supabase documentation</em>. https://supabase.com/docs</li><li>Supabase. (2026). <em>Row Level Security</em>. https://supabase.com/docs/guides/database/postgres/row-level-security</li><li>Ktor. (2026). <em>Ktor client documentation</em>. https://ktor.io/docs/client-create-new-application.html</li><li>Coil. (2026). <em>Coil image loading for Android</em>. https://coil-kt.github.io/coil/</li><li>OWASP Foundation. (2026). <em>Mobile Application Security Verification Standard</em>. https://mas.owasp.org/MASVS/</li><li>OpenStreetMap Foundation. (2026). <em>OpenStreetMap</em>. https://www.openstreetmap.org/</li><li>Ministerio para la Transición Ecológica y el Reto Demográfico. (2026). <em>Datos públicos de estaciones de servicio y precios de carburantes</em>. https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/</li></ul>
+
+<h1>19. Anexos</h1>
+<h2>Anexo A. Lista de capturas recomendadas</h2><table class='tabla'><thead><tr><th>Número</th><th>Captura</th><th>Objetivo</th></tr></thead><tbody><tr><td>A-01</td><td>Splash</td><td>Demostrar carga inicial sin mostrar login de forma brusca.</td></tr><tr><td>A-02</td><td>Login</td><td>Mostrar autenticación.</td></tr><tr><td>A-03</td><td>Registro</td><td>Mostrar alta de usuario.</td></tr><tr><td>A-04</td><td>Confirmación de correo</td><td>Evidenciar flujo de activación.</td></tr><tr><td>A-05</td><td>Vehículos</td><td>Mostrar pantalla principal.</td></tr><tr><td>A-06</td><td>Detalle vehículo</td><td>Mostrar ficha completa.</td></tr><tr><td>A-07</td><td>Foto vehículo</td><td>Mostrar cámara/galería.</td></tr><tr><td>A-08</td><td>Repostajes</td><td>Mostrar consumo y coste medio.</td></tr><tr><td>A-09</td><td>Mantenimientos</td><td>Mostrar pendientes y realizados.</td></tr><tr><td>A-10</td><td>Gastos</td><td>Mostrar vencimientos y pagados.</td></tr><tr><td>A-11</td><td>Recordatorios</td><td>Mostrar avisos.</td></tr><tr><td>A-12</td><td>Documentación</td><td>Mostrar tarjetas libres.</td></tr><tr><td>A-13</td><td>Adjuntos</td><td>Mostrar previsualización de archivo.</td></tr><tr><td>A-14</td><td>Cuenta</td><td>Mostrar acciones de usuario.</td></tr><tr><td>A-15</td><td>Estadísticas</td><td>Mostrar métricas.</td></tr><tr><td>A-16</td><td>Gasolineras</td><td>Mostrar mapa y rango.</td></tr><tr><td>A-17</td><td>Offline</td><td>Mostrar banner sin conexión.</td></tr><tr><td>A-18</td><td>Sincronización</td><td>Mostrar dato replicado en otro dispositivo.</td></tr></tbody></table><h2>Anexo B. Estructura de paquetes</h2><table class='tabla'><thead><tr><th>Paquete</th><th>Contenido</th><th>Finalidad</th></tr></thead><tbody><tr><td>datos/basedatos</td><td>GestCarBaseDatos y migraciones.</td><td>Configurar Room.</td></tr><tr><td>datos/dao</td><td>Interfaces DAO.</td><td>Encapsular consultas locales.</td></tr><tr><td>datos/entidades</td><td>Entidades Room.</td><td>Modelo local.</td></tr><tr><td>datos/remoto</td><td>DTOs y cliente remoto.</td><td>Modelo remoto y Supabase.</td></tr><tr><td>datos/repositorio</td><td>Repositorios.</td><td>Coordinar local y remoto.</td></tr><tr><td>ui/pantallas</td><td>Pantallas Compose.</td><td>Interfaz principal.</td></tr><tr><td>ui/componentes</td><td>Componentes reutilizables.</td><td>Evitar duplicación visual.</td></tr><tr><td>ui/navegacion</td><td>Rutas y grafo.</td><td>Navegación.</td></tr><tr><td>ui/viewmodel</td><td>ViewModels.</td><td>Estado y lógica de presentación.</td></tr><tr><td>util</td><td>Utilidades.</td><td>Imágenes, archivos, sincronización, notificaciones, normalizadores.</td></tr></tbody></table><h2>Anexo C. Checklist previo a entrega</h2><ul><li>Actualizar índice automático en Word.</li><li>Sustituir todos los placeholders por capturas reales.</li><li>Revisar ortografía y coherencia de estilos.</li><li>Comprobar que no aparecen claves, URLs sensibles ni SQL privado.</li><li>Revisar bibliografía y fecha de consulta.</li><li>Generar PDF final desde DOCX.</li><li>Probar APK final en al menos un emulador y un dispositivo físico.</li><li>Revisar que el README público no expone información sensible.</li><li>Adjuntar APK si el procedimiento de entrega lo permite.</li><li>Preparar una explicación breve de despliegue y casos de uso para defensa.</li></ul><h2>Anexo D. Glosario</h2><table class='tabla'><thead><tr><th>Término</th><th>Definición</th></tr></thead><tbody><tr><td>APK</td><td>Paquete instalable de una aplicación Android.</td></tr><tr><td>Backend</td><td>Servicios remotos que gestionan autenticación, base de datos y almacenamiento.</td></tr><tr><td>DTO</td><td>Objeto utilizado para transferir datos entre app y backend.</td></tr><tr><td>MVVM</td><td>Patrón Modelo-Vista-ViewModel para separar responsabilidades.</td></tr><tr><td>Offline-first</td><td>Diseño que prioriza guardar datos localmente antes de depender de red.</td></tr><tr><td>Room</td><td>Librería de persistencia local de Android basada en SQLite.</td></tr><tr><td>RLS</td><td>Row Level Security, política de seguridad por fila en base de datos.</td></tr><tr><td>StateFlow</td><td>Flujo observable de estado utilizado en Kotlin.</td></tr><tr><td>Storage</td><td>Servicio de almacenamiento de archivos.</td></tr><tr><td>WorkManager</td><td>Librería de Android para tareas en segundo plano.</td></tr></tbody></table></body>
+</html>

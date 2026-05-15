@@ -1,5 +1,9 @@
 package com.gestcar.ui.pantallas
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +21,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -35,12 +41,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gestcar.datos.entidades.Vehiculo
 import com.gestcar.ui.componentes.BarraSuperiorCompacta
 import com.gestcar.ui.componentes.TarjetaVehiculo
 import com.gestcar.ui.viewmodel.VehiculoViewModel
+
+private const val PREFERENCIAS_NOTIFICACIONES = "preferencias_notificaciones"
+private const val CLAVE_AVISO_NOTIFICACIONES_MOSTRADO = "aviso_notificaciones_mostrado"
 
 // pantalla principal de la app, muestra la lista de vehiculos del usuario
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,21 +59,27 @@ import com.gestcar.ui.viewmodel.VehiculoViewModel
 fun PantallaListaVehiculos(
     usuarioId: String,
     alCargaInicialCompletada: () -> Unit = {},
+    alSolicitarPermisoNotificaciones: () -> Unit = {},
     alPulsarVehiculo: (String) -> Unit,
     alAnadirVehiculo: () -> Unit,
     viewModel: VehiculoViewModel = viewModel()
 ) {
+    val contexto = LocalContext.current
     val estado by viewModel.estadoLista.collectAsState()
     var modoOrganizacion by remember { mutableStateOf(false) }
     var vehiculosOrganizacion by remember { mutableStateOf(emptyList<Vehiculo>()) }
     var haVistoCargaInicial by remember { mutableStateOf(false) }
     var avisoCargaInicialEnviado by remember { mutableStateOf(false) }
+    var avisoNotificacionesEvaluado by remember { mutableStateOf(false) }
+    var mostrarAvisoNotificaciones by remember { mutableStateOf(false) }
 
     LaunchedEffect(usuarioId) {
         // reiniciamos el aviso para que el splash inicial no desaparezca antes de tiempo
         // se usa sobre todo cuando la app recupera una sesion guardada
         haVistoCargaInicial = false
         avisoCargaInicialEnviado = false
+        avisoNotificacionesEvaluado = false
+        mostrarAvisoNotificaciones = false
         viewModel.cargarVehiculos(usuarioId)
     }
 
@@ -73,6 +90,46 @@ fun PantallaListaVehiculos(
             avisoCargaInicialEnviado = true
             alCargaInicialCompletada()
         }
+    }
+
+    LaunchedEffect(avisoCargaInicialEnviado, usuarioId) {
+        if (avisoCargaInicialEnviado && !avisoNotificacionesEvaluado) {
+            avisoNotificacionesEvaluado = true
+            when {
+                debeMostrarAvisoNotificaciones(contexto) -> {
+                    mostrarAvisoNotificaciones = true
+                }
+
+                lasNotificacionesYaPuedenUsarse(contexto) -> {
+                    alSolicitarPermisoNotificaciones()
+                }
+            }
+        }
+    }
+
+    if (mostrarAvisoNotificaciones) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = {
+                Text(text = "Notificaciones de GestCar")
+            },
+            text = {
+                Text(
+                    text = "GestCar usa notificaciones para avisarte de recordatorios, vencimientos de gastos y tareas pendientes de tus vehículos."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        marcarAvisoNotificacionesMostrado(contexto)
+                        mostrarAvisoNotificaciones = false
+                        alSolicitarPermisoNotificaciones()
+                    }
+                ) {
+                    Text(text = "Entendido")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -240,6 +297,39 @@ fun PantallaListaVehiculos(
             }
         }
     }
+}
+
+private fun debeMostrarAvisoNotificaciones(contexto: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        return false
+    }
+
+    if (lasNotificacionesYaPuedenUsarse(contexto)) {
+        return false
+    }
+
+    return !contexto
+        .getSharedPreferences(PREFERENCIAS_NOTIFICACIONES, Context.MODE_PRIVATE)
+        .getBoolean(CLAVE_AVISO_NOTIFICACIONES_MOSTRADO, false)
+}
+
+private fun lasNotificacionesYaPuedenUsarse(contexto: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        return true
+    }
+
+    return ContextCompat.checkSelfPermission(
+        contexto,
+        Manifest.permission.POST_NOTIFICATIONS
+    ) == PackageManager.PERMISSION_GRANTED
+}
+
+private fun marcarAvisoNotificacionesMostrado(contexto: Context) {
+    contexto
+        .getSharedPreferences(PREFERENCIAS_NOTIFICACIONES, Context.MODE_PRIVATE)
+        .edit()
+        .putBoolean(CLAVE_AVISO_NOTIFICACIONES_MOSTRADO, true)
+        .apply()
 }
 
 @Composable

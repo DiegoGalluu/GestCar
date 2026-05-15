@@ -52,7 +52,6 @@ class ActividadPrincipal : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        solicitarPermisoNotificacionesSiHaceFalta()
 
         setContent {
             GestCarTema {
@@ -85,6 +84,9 @@ class ActividadPrincipal : ComponentActivity() {
                             estaAutenticado = estadoAuth.estaAutenticado,
                             usuarioId = estadoAuth.usuarioId,
                             alCerrarSesion = { authViewModel.cerrarSesion() },
+                            alSolicitarPermisoNotificaciones = {
+                                solicitarPermisoNotificacionesSiHaceFalta()
+                            },
                         )
                     }
 
@@ -124,6 +126,7 @@ class ActividadPrincipal : ComponentActivity() {
 
     private fun solicitarPermisoNotificacionesSiHaceFalta() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            PlanificadorNotificaciones.encolarRevisionPuntual(this)
             return
         }
 

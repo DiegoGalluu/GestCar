@@ -89,7 +89,8 @@ fun GrafoNavegacion(
     estaAutenticado: Boolean,
     usuarioId: String,
     alCerrarSesion: () -> Unit,
-    alListaVehiculosCargada: () -> Unit = {}
+    alListaVehiculosCargada: () -> Unit = {},
+    alSolicitarPermisoNotificaciones: () -> Unit = {}
 ) {
     // determinamos la pantalla de inicio segun si el usuario esta logueado o no
     val pantallaInicio = if (estaAutenticado) Rutas.LISTA_VEHICULOS else Rutas.INICIO_SESION
@@ -177,6 +178,7 @@ fun GrafoNavegacion(
                     // avisa a actividadprincipal cuando ya se puede retirar el splash inicial
                     // asi no se ve el login ni una pantalla vacia durante la carga de sesion
                     alCargaInicialCompletada = alListaVehiculosCargada,
+                    alSolicitarPermisoNotificaciones = alSolicitarPermisoNotificaciones,
                     alPulsarVehiculo = { vehiculoId ->
                         controladorNav.navigate(Rutas.detalleVehiculo(vehiculoId))
                     },

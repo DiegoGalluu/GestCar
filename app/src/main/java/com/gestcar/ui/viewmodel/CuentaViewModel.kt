@@ -6,12 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.gestcar.datos.basedatos.GestCarBaseDatos
 import com.gestcar.datos.remoto.ClienteSupabase
 import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.postgrest.postgrest
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class EstadoCuenta(
     val estaEliminando: Boolean = false,
@@ -36,12 +39,11 @@ class CuentaViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             _estado.value = _estado.value.copy(estaEliminando = true, mensajeError = null)
             try {
-                // la funcion vive en supabase y solo puede borrar la cuenta autenticada
-                // no usamos service role en la app porque seria una llave maestra dentro del apk
-                ClienteSupabase.cliente.postgrest.rpc("eliminar_cuenta_actual")
+                llamarFuncionEliminarCuenta()
 
                 // limpiamos tambien la cache local para no dejar datos sensibles en el dispositivo
                 // al borrar vehiculos room elimina en cascada el resto de tablas relacionadas
+                eliminarAdjuntosLocalesDelUsuario(usuarioId)
                 baseDatos.vehiculoDao().eliminarTodosPorUsuario(usuarioId)
                 File(getApplication<Application>().filesDir, "vehiculos_imagenes/$usuarioId")
                     .deleteRecursively()
@@ -55,6 +57,63 @@ class CuentaViewModel(application: Application) : AndroidViewModel(application) 
                 )
             }
         }
+    }
+
+    private suspend fun llamarFuncionEliminarCuenta() {
+        // la eliminacion real vive en una edge function con permisos de servidor
+        // asi storage se limpia con su api oficial y la app nunca guarda service role
+        ClienteSupabase.cliente.auth.awaitInitialization()
+        ClienteSupabase.cliente.auth.loadFromStorage()
+        val token = ClienteSupabase.cliente.auth.currentSessionOrNull()
+            ?.accessToken
+            ?: error("No hay sesion activa para eliminar la cuenta.")
+
+        withContext(Dispatchers.IO) {
+            val conexion = (URL("${ClienteSupabase.SUPABASE_URL}/functions/v1/eliminar-cuenta")
+                .openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = 15_000
+                readTimeout = 60_000
+                doOutput = true
+                setRequestProperty("Authorization", "Bearer $token")
+                setRequestProperty("apikey", ClienteSupabase.SUPABASE_KEY)
+                setRequestProperty("Content-Type", "application/json")
+                setRequestProperty("Accept", "application/json")
+            }
+
+            runCatching {
+                conexion.outputStream.use { salida ->
+                    salida.write("{}".toByteArray(Charsets.UTF_8))
+                }
+
+                val codigo = conexion.responseCode
+                val cuerpo = if (codigo in 200..299) {
+                    conexion.inputStream.bufferedReader().use { it.readText() }
+                } else {
+                    conexion.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                }
+
+                if (codigo !in 200..299) {
+                    error("Error al eliminar cuenta. Codigo $codigo: $cuerpo")
+                }
+            }.also {
+                conexion.disconnect()
+            }.getOrThrow()
+        }
+    }
+
+    private suspend fun eliminarAdjuntosLocalesDelUsuario(usuarioId: String) {
+        val filesDir = getApplication<Application>().filesDir
+        baseDatos.vehiculoDao()
+            .obtenerVehiculosPorUsuarioLista(usuarioId)
+            .forEach { vehiculo ->
+                baseDatos.documentoVehiculoDao()
+                    .obtenerPorVehiculoLista(vehiculo.id)
+                    .forEach { documento ->
+                        File(filesDir, "documentos_adjuntos/${documento.id}")
+                            .deleteRecursively()
+                    }
+            }
     }
 
     fun limpiarError() {

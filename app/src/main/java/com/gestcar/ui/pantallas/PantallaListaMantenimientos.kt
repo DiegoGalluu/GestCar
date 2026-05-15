@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,6 +26,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -265,11 +268,16 @@ private fun EncabezadoSeccionMantenimientos(
             style = MaterialTheme.typography.titleMedium
         )
         estaDesplegada?.let {
-            Text(
-                text = if (it) "v" else ">",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            IconButton(
+                onClick = { alPulsar?.invoke() },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = if (it) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
+                    contentDescription = if (it) "Ocultar realizadas" else "Mostrar realizadas",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

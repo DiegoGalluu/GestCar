@@ -265,8 +265,7 @@ private fun TituloSeccionGastosDesplegable(
         Text(
             text = "$titulo ($cantidad)",
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         IconButton(
