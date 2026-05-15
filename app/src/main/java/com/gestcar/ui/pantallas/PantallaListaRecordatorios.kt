@@ -4,15 +4,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,8 +32,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -63,11 +66,12 @@ fun PantallaListaRecordatorios(
     val estadoVehiculo by vehiculoActivoViewModel.estado.collectAsState()
     val estadoRecordatorios by recordatorioViewModel.estadoLista.collectAsState()
     val vehiculoActivo = estadoVehiculo.vehiculoActivo
-    var mostrarFiltroPeriodo by remember { mutableStateOf(false) }
-    var mostrarRangoPersonalizado by remember { mutableStateOf(false) }
-    var periodoSeleccionado by remember { mutableStateOf(PeriodoRepostajes.TODO) }
-    var fechaInicioPersonalizada by remember { mutableStateOf<Long?>(null) }
-    var fechaFinPersonalizada by remember { mutableStateOf<Long?>(null) }
+    var mostrarCompletados by rememberSaveable { mutableStateOf(false) }
+    var mostrarFiltroPeriodo by rememberSaveable { mutableStateOf(false) }
+    var mostrarRangoPersonalizado by rememberSaveable { mutableStateOf(false) }
+    var periodoSeleccionado by rememberSaveable { mutableStateOf(PeriodoRepostajes.TODO) }
+    var fechaInicioPersonalizada by rememberSaveable { mutableStateOf<Long?>(null) }
+    var fechaFinPersonalizada by rememberSaveable { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(usuarioId, vehiculoInicialId) {
         vehiculoActivoViewModel.cargarVehiculos(usuarioId, vehiculoInicialId)
@@ -130,7 +134,7 @@ fun PantallaListaRecordatorios(
                 }
 
                 else -> {
-                    val recordatoriosOrdenados = estadoRecordatorios.recordatorios
+                    val recordatoriosDelPeriodo = estadoRecordatorios.recordatorios
                         .filter {
                             fechaDentroDePeriodo(
                                 fecha = fechaReferenciaFiltroRecordatorio(it),
@@ -139,13 +143,20 @@ fun PantallaListaRecordatorios(
                                 fechaFinPersonalizada = fechaFinPersonalizada
                             )
                         }
+
+                    val recordatoriosPendientes = recordatoriosDelPeriodo
+                        .filter { !it.completado }
                         .sortedWith(compareBy({ prioridadEstado(it, vehiculoActivo) }, { it.fechaLimite ?: Long.MAX_VALUE }))
+
+                    val recordatoriosCompletados = recordatoriosDelPeriodo
+                        .filter { it.completado }
+                        .sortedByDescending { it.fechaCompletado ?: it.fechaLimite ?: 0L }
 
                     androidx.compose.foundation.lazy.LazyColumn(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        if (recordatoriosOrdenados.isEmpty()) {
+                        if (recordatoriosDelPeriodo.isEmpty()) {
                             item {
                                 Text(
                                     text = "No hay recordatorios en este periodo",
@@ -155,15 +166,45 @@ fun PantallaListaRecordatorios(
                             }
                         }
 
-                        itemsIndexed(recordatoriosOrdenados) { indice, recordatorio ->
-                            TarjetaRecordatorio(
-                                recordatorio = recordatorio,
-                                estadoVisual = calcularEstadoVisual(recordatorio, vehiculoActivo),
-                                indiceColor = indice,
-                                alPulsar = {
-                                    alVerDetalleRecordatorio(recordatorio.vehiculoId, recordatorio.id)
+                        if (recordatoriosPendientes.isNotEmpty()) {
+                            item { EncabezadoSeccionRecordatorios("Pendientes") }
+
+                            itemsIndexed(recordatoriosPendientes) { indice, recordatorio ->
+                                TarjetaRecordatorio(
+                                    recordatorio = recordatorio,
+                                    estadoVisual = calcularEstadoVisual(recordatorio, vehiculoActivo),
+                                    indiceColor = indice,
+                                    alPulsar = {
+                                        alVerDetalleRecordatorio(recordatorio.vehiculoId, recordatorio.id)
+                                    }
+                                )
+                            }
+                        }
+
+                        if (recordatoriosCompletados.isNotEmpty()) {
+                            item {
+                                if (recordatoriosPendientes.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
                                 }
-                            )
+                                EncabezadoSeccionRecordatorios(
+                                    titulo = "Completados (${recordatoriosCompletados.size})",
+                                    estaDesplegada = mostrarCompletados,
+                                    alPulsar = { mostrarCompletados = !mostrarCompletados }
+                                )
+                            }
+
+                            if (mostrarCompletados) {
+                                itemsIndexed(recordatoriosCompletados) { indice, recordatorio ->
+                                    TarjetaRecordatorio(
+                                        recordatorio = recordatorio,
+                                        estadoVisual = calcularEstadoVisual(recordatorio, vehiculoActivo),
+                                        indiceColor = indice,
+                                        alPulsar = {
+                                            alVerDetalleRecordatorio(recordatorio.vehiculoId, recordatorio.id)
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -199,6 +240,38 @@ fun PantallaListaRecordatorios(
             },
             alCancelar = { mostrarRangoPersonalizado = false }
         )
+    }
+}
+
+@Composable
+private fun EncabezadoSeccionRecordatorios(
+    titulo: String,
+    estaDesplegada: Boolean? = null,
+    alPulsar: (() -> Unit)? = null
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            text = titulo,
+            style = MaterialTheme.typography.titleMedium
+        )
+        estaDesplegada?.let {
+            IconButton(
+                onClick = { alPulsar?.invoke() },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = if (it) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
+                    contentDescription = if (it) "Ocultar completados" else "Mostrar completados",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 
